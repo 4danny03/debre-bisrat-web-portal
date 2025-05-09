@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,7 +62,19 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				church: {
+					'burgundy': '#8B0000',
+					'gold': '#D4AF37',
+					'cream': '#FFF8E1',
+					'light': '#F8F8FF',
+					'dark': '#2D2926',
 				}
+			},
+			fontFamily: {
+				'serif': ['Georgia', 'Cambria', 'serif'],
+				'sans': ['Inter', 'sans-serif'],
+				'amharic': ['Nyala', 'Arial', 'sans-serif']
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -84,11 +97,21 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'fade': {
+					'0%': { opacity: '0' },
+					'100%': { opacity: '1' }
+				},
+				'slide': {
+					'0%': { transform: 'translateX(100%)' },
+					'100%': { transform: 'translateX(0)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade 0.5s ease-in-out',
+				'slide-in': 'slide 0.5s ease-in-out'
 			}
 		}
 	},
