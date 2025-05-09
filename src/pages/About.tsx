@@ -53,6 +53,31 @@ const About: React.FC = () => {
                       Ethiopian Orthodox Tewahedo tradition. Our doors are open to you.
                     </p>
                   </div>
+                  
+                  <h2 className="text-2xl font-serif text-church-burgundy mt-12 mb-4">Our Vision</h2>
+                  <p className="mb-6">
+                    The vision of Debre Bisrat Dagimawi Kulibi Gabriel Church of Maryland is to see all followers of the faith 
+                    preserve their beliefs and traditions, and to witness the Ethiopian Orthodox Tewahedo faith and practice 
+                    flourish and strengthen.
+                  </p>
+                  
+                  <h2 className="text-2xl font-serif text-church-burgundy mt-8 mb-4">Our Purpose</h2>
+                  <p className="mb-6">
+                    To maintain a Holy Church that is independent from any political organization, governed and administered 
+                    according to the Church's established rules and regulations, ensuring comprehensive service delivery.
+                  </p>
+                  
+                  <h2 className="text-2xl font-serif text-church-burgundy mt-8 mb-4">Our Mission Statement</h2>
+                  <ul className="list-disc pl-6 space-y-2 mb-6">
+                    <li>Expand and strengthen the evangelism service.</li>
+                    <li>Organize and strengthen Sunday school youth programs.</li>
+                    <li>Support and strengthen monasteries, churches, and traditional education centers in Ethiopia.</li>
+                    <li>Protect and preserve the Church's dogma and canon.</li>
+                    <li>Enable believers to fully understand their faith and live according to Christian ethics.</li>
+                    <li>Accept and implement religious decisions issued by the Holy Synod.</li>
+                    <li>Establish various charitable organizations.</li>
+                    <li>Provide services in collaboration with other Ethiopian Orthodox Tewahedo churches in the area.</li>
+                  </ul>
                 </>
               ) : (
                 // Amharic content
@@ -91,6 +116,28 @@ const About: React.FC = () => {
                       መንፈሳዊ ዕድገትን፣ ማህበረሰብን እና የኢትዮጵያ ኦርቶዶክስ ተዋሕዶን ወግና ባህል የሚፈልጉ ሁሉ እንኳን ደህና መጡ። የእኛ በሮች ሁልጊዜ ለእርስዎ ክፍት ናቸው።
                     </p>
                   </div>
+                  
+                  <h2 className="text-2xl font-serif text-church-burgundy mt-12 mb-4">ራዕያችን</h2>
+                  <p className="mb-6">
+                    የሜሪላንድ ደብረ ብሥራት ዳግማዊ ቁልቢ ገብርኤል ቤተክርስቲያን የእምነቱ ተከታዮች ሁሉ እምነታቸውንና ሥርዓታቸውን ጠብቀው የኢትዮጵያ ኦርቶዶክስ ተዋሕዶ እምነትና ሥርዓት ተስፋፍቶና ተጠናክሮ ማየት ነው።
+                  </p>
+                  
+                  <h2 className="text-2xl font-serif text-church-burgundy mt-8 mb-4">አላማና ተግባር</h2>
+                  <p className="mb-6">
+                    ከማንኛውም የፖለቲካ ድርጅት ነፃ የሆነ በቤተክርስቲያኗ ቃለ አዋዲ ሕገ ደንብ የሚመራና የሚተዳደር ቅድስት ቤተ ክርስቲያንን ለመጠበቅና አገልግሎቷም የተሟላ እንዲሆን ማድረግ ነው።
+                  </p>
+                  
+                  <h2 className="text-2xl font-serif text-church-burgundy mt-8 mb-4">ተልዕኮ</h2>
+                  <ul className="list-disc pl-6 space-y-2 mb-6">
+                    <li>የስብከተ ወንጌል አገልግሎትን ማስፋፋትና ማጠናከር።</li>
+                    <li>የሰንበት ትምህርት ቤት ወጣቶችን ማደራጀት ማጠናከር።</li>
+                    <li>በኢትዮጵያ የሚገኙትን ገዳማትና አድባራት እንዲሁም የአብነት ትምህርት ቤቶችን መርዳትና ማጠናከር።</li>
+                    <li>የቤተክርስቲያንን ዶግማ እና ቀኖና መጠበቅና ማስጠበቅ</li>
+                    <li>ምዕመናን ሃይማኖታቸውን ጠንቅቀው እንዲያውቁና በክርስቲያናዊ ሥነ ምግባር እንዲኖሩ ማድረግ</li>
+                    <li>ከቅዱስ ሲኖዶስ የሚተላለፈንና የሚወጣውን ሃይማኖታዊ ውሳኔ መቀበና በተግባር መተርጐም።</li>
+                    <li>ልዩ ልዩ ምግባረ ሠናይ ድርጅቶችን ማቋቋም።</li>
+                    <li>በአካባቢው ከሚገኙ የኢትዮጵያ ኦርቶዶክስ ተዋሕዶ አብያተ ክርስቲያናት ጋር ሕብረት በፍጠር አገልግሎት መስጠት።</li>
+                  </ul>
                 </>
               )}
             </div>
