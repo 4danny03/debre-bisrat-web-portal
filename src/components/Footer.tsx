@@ -2,6 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
+import { MapPin, Phone, Mail } from 'lucide-react';
 
 const Footer: React.FC = () => {
   const { t, language } = useLanguage();
@@ -16,10 +17,22 @@ const Footer: React.FC = () => {
                 ? "Debre Bisrat St. Gabriel Church" 
                 : "ደብረ ብሥራት ቅዱስ ገብርኤል ቤተክርስቲያን"}
             </h2>
-            <address className="not-italic mb-2">
-              16020 Batson Rd, Spencerville, MD 20868
-            </address>
-            <p>(240)-381-8146</p>
+            <div className="space-y-2">
+              <div className="flex items-center">
+                <MapPin size={18} className="text-church-gold mr-2" />
+                <address className="not-italic">
+                  16020 Batson Rd, Spencerville, MD 20868
+                </address>
+              </div>
+              <div className="flex items-center">
+                <Phone size={18} className="text-church-gold mr-2" />
+                <p>(240)-381-8146</p>
+              </div>
+              <div className="flex items-center">
+                <Mail size={18} className="text-church-gold mr-2" />
+                <p>info@stgabrielmd.org</p>
+              </div>
+            </div>
           </div>
 
           <div className="mb-6 md:mb-0">
@@ -70,6 +83,11 @@ const Footer: React.FC = () => {
 
         <div className="mt-8 pt-6 border-t border-white/20 text-center text-sm">
           <p>{t("copyright")}</p>
+          <p className="mt-2">
+            {language === 'en' 
+              ? "Visit us at our church location for worship services and community events." 
+              : "ለአምልኮ አገልግሎቶች እና የማህበረሰብ ዝግጅቶች በቤተክርስቲያናችን ይጎብኙን።"}
+          </p>
         </div>
       </div>
     </footer>
