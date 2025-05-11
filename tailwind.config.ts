@@ -74,7 +74,9 @@ export default {
 					'red': '#AA0000', // Ethiopian flag red
 					'tabot-gold': '#FFD700', // For highlighting sacred elements
 					'cross-brown': '#8B4513', // Ethiopian cross color
-					'papyrus': '#F5DEB3' // Traditional manuscript color
+					'papyrus': '#F5DEB3', // Traditional manuscript color
+					'icon-blue': '#1E90FF', // Color from St. Gabriel icon
+					'icon-red': '#B22222'   // Another color from St. Gabriel icon
 				}
 			},
 			fontFamily: {
@@ -116,13 +118,22 @@ export default {
 				'slide': {
 					'0%': { transform: 'translateX(100%)' },
 					'100%': { transform: 'translateX(0)' }
+				},
+				'glow': {
+					'0%, 100%': { 
+						boxShadow: '0 0 5px #D4AF37, 0 0 10px #D4AF37' 
+					},
+					'50%': { 
+						boxShadow: '0 0 20px #D4AF37, 0 0 30px #D4AF37' 
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'fade-in': 'fade 0.5s ease-in-out',
-				'slide-in': 'slide 0.5s ease-in-out'
+				'slide-in': 'slide 0.5s ease-in-out',
+				'holy-glow': 'glow 2s ease-in-out infinite'
 			}
 		}
 	},

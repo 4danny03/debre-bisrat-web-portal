@@ -17,7 +17,13 @@ const Header: React.FC = () => {
       <div className="container mx-auto px-4 py-5">
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="flex items-center mb-4 md:mb-0">
-            <div className="w-12 h-12 bg-church-gold rounded-full mr-3"></div>
+            <div className="w-16 h-16 mr-3 rounded-full overflow-hidden border-2 border-church-gold">
+              <img 
+                src="/lovable-uploads/c533ed24-4c1a-4ba1-ac6c-68a3a0fb66d7.png" 
+                alt="St. Gabriel Icon" 
+                className="w-full h-full object-cover"
+              />
+            </div>
             <div>
               <h1 className="text-xl md:text-2xl font-serif text-church-gold">
                 {language === 'en' ? (
