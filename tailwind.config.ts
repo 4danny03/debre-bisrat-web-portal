@@ -69,6 +69,12 @@ export default {
 					'cream': '#FFF8E1',
 					'light': '#F8F8FF',
 					'dark': '#2D2926',
+					'green': '#006400', // Ethiopian flag green
+					'yellow': '#FFDC00', // Ethiopian flag yellow
+					'red': '#AA0000', // Ethiopian flag red
+					'tabot-gold': '#FFD700', // For highlighting sacred elements
+					'cross-brown': '#8B4513', // Ethiopian cross color
+					'papyrus': '#F5DEB3' // Traditional manuscript color
 				}
 			},
 			fontFamily: {
@@ -76,6 +82,11 @@ export default {
 				'sans': ['Inter', 'sans-serif'],
 				'amharic': ['Nyala', 'Arial', 'sans-serif']
 			},
+			backgroundImage: {
+				'ethiopian-cross': "url('data:image/svg+xml,%3Csvg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"40\" viewBox=\"0 0 40 40\" fill=\"none\"%3E%3Cpath d=\"M20 5V35M5 20H35M12 12L28 28M28 12L12 28\" stroke=\"%238B0000\" stroke-opacity=\"0.07\" stroke-width=\"2\"/%3E%3C/svg%3E')",
+				'lalibela-pattern': "url('data:image/svg+xml,%3Csvg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"none\" fill-rule=\"evenodd\"%3E%3Cg fill=\"%238B0000\" fill-opacity=\"0.05\"%3E%3Cpath d=\"M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')"
+			},
+			// Add Ethiopian-inspired border patterns
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',

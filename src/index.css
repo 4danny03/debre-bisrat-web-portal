@@ -1,4 +1,5 @@
 
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
@@ -106,7 +107,56 @@
   @apply scale-x-100 origin-bottom-left;
 }
 
-/* Cross Pattern Background */
+/* Ethiopian Orthodox Cultural Patterns */
 .pattern-bg {
   background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%238B0000' fill-opacity='0.05' fill-rule='evenodd'%3E%3Cpath d='M20 18v-4h-4v4H2v4h14v14h4V22h14v-4H20z'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+.cross-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40' fill='none'%3E%3Cpath d='M20 5V35M5 20H35M12 12L28 28M28 12L12 28' stroke='%238B0000' stroke-opacity='0.07' stroke-width='2'/%3E%3C/svg%3E");
+}
+
+.lalibela-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%238B0000' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Ethiopian Heritage Elements */
+.eth-border {
+  @apply border-2 border-church-gold p-4 rounded-lg;
+  background-image: linear-gradient(to right, transparent, transparent),
+                    linear-gradient(to right, #D4AF37, #D4AF37);
+  background-size: 100% 2px;
+  background-position: 0 0, 0 100%;
+  background-repeat: no-repeat;
+}
+
+.eth-card {
+  @apply bg-white rounded-lg shadow-md overflow-hidden border-t-4 border-church-gold;
+}
+
+.eth-title {
+  @apply font-serif text-church-burgundy relative pb-2 inline-block;
+}
+
+.eth-title::after {
+  @apply content-[''] absolute bottom-0 left-0 w-full h-0.5 bg-church-gold rounded;
+}
+
+/* Ethiopian Flag-inspired elements */
+.eth-flag-border {
+  @apply p-4 border-l-4 border-church-green;
+  background: linear-gradient(to right, rgba(0, 100, 0, 0.1) 0%, rgba(255, 220, 0, 0.1) 33%, rgba(170, 0, 0, 0.1) 66%);
+}
+
+.eth-flag-accent {
+  background: linear-gradient(to right, #006400 33%, #FFDC00 33%, #FFDC00 66%, #AA0000 66%);
+  height: 4px;
+  width: 100%;
+}
+
+/* Ethiopian Cross Design */
+.eth-cross {
+  @apply relative inline-block w-6 h-6 mx-2 bg-church-gold;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12,2V22M2,12H22M7,7L17,17M17,7L7,17' stroke='black' stroke-width='4'/%3E%3C/svg%3E");
+  mask-size: contain;
 }
