@@ -11,6 +11,7 @@ import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import Signup from "./pages/Signup";
 import Donation from "./pages/Donation";
+import DonationSuccess from "./pages/DonationSuccess";
 import Gallery from "./pages/Gallery";
 import Services from "./pages/Services";
 import { LanguageProvider } from "./contexts/LanguageContext";
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/contact" element={<Contact />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/donation" element={<Donation />} />
+            <Route path="/donation-success" element={<DonationSuccess />} />
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/services" element={<Services />} />
             <Route path="*" element={<NotFound />} />

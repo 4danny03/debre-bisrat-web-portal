@@ -1,8 +1,9 @@
 
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
-import { Heart } from "lucide-react";
+import { Heart, CreditCard, Apple, Smartphone } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,13 +11,18 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Donation: React.FC = () => {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [amount, setAmount] = useState("");
   const [donationType, setDonationType] = useState("one_time");
+  const [paymentMethod, setPaymentMethod] = useState("credit_card");
+  const [purpose, setPurpose] = useState("general_fund");
+  const [email, setEmail] = useState("");
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +31,21 @@ const Donation: React.FC = () => {
     // Simulate payment processing
     setTimeout(() => {
       setIsSubmitting(false);
+      
+      // Store donation details to pass to success page
+      const donationDetails = {
+        amount,
+        donationType,
+        paymentMethod,
+        purpose,
+        email,
+        date: new Date().toISOString()
+      };
+      
+      // Navigate to the success page with donation details
+      navigate("/donation-success", { state: { donationDetails } });
+      
+      // Show toast notification
       toast({
         title: `Thank you for your $${amount} donation!`,
         description: "Your generosity helps our church community thrive.",
@@ -67,6 +88,22 @@ const Donation: React.FC = () => {
                   </div>
                 </div>
                 
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-church-burgundy">
+                    {t("email_address")}
+                  </Label>
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    required
+                    className="border-church-burgundy/30 focus:border-church-burgundy"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your@email.com"
+                  />
+                  <p className="text-xs text-gray-500">{t("donation_receipt_email")}</p>
+                </div>
+                
                 <div className="space-y-3">
                   <Label className="text-church-burgundy">
                     {t("donation_type")}
@@ -95,7 +132,7 @@ const Donation: React.FC = () => {
                   <Label htmlFor="purpose" className="text-church-burgundy">
                     {t("donation_purpose")}
                   </Label>
-                  <Select defaultValue="general_fund">
+                  <Select defaultValue="general_fund" value={purpose} onValueChange={setPurpose}>
                     <SelectTrigger className="border-church-burgundy/30 focus:border-church-burgundy">
                       <SelectValue placeholder={t("donation_purpose")} />
                     </SelectTrigger>
@@ -108,9 +145,70 @@ const Donation: React.FC = () => {
                   </Select>
                 </div>
                 
+                <div className="space-y-3">
+                  <Label className="text-church-burgundy">
+                    {t("payment_method")}
+                  </Label>
+                  <Tabs defaultValue="credit_card" value={paymentMethod} onValueChange={setPaymentMethod} className="w-full">
+                    <TabsList className="grid grid-cols-3 w-full">
+                      <TabsTrigger value="credit_card" className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4" />
+                        {t("credit_card")}
+                      </TabsTrigger>
+                      <TabsTrigger value="apple_pay" className="flex items-center gap-2">
+                        <Apple className="h-4 w-4" />
+                        {t("apple_pay")}
+                      </TabsTrigger>
+                      <TabsTrigger value="google_pay" className="flex items-center gap-2">
+                        <Smartphone className="h-4 w-4" />
+                        {t("google_pay")}
+                      </TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="credit_card" className="mt-4 border rounded-md p-4">
+                      <div className="space-y-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="card_number">Card Number</Label>
+                          <Input id="card_number" placeholder="1234 5678 9012 3456" className="border-church-burgundy/30" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="expiry">Expiry Date</Label>
+                            <Input id="expiry" placeholder="MM/YY" className="border-church-burgundy/30" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="cvc">CVC</Label>
+                            <Input id="cvc" placeholder="123" className="border-church-burgundy/30" />
+                          </div>
+                        </div>
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="apple_pay" className="mt-4 border rounded-md p-4 text-center">
+                      <div className="py-4">
+                        <p className="text-gray-600 mb-2">Click the button below to pay with Apple Pay</p>
+                        <div className="bg-black text-white py-2 px-4 rounded-md inline-flex items-center gap-2 cursor-pointer">
+                          <Apple className="h-5 w-5" />
+                          <span className="font-medium">Pay</span>
+                        </div>
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="google_pay" className="mt-4 border rounded-md p-4 text-center">
+                      <div className="py-4">
+                        <p className="text-gray-600 mb-2">Click the button below to pay with Google Pay</p>
+                        <div className="bg-white border shadow-sm text-black py-2 px-4 rounded-md inline-flex items-center gap-2 cursor-pointer">
+                          <Smartphone className="h-5 w-5" />
+                          <span className="font-medium">Google Pay</span>
+                        </div>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                </div>
+                
                 <Button 
                   type="submit" 
-                  disabled={isSubmitting || !amount}
+                  disabled={isSubmitting || !amount || !email}
                   className="bg-church-gold hover:bg-church-gold/90 text-church-burgundy font-bold w-full"
                 >
                   {isSubmitting ? "Processing..." : t("donate_now")}
