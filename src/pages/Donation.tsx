@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { supabase } from "@/integrations/supabase/client";
 
 const Donation: React.FC = () => {
   const { t } = useLanguage();
@@ -24,33 +25,40 @@ const Donation: React.FC = () => {
   const [purpose, setPurpose] = useState("general_fund");
   const [email, setEmail] = useState("");
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate payment processing
-    setTimeout(() => {
-      setIsSubmitting(false);
-      
-      // Store donation details to pass to success page
-      const donationDetails = {
-        amount,
-        donationType,
-        paymentMethod,
-        purpose,
-        email,
-        date: new Date().toISOString()
-      };
-      
-      // Navigate to the success page with donation details
-      navigate("/donation-success", { state: { donationDetails } });
-      
-      // Show toast notification
-      toast({
-        title: `Thank you for your $${amount} donation!`,
-        description: "Your generosity helps our church community thrive.",
+    try {
+      // Call our Supabase Edge Function to create a Stripe checkout session
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { 
+          amount,
+          donationType,
+          purpose,
+          email
+        }
       });
-    }, 2000);
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = data.url;
+      } else {
+        throw new Error("Failed to generate checkout URL");
+      }
+    } catch (error) {
+      console.error("Payment error:", error);
+      toast({
+        title: "Payment Error",
+        description: error.message || "Failed to process payment. Please try again.",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -149,61 +157,9 @@ const Donation: React.FC = () => {
                   <Label className="text-church-burgundy">
                     {t("payment_method")}
                   </Label>
-                  <Tabs defaultValue="credit_card" value={paymentMethod} onValueChange={setPaymentMethod} className="w-full">
-                    <TabsList className="grid grid-cols-3 w-full">
-                      <TabsTrigger value="credit_card" className="flex items-center gap-2">
-                        <CreditCard className="h-4 w-4" />
-                        {t("credit_card")}
-                      </TabsTrigger>
-                      <TabsTrigger value="apple_pay" className="flex items-center gap-2">
-                        <Apple className="h-4 w-4" />
-                        {t("apple_pay")}
-                      </TabsTrigger>
-                      <TabsTrigger value="google_pay" className="flex items-center gap-2">
-                        <Smartphone className="h-4 w-4" />
-                        {t("google_pay")}
-                      </TabsTrigger>
-                    </TabsList>
-                    
-                    <TabsContent value="credit_card" className="mt-4 border rounded-md p-4">
-                      <div className="space-y-3">
-                        <div className="space-y-2">
-                          <Label htmlFor="card_number">Card Number</Label>
-                          <Input id="card_number" placeholder="1234 5678 9012 3456" className="border-church-burgundy/30" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="expiry">Expiry Date</Label>
-                            <Input id="expiry" placeholder="MM/YY" className="border-church-burgundy/30" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="cvc">CVC</Label>
-                            <Input id="cvc" placeholder="123" className="border-church-burgundy/30" />
-                          </div>
-                        </div>
-                      </div>
-                    </TabsContent>
-                    
-                    <TabsContent value="apple_pay" className="mt-4 border rounded-md p-4 text-center">
-                      <div className="py-4">
-                        <p className="text-gray-600 mb-2">Click the button below to pay with Apple Pay</p>
-                        <div className="bg-black text-white py-2 px-4 rounded-md inline-flex items-center gap-2 cursor-pointer">
-                          <Apple className="h-5 w-5" />
-                          <span className="font-medium">Pay</span>
-                        </div>
-                      </div>
-                    </TabsContent>
-                    
-                    <TabsContent value="google_pay" className="mt-4 border rounded-md p-4 text-center">
-                      <div className="py-4">
-                        <p className="text-gray-600 mb-2">Click the button below to pay with Google Pay</p>
-                        <div className="bg-white border shadow-sm text-black py-2 px-4 rounded-md inline-flex items-center gap-2 cursor-pointer">
-                          <Smartphone className="h-5 w-5" />
-                          <span className="font-medium">Google Pay</span>
-                        </div>
-                      </div>
-                    </TabsContent>
-                  </Tabs>
+                  <p className="text-sm text-gray-500">
+                    {t("stripe_payment_methods")}
+                  </p>
                 </div>
                 
                 <Button 
