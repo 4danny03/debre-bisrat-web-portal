@@ -1,5 +1,3 @@
-
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
@@ -152,6 +150,46 @@
   background: linear-gradient(to right, #006400 33%, #FFDC00 33%, #FFDC00 66%, #AA0000 66%);
   height: 4px;
   width: 100%;
+}
+
+/* NEW: Flag-inspired nostalgic elements */
+.nostalgic-paper {
+  background-color: #FEF7CD;
+  background-image: 
+    linear-gradient(rgba(255, 220, 0, 0.05) 2px, transparent 2px),
+    linear-gradient(90deg, rgba(255, 220, 0, 0.05) 2px, transparent 2px);
+  background-size: 20px 20px;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+}
+
+.eth-flag-ribbon {
+  position: relative;
+  overflow: hidden;
+}
+
+.eth-flag-ribbon::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  border-width: 0 16px 16px 0;
+  border-style: solid;
+  border-color: #AA0000 #FFF8E1;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+.eth-vintage-photo {
+  filter: sepia(30%) contrast(90%) brightness(95%);
+  border: 8px solid white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+.eth-flag-gradient {
+  background: linear-gradient(to bottom, 
+    rgba(0, 100, 0, 0.05) 0%, 
+    rgba(255, 220, 0, 0.05) 33%, 
+    rgba(170, 0, 0, 0.05) 66%,
+    transparent 100%);
 }
 
 /* Ethiopian Cross Design */

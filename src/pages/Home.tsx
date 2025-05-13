@@ -2,7 +2,7 @@
 import React from 'react';
 import Layout from '../components/Layout';
 import { Link } from 'react-router-dom';
-import { Calendar, DollarSign } from 'lucide-react';
+import { Calendar, DollarSign, Church } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 
@@ -27,10 +27,15 @@ const Home: React.FC = () => {
 
   return (
     <Layout>
-      {/* Hero Image Section - Half page */}
+      {/* Hero Image Section - Half page with nostalgic filter */}
       <section className="relative h-[50vh]">
         <div className="absolute inset-0 bg-church-burgundy/40 z-10 flex items-center justify-center">
           <div className="text-center text-white p-6 bg-black/30 rounded-lg max-w-3xl">
+            <div className="flex justify-center mb-3">
+              <div className="w-10 h-1 bg-church-green"></div>
+              <div className="w-10 h-1 bg-church-yellow"></div>
+              <div className="w-10 h-1 bg-church-red"></div>
+            </div>
             <h1 className="text-4xl md:text-5xl font-serif mb-4">
               {language === 'en' ? 
                 "Debre Bisrat St. Gabriel Ethiopian Orthodox Tewahedo Church" : 
@@ -43,12 +48,17 @@ const Home: React.FC = () => {
                 "በስመ አብ ወወልድ ወመንፈስ ቅዱስ አሐዱ አምላክ አሜን።"
               }
             </p>
+            <div className="flex justify-center mt-3">
+              <div className="w-10 h-1 bg-church-green"></div>
+              <div className="w-10 h-1 bg-church-yellow"></div>
+              <div className="w-10 h-1 bg-church-red"></div>
+            </div>
           </div>
         </div>
         <img 
           src="https://images.unsplash.com/photo-1487958449943-2429e8be8625" 
           alt="Church Sanctuary" 
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover eth-vintage-photo"
         />
       </section>
 
@@ -57,7 +67,7 @@ const Home: React.FC = () => {
         <div className="container mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Upcoming Events Column */}
-            <div className="eth-card">
+            <div className="eth-card eth-flag-ribbon nostalgic-paper">
               <div className="bg-church-burgundy text-white p-4 flex items-center">
                 <Calendar size={24} className="text-church-gold mr-2" />
                 <h2 className="text-2xl font-serif">{t("upcoming_events")}</h2>
@@ -83,7 +93,7 @@ const Home: React.FC = () => {
             </div>
             
             {/* Donation Column */}
-            <div className="eth-card">
+            <div className="eth-card eth-flag-ribbon nostalgic-paper">
               <div className="bg-church-burgundy text-white p-4 flex items-center">
                 <DollarSign size={24} className="text-church-gold mr-2" />
                 <h2 className="text-2xl font-serif">{t("support_our_church")}</h2>
@@ -118,10 +128,15 @@ const Home: React.FC = () => {
       <section className="py-12 bg-white">
         <div className="container mx-auto px-6">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl font-serif mb-8 text-center eth-title">{t("biblical_wisdom")}</h2>
+            <h2 className="text-3xl font-serif mb-8 text-center eth-title">
+              <span className="inline-flex items-center">
+                <Church size={22} className="text-church-burgundy mr-2" />
+                {t("biblical_wisdom")}
+              </span>
+            </h2>
             
-            <div className="eth-border">
-              <div className="bg-church-cream p-8 rounded-lg">
+            <div className="eth-border nostalgic-paper">
+              <div className="p-8 rounded-lg">
                 <p className="text-xl mb-4 italic">
                   "Give, and it will be given to you. A good measure, pressed down, shaken together and running over, 
                   will be poured into your lap. For with the measure you use, it will be measured to you."
@@ -131,7 +146,9 @@ const Home: React.FC = () => {
                 </p>
                 
                 <div className="flex justify-center my-4">
-                  <div className="h-px bg-church-gold w-24"></div>
+                  <div className="h-px w-8 bg-church-green"></div>
+                  <div className="h-px w-8 bg-church-yellow"></div>
+                  <div className="h-px w-8 bg-church-red"></div>
                 </div>
                 
                 <p className="text-xl mt-6 mb-4 font-amharic italic">
