@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { Calendar, DollarSign, Church } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
+import ImageSlider from '../components/ImageSlider';
 
 const Home: React.FC = () => {
   const { t, language } = useLanguage();
@@ -25,41 +26,36 @@ const Home: React.FC = () => {
     }
   ];
 
+  // Slides for the image slider
+  const sliderContent = [
+    {
+      image: "https://images.unsplash.com/photo-1487958449943-2429e8be8625",
+      title: language === 'en' ? "Welcome to Our Church" : "ወደ ቤተክርስቲያናችን እንኳን ደህና መጡ",
+      content: language === 'en' ? 
+        "A place of worship, community, and spiritual growth." : 
+        "የአምልኮ፣ የማህበረሰብ እና የመንፈሳዊ እድገት ቦታ።"
+    },
+    {
+      image: "https://images.unsplash.com/photo-1601513197269-427a1b50e9fc",
+      title: language === 'en' ? "Join Our Community" : "ማህበረሰባችንን ይቀላቀሉ",
+      content: language === 'en' ? 
+        "Discover the richness of Ethiopian Orthodox tradition." : 
+        "የኢትዮጵያ ኦርቶዶክስ ቅድመ ሁኔታን ሀብት ይወቁ።"
+    },
+    {
+      image: "https://images.unsplash.com/photo-1578530332339-44982d9af50f",
+      title: language === 'en' ? "Weekly Services" : "ሳምንታዊ አገልግሎቶች",
+      content: language === 'en' ? 
+        "Join us for liturgy, prayer, and fellowship." : 
+        "ቅዳሴ፣ ጸሎት እና ህብረት ላይ ይቀላቀሉን።"
+    }
+  ];
+
   return (
     <Layout>
-      {/* Hero Image Section - Half page with nostalgic filter */}
-      <section className="relative h-[50vh]">
-        <div className="absolute inset-0 bg-church-burgundy/40 z-10 flex items-center justify-center">
-          <div className="text-center text-white p-6 bg-black/30 rounded-lg max-w-3xl">
-            <div className="flex justify-center mb-3">
-              <div className="w-10 h-1 bg-church-green"></div>
-              <div className="w-10 h-1 bg-church-yellow"></div>
-              <div className="w-10 h-1 bg-church-red"></div>
-            </div>
-            <h1 className="text-4xl md:text-5xl font-serif mb-4">
-              {language === 'en' ? 
-                "Debre Bisrat St. Gabriel Ethiopian Orthodox Tewahedo Church" : 
-                "ደብረ ብሥራት ቅዱስ ገብርኤል የኢትዮጵያ ኦርቶዶክስ ተዋሕዶ ቤተክርስቲያን"
-              }
-            </h1>
-            <p className="text-xl">
-              {language === 'en' ? 
-                "In the name of the Father, the Son, and the Holy Spirit, one God, Amen." :
-                "በስመ አብ ወወልድ ወመንፈስ ቅዱስ አሐዱ አምላክ አሜን።"
-              }
-            </p>
-            <div className="flex justify-center mt-3">
-              <div className="w-10 h-1 bg-church-green"></div>
-              <div className="w-10 h-1 bg-church-yellow"></div>
-              <div className="w-10 h-1 bg-church-red"></div>
-            </div>
-          </div>
-        </div>
-        <img 
-          src="https://images.unsplash.com/photo-1487958449943-2429e8be8625" 
-          alt="Church Sanctuary" 
-          className="w-full h-full object-cover eth-vintage-photo"
-        />
+      {/* Mid-page Image Slider Section */}
+      <section className="relative">
+        <ImageSlider slides={sliderContent} />
       </section>
 
       {/* Two Column Section for Events and Donation */}

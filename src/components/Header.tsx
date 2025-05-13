@@ -19,7 +19,14 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="bg-church-burgundy text-white">
+    <header className="bg-church-burgundy text-white relative">
+      {/* Flag-inspired horizontal bars at the top */}
+      <div className="w-full flex">
+        <div className="h-2 bg-church-green flex-1"></div>
+        <div className="h-2 bg-church-yellow flex-1"></div>
+        <div className="h-2 bg-church-red flex-1"></div>
+      </div>
+      
       <div className="container mx-auto px-4 py-5">
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="flex items-center mb-4 md:mb-0">
@@ -30,14 +37,24 @@ const Header: React.FC = () => {
                 className="w-full h-full object-cover"
               />
             </div>
-            <div>
-              <h1 className="text-xl md:text-2xl font-serif text-church-gold">
-                {language === 'en' ? (
-                  "Debre Bisrat St. Gabriel"
-                ) : (
-                  "ደብረ ብሥራት ቅዱስ ገብርኤል"
-                )}
-              </h1>
+            
+            <div className="flex flex-col items-start">
+              <div className="flex items-center">
+                <h1 className="text-xl md:text-2xl font-serif text-church-gold">
+                  {language === 'en' ? (
+                    "Debre Bisrat St. Gabriel"
+                  ) : (
+                    "ደብረ ብሥራት ቅዱስ ገብርኤል"
+                  )}
+                </h1>
+                <div className="hidden md:block w-8 h-5 ml-2 overflow-hidden">
+                  <img 
+                    src="/lovable-uploads/9d459f19-63f7-4da9-8ef6-977ee8615783.png" 
+                    alt="Ethiopian Orthodox Church Flag" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
               <p className="text-xs md:text-sm">
                 {language === 'en' ? (
                   "Ethiopian Orthodox Tewahedo Church"
