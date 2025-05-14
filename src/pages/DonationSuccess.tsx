@@ -38,8 +38,9 @@ const DonationSuccess: React.FC = () => {
         }
 
         // Call the get-session function to get session details
+        // Using params in the URL path instead of query option
         const { data, error: sessionError } = await supabase.functions.invoke('get-session', {
-          query: { session_id: sessionId }
+          body: { session_id: sessionId }
         });
 
         if (sessionError) {
