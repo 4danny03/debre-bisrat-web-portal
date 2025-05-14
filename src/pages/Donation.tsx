@@ -157,6 +157,20 @@ const Donation: React.FC = () => {
                   <Label className="text-church-burgundy">
                     {t("payment_method")}
                   </Label>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-1 bg-gray-100 px-3 py-2 rounded-md">
+                      <CreditCard className="h-5 w-5 text-gray-600" />
+                      <span className="text-sm">Credit Card</span>
+                    </div>
+                    <div className="flex items-center gap-1 bg-gray-100 px-3 py-2 rounded-md">
+                      <Apple className="h-5 w-5 text-gray-600" />
+                      <span className="text-sm">Apple Pay</span>
+                    </div>
+                    <div className="flex items-center gap-1 bg-gray-100 px-3 py-2 rounded-md">
+                      <Smartphone className="h-5 w-5 text-gray-600" />
+                      <span className="text-sm">Google Pay</span>
+                    </div>
+                  </div>
                   <p className="text-sm text-gray-500">
                     {t("stripe_payment_methods")}
                   </p>

@@ -57,7 +57,7 @@ serve(async (req) => {
     
     const sessionConfig = {
       customer: customerId,
-      payment_method_types: ['card'],
+      payment_method_types: ['card', 'apple_pay', 'google_pay'],
       line_items: [
         {
           price_data: {
