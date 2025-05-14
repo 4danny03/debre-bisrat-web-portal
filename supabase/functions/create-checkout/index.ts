@@ -57,14 +57,21 @@ serve(async (req) => {
     
     const sessionConfig = {
       customer: customerId,
-      payment_method_types: ['card', 'apple_pay', 'google_pay'],
+      payment_method_types: ['card'],
       line_items: [
         {
           price_data: {
             currency: "usd",
             product_data: { name: productName },
             unit_amount: amountInCents,
-            ...(isRecurring && { recurring: { interval: donationType === "monthly" ? "month" : donationType === "quarterly" ? "month" : "year" } })
+            ...(isRecurring && { 
+              recurring: { 
+                interval: donationType === "monthly" ? "month" : 
+                          donationType === "quarterly" ? "month" : 
+                          "year",
+                interval_count: donationType === "quarterly" ? 3 : 1
+              } 
+            })
           },
           quantity: 1,
         },
