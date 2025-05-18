@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Layout from '../components/Layout';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -56,7 +55,7 @@ const About: React.FC = () => {
                   
                   <h2 className="text-2xl font-serif text-church-burgundy mt-12 mb-4">Our Vision</h2>
                   <p className="mb-6">
-                    The vision of Debre Bisrat Dagimawi Kulibi Gabriel Church of Maryland is to see all followers of the faith 
+                    The vision of Debre Bisrat Dagimawi Kulibi St.Gabriel EOTC is to see all followers of the faith 
                     preserve their beliefs and traditions, and to witness the Ethiopian Orthodox Tewahedo faith and practice 
                     flourish and strengthen.
                   </p>

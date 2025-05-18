@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Layout from '../components/Layout';
 import { Link } from 'react-router-dom';
@@ -13,41 +12,41 @@ const Home: React.FC = () => {
   // Sample upcoming events data
   const upcomingEvents = [
     {
-      date: "May 14, 2025",
-      title: "St. Gabriel Monthly Commemoration"
+      date: "May 19, 2025",
+      title: language === 'en' ? "St. Gabriel Monthly Commemoration" : "የቅዱስ ገብርኤል ወርሃዊ ተዝካር"
     },
     {
-      date: "May 21, 2025",
-      title: "Sunday School for Children"
+      date: "May 25, 2025",
+      title: language === 'en' ? "Sunday School for Children" : "የሰንበት ትምህርት ቤት ለልጆች"
     },
     {
       date: "June 19, 2025",
-      title: "Church Foundation Anniversary"
+      title: language === 'en' ? "Church Foundation Anniversary" : "የቤተክርስቲያን መሰረት የተጣለበት ቀን"
     }
   ];
 
   // Slides for the image slider
   const sliderContent = [
     {
-      image: "https://images.unsplash.com/photo-1487958449943-2429e8be8625",
+      image: "/images/church-front.jpg",
       title: language === 'en' ? "Welcome to Our Church" : "ወደ ቤተክርስቲያናችን እንኳን ደህና መጡ",
       content: language === 'en' ? 
-        "A place of worship, community, and spiritual growth." : 
-        "የአምልኮ፣ የማህበረሰብ እና የመንፈሳዊ እድገት ቦታ።"
+        "Debre Bisrat Dagimawi Kulibi St.Gabriel Ethiopian Orthodox Tewahedo Church" : 
+        "ደብረ ብሥራት ዳግማዊ ቁልቢ ቅዱስ ገብርኤል ቤተክርስቲያን"
     },
     {
-      image: "https://images.unsplash.com/photo-1601513197269-427a1b50e9fc",
-      title: language === 'en' ? "Join Our Community" : "ማህበረሰባችንን ይቀላቀሉ",
+      image: "/images/church-interior.jpg",
+      title: language === 'en' ? "Our Sanctuary" : "የእኛ መቅደስ",
       content: language === 'en' ? 
-        "Discover the richness of Ethiopian Orthodox tradition." : 
-        "የኢትዮጵያ ኦርቶዶክስ ቅድመ ሁኔታን ሀብት ይወቁ።"
+        "Experience the sacred beauty of our church's interior" : 
+        "የቤተክርስቲያናችንን የውስጥ ውበት ይመልከቱ"
     },
     {
-      image: "https://images.unsplash.com/photo-1578530332339-44982d9af50f",
-      title: language === 'en' ? "Weekly Services" : "ሳምንታዊ አገልግሎቶች",
+      image: "/images/timket-celebration.jpg",
+      title: language === 'en' ? "Timket Celebration" : "ጥምቀት በዓል",
       content: language === 'en' ? 
-        "Join us for liturgy, prayer, and fellowship." : 
-        "ቅዳሴ፣ ጸሎት እና ህብረት ላይ ይቀላቀሉን።"
+        "Join us in celebrating our holy traditions and festivals" : 
+        "በቅዱስ ባህላችን እና በዓላት ላይ ይሳተፉ"
     }
   ];
 
@@ -120,14 +119,14 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Biblical Wisdom Section */}
+      {/* Wisdom Section */}
       <section className="py-12 bg-white">
         <div className="container mx-auto px-6">
           <div className="max-w-3xl mx-auto">
             <h2 className="text-3xl font-serif mb-8 text-center eth-title">
               <span className="inline-flex items-center">
                 <Church size={22} className="text-church-burgundy mr-2" />
-                {t("biblical_wisdom")}
+                {t("")}
               </span>
             </h2>
             

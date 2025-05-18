@@ -1,8 +1,12 @@
+import { serve } from "std/http/server.ts";
+import { Resend } from "resend";
+import { load } from "std/dotenv/mod.ts";
 
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
+// Load environment variables
+const env = await load();
+const RESEND_API_KEY = env["RESEND_API_KEY"] || Deno.env.get("RESEND_API_KEY");
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const resend = new Resend(RESEND_API_KEY);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -43,7 +47,7 @@ serve(async (req) => {
 
     // Send thank you email to donor
     const donorEmailResponse = await resend.emails.send({
-      from: "Debre Bisrat Ethiopian Orthodox Church <donation@church.org>",
+      from: "Debre Bisrat Dagimawi Kulibi St.Gabriel EOTC <donation@church.org>",
       to: [donorEmail],
       subject: "Thank You for Your Donation",
       html: `
@@ -53,7 +57,7 @@ serve(async (req) => {
           </div>
           <div style="padding: 20px; background-color: #fff; border: 1px solid #e0e0e0;">
             <p>Dear Supporter,</p>
-            <p>Thank you for your generous donation to Debre Bisrat Ethiopian Orthodox Church. Your contribution helps us continue our mission and service to the community.</p>
+            <p>Thank you for your generous donation to Debre Bisrat Dagimawi Kulibi St.Gabriel EOTC. Your contribution helps us continue our mission and service to the community.</p>
             <div style="background-color: #f9f9f9; border-left: 4px solid #7D2224; padding: 15px; margin: 20px 0;">
               <p style="margin: 5px 0;"><strong>Donation Amount:</strong> ${formattedAmount}</p>
               <p style="margin: 5px 0;"><strong>Purpose:</strong> ${formattedPurpose}</p>
@@ -61,7 +65,7 @@ serve(async (req) => {
               <p style="margin: 5px 0;"><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
             </div>
             <p>May God bless you for your generosity.</p>
-            <p>Sincerely,<br>Debre Bisrat Ethiopian Orthodox Church</p>
+            <p>Sincerely,<br>Debre Bisrat Dagimawi Kulibi St.Gabriel EOTC</p>
           </div>
           <div style="background-color: #f5f5f5; padding: 10px; text-align: center; font-size: 12px; color: #666;">
             <p>This is an automated email. Please do not reply.</p>
@@ -73,7 +77,7 @@ serve(async (req) => {
     // Send notification email to admin
     const adminEmailResponse = await Promise.all(adminEmails.map(adminEmail => {
       return resend.emails.send({
-        from: "Debre Bisrat Ethiopian Orthodox Church <donation@church.org>",
+        from: "Debre Bisrat Dagimawi Kulibi St.Gabriel EOTC <donation@church.org>",
         to: [adminEmail],
         subject: "New Donation Received",
         html: `

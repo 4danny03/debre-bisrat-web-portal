@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Globe, Menu, X } from 'lucide-react';
@@ -32,7 +31,7 @@ const Header: React.FC = () => {
           <div className="flex items-center mb-4 md:mb-0">
             <div className="w-16 h-16 mr-3 rounded-full overflow-hidden border-2 border-church-gold">
               <img 
-                src="/lovable-uploads/c533ed24-4c1a-4ba1-ac6c-68a3a0fb66d7.png" 
+                src="/images/church-icon.png" 
                 alt="St. Gabriel Icon" 
                 className="w-full h-full object-cover"
               />
@@ -42,14 +41,14 @@ const Header: React.FC = () => {
               <div className="flex items-center">
                 <h1 className="text-xl md:text-2xl font-serif text-church-gold">
                   {language === 'en' ? (
-                    "Debre Bisrat St. Gabriel"
+                    "Debre Bisrat Dagimawi Kulibi St.Gabriel church"
                   ) : (
-                    "ደብረ ብሥራት ቅዱስ ገብርኤል"
+                    "ደብረ ብሥራት ዳግማዊ ቁልቢ ቅዱስ ገብርኤል ቤተክርስቲያን"
                   )}
                 </h1>
                 <div className="hidden md:block w-8 h-5 ml-2 overflow-hidden">
                   <img 
-                    src="/lovable-uploads/9d459f19-63f7-4da9-8ef6-977ee8615783.png" 
+                    src="/images/church-flag.png" 
                     alt="Ethiopian Orthodox Church Flag" 
                     className="w-full h-full object-cover"
                   />
@@ -143,11 +142,11 @@ const Header: React.FC = () => {
             </li>
             <li className="py-2 md:py-0">
               <Link 
-                to="/signup" 
-                className={`nav-link ${location.pathname === '/signup' ? 'active' : ''}`}
+                to="/membership" 
+                className={`nav-link ${location.pathname === '/membership' ? 'active' : ''}`}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                {t("signup")}
+                {t("membership")}
               </Link>
             </li>
             <li className="py-2 md:py-0">

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 type Language = 'en' | 'am';
@@ -21,12 +20,12 @@ const translations: Record<string, Record<Language, string>> = {
   "services": { en: "Services", am: "አገልግሎቶች" },
   "gallery": { en: "Gallery", am: "ፎቶዎች" },
   "donation": { en: "Donation", am: "ልገሳ" },
-  "signup": { en: "Signup", am: "ይመዝገቡ" },
+  "membership": { en: "Membership", am: "አባልነት" },
   "contact": { en: "Contact Us", am: "ያግኙን" },
   
   // Home page
   "welcome": { 
-    en: "Welcome to the Debre Bisrat Dagimawi Kulibi St. Gabriel Ethiopian Orthodox Tewahedo Church, Silver Spring, Maryland", 
+    en: "Welcome to the Debre Bisrat Dagimawi Kulibi St.Gabriel EOTC, Silver Spring, Maryland", 
     am: "እንኳን ወደ ደብረ ብሥራት ዳግማዊ ቁልቢ ቅዱስ ገብርኤል የኢትዮጵያ ኦርቶዶክስ ተዋሕዶ ቤተክርስቲያን ድረ ገጽ በሰላም መጡ።" 
   },
   "bible_verse": {
@@ -35,20 +34,16 @@ const translations: Record<string, Record<Language, string>> = {
   },
   "bible_reference": { en: "Luke 6:38, NIV", am: "ሉቃስ 6:38" },
   
-  // Signup page
-  "signup_title": { en: "Join Our Community", am: "ከእኛ ጋር ይቀላቀሉ" },
-  "signup_description": { 
-    en: "Join our community to receive updates about church events, services, and announcements.", 
-    am: "ስለ ቤተክርስቲያን ዝግጅቶች፣ አገልግሎቶችና ማስታወቂያዎች ለመቀበል ከህብረተሰባችን ጋር ይቀላቀሉ።" 
-  },
+  // Common form fields
   "full_name": { en: "Full Name", am: "ሙሉ ስም" },
   "email": { en: "Email Address", am: "የኢሜል አድራሻ" },
   "phone": { en: "Phone Number", am: "ስልክ ቁጥር" },
+  "address": { en: "Address", am: "አድራሻ" },
   "preferred_language": { en: "Preferred Language", am: "የተመረጠ ቋንቋ" },
   "english": { en: "English", am: "እንግሊዝኛ" },
   "amharic": { en: "Amharic", am: "አማርኛ" },
   "submit": { en: "Submit", am: "አስገባ" },
-  "signup_success": { en: "Thank you for signing up!", am: "ስለ ምዝገባዎ እናመሰግናለን!" },
+  "processing": { en: "Processing...", am: "በመስራት ላይ..." },
   
   // Donation page
   "donation_title": { en: "Support Our Church", am: "ቤተክርስቲያናችንን ይደግፉ" },
@@ -96,15 +91,52 @@ const translations: Record<string, Record<Language, string>> = {
     en: "Have questions? Reach out to us through any of the methods below or use the contact form.", 
     am: "ጥያቄዎች አሉዎት? ከታች ባሉት ማንኛውም መንገዶች ወይም የመገናኛ ቅጹን በመጠቀም ያግኙን።" 
   },
-  "address": { en: "Address", am: "አድራሻ" },
   "message": { en: "Message", am: "መልዕክት" },
   "send_message": { en: "Send Message", am: "መልዕክት ላክ" },
   "language_switch": { en: "አማርኛ", am: "English" },
   
   // Footer
   "copyright": { 
-    en: "© 2025 Debre Bisrat Dagimawi Kulibi St. Gabriel Ethiopian Orthodox Tewahedo Church. All rights reserved.", 
+    en: "© 2025 Debre Bisrat Dagimawi Kulibi St.Gabriel EOTC. All rights reserved.", 
     am: "© 2025 ደብረ ብሥራት ዳግማዊ ቁልቢ ቅዱስ ገብርኤል የኢትዮጵያ ኦርቶዶክስ ተዋሕዶ ቤተክርስቲያን። መብቱ በህግ የተጠበቀ ነው።" 
+  },
+  
+  // Membership Registration
+  "membership_registration_title": { 
+    en: "Membership Registration", 
+    am: "የአባልነት ምዝገባ" 
+  },
+  "membership_registration_description": { 
+    en: "Join our church community by registering as a member. Annual membership fee is $100.",
+    am: "በአባልነት በመመዝገብ የቤተክርስቲያን ማህበረሰባችንን ይቀላቀሉ። የዓመት አባልነት ክፍያ $100 ነው።"
+  },
+  "membership_type": { 
+    en: "Membership Type", 
+    am: "የአባልነት ዓይነት" 
+  },
+  "select_membership_type": { 
+    en: "Select Membership Type", 
+    am: "የአባልነት ዓይነት ይምረጡ" 
+  },
+  "individual_membership": { 
+    en: "Individual Membership", 
+    am: "የግል አባልነት" 
+  },
+  "family_membership": { 
+    en: "Family Membership", 
+    am: "የቤተሰብ አባልነት" 
+  },
+  "membership_fee_notice": { 
+    en: "Annual Membership Fee: $100", 
+    am: "የዓመት አባልነት ክፍያ፡ $100" 
+  },
+  "membership_fee_description": { 
+    en: "This fee helps support our church's activities and maintenance.", 
+    am: "ይህ ክፍያ የቤተክርስቲያናችንን እንቅስቃሴዎች እና ጥገና ይደግፋል።" 
+  },
+  "register_and_pay": { 
+    en: "Register & Pay $100", 
+    am: "ይመዝገቡ እና $100 ይክፈሉ" 
   }
 };
 

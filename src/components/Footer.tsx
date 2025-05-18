@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -14,8 +13,8 @@ const Footer: React.FC = () => {
           <div className="mb-6 md:mb-0">
             <h2 className="text-xl font-serif text-church-gold mb-3">
               {language === 'en' 
-                ? "Debre Bisrat St. Gabriel Church" 
-                : "ደብረ ብሥራት ቅዱስ ገብርኤል ቤተክርስቲያን"}
+                ? "Debre Bisrat Dagimawi Kulibi St.Gabriel church" 
+                : "ደብረ ብሥራት ዳግማዊ ኩሊቢ ቅዱስ ገብርኤል ቤተክርስቲያን"}
             </h2>
             <div className="space-y-2">
               <div className="flex items-center">
