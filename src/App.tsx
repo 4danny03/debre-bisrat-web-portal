@@ -13,6 +13,12 @@ import Donation from "./pages/Donation";
 import DonationSuccess from "./pages/DonationSuccess";
 import Gallery from "./pages/Gallery";
 import Services from "./pages/Services";
+import AdminLayout from "./pages/admin/AdminLayout";
+import AdminLogin from "./pages/admin/Login";
+import AdminDashboard from "./pages/admin/Dashboard";
+import AdminEvents from "./pages/admin/Events";
+import AdminGallery from "./pages/admin/Gallery";
+import AdminSettings from "./pages/admin/Settings";
 import { LanguageProvider } from "./contexts/LanguageContext";
 
 const queryClient = new QueryClient();
@@ -34,6 +40,17 @@ const App = () => (
             <Route path="/donation-success" element={<DonationSuccess />} />
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/services" element={<Services />} />
+
+            {/* Admin Routes */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="events" element={<AdminEvents />} />
+              <Route path="gallery" element={<AdminGallery />} />
+              <Route path="settings" element={<AdminSettings />} />
+            </Route>
+            
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

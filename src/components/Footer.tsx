@@ -87,6 +87,12 @@ const Footer: React.FC = () => {
               ? "Visit us at our church location for worship services and community events." 
               : "ለአምልኮ አገልግሎቶች እና የማህበረሰብ ዝግጅቶች በቤተክርስቲያናችን ይጎብኙን።"}
           </p>
+          <Link 
+            to="/admin/login" 
+            className="mt-4 inline-block text-church-gold/60 hover:text-church-gold text-xs transition-colors"
+          >
+            {language === 'en' ? "Administration" : "አስተዳደር"}
+          </Link>
         </div>
       </div>
     </footer>
