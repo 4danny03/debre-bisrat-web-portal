@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link, Outlet } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
+import { useFirebase } from '@/integrations/firebase/context';
+import { signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import {
   LayoutDashboard,
   Calendar,
@@ -13,6 +15,7 @@ import {
 export default function AdminLayout() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { auth, db } = useFirebase();
 
   useEffect(() => {
     checkAuth();
@@ -20,21 +23,17 @@ export default function AdminLayout() {
 
   const checkAuth = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      const user = auth.currentUser;
+      if (!user) {
         navigate('/admin/login');
         return;
       }
 
       // Check if user has admin role
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single();
-
-      if (profileError || profile?.role !== 'admin') {
-        await supabase.auth.signOut();
+      const profileDoc = await getDoc(doc(db, 'profiles', user.uid));
+      
+      if (!profileDoc.exists() || profileDoc.data()?.role !== 'admin') {
+        await signOut(auth);
         navigate('/admin/login');
         return;
       }
@@ -47,7 +46,7 @@ export default function AdminLayout() {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await signOut(auth);
     navigate('/admin/login');
   };
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -10,7 +10,9 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { ImagePlus, Trash2, Edit } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useFirebase } from '@/integrations/firebase/context';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { collection, addDoc, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/components/ui/use-toast';
 
 export default function GalleryManager() {
@@ -18,6 +20,29 @@ export default function GalleryManager() {
   const [uploading, setUploading] = useState(false);
   const [images, setImages] = useState<Array<{ id: string; url: string; title: string }>>([]);
   const { toast } = useToast();
+  const { storage, db } = useFirebase();
+
+  useEffect(() => {
+    loadImages();
+  }, []);
+
+  const loadImages = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, 'gallery'));
+      const loadedImages = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data() as { url: string; title: string }
+      }));
+      setImages(loadedImages);
+    } catch (error) {
+      console.error('Error loading images:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load gallery images",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
@@ -28,42 +53,57 @@ export default function GalleryManager() {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `gallery/${fileName}`;
+      const storageRef = ref(storage, filePath);
 
-      const { error: uploadError } = await supabase.storage
-        .from('public')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('public')
-        .getPublicUrl(filePath);
+      // Upload the file
+      await uploadBytes(storageRef, file);
+      const downloadUrl = await getDownloadURL(storageRef);
 
       // Save image metadata to database
-      const { error: dbError } = await supabase
-        .from('gallery')
-        .insert([
-          {
-            url: publicUrl,
-            title: file.name,
-          },
-        ]);
-
-      if (dbError) throw dbError;
+      // Add to Firestore
+      await addDoc(collection(db, 'gallery'), {
+        url: downloadUrl,
+        title: file.name,
+        createdAt: new Date().toISOString()
+      });
 
       toast({
         title: "Success",
         description: "Image uploaded successfully",
       });
       setIsUploadDialogOpen(false);
+      loadImages(); // Refresh the gallery
     } catch (error) {
       toast({
         title: "Error",
-        description: error.message || "Error uploading image",
+        description: error instanceof Error ? error.message : "Error uploading image",
         variant: "destructive",
       });
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleDelete = async (id: string, imageUrl: string) => {
+    try {
+      // Delete from Storage
+      const storageRef = ref(storage, imageUrl);
+      await deleteObject(storageRef);
+
+      // Delete from Firestore
+      await deleteDoc(doc(db, 'gallery', id));
+
+      toast({
+        title: "Success",
+        description: "Image deleted successfully",
+      });
+      loadImages(); // Refresh the gallery
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error deleting image",
+        variant: "destructive",
+      });
     }
   };
 

@@ -1,0 +1,33 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return request.auth != null && 
+        firestore.exists(/databases/(default)/documents/profiles/$(request.auth.uid)) &&
+        firestore.get(/databases/(default)/documents/profiles/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Gallery images
+    match /gallery/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Profile images
+    match /profiles/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+    }
+
+    // Event images
+    match /events/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

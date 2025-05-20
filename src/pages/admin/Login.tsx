@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
+import { useFirebase } from '@/integrations/firebase/context';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/components/ui/use-toast';
 
 export default function AdminLogin() {
@@ -12,43 +14,32 @@ export default function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { auth, db } = useFirebase();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
       
-      if (data.user) {
-        // Check if user has admin role
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', data.user.id)
-          .single();
-        
-        if (profileError) throw profileError;
-        
-        if (profile?.role === 'admin') {
-          toast({
-            title: "Success",
-            description: "Logged in successfully",
-          });
-          navigate('/admin/dashboard');
-        } else {
-          throw new Error('Unauthorized access');
-        }
+      // Check if user has admin role
+      const profileDoc = await getDoc(doc(db, 'profiles', user.uid));
+      
+      if (profileDoc.exists() && profileDoc.data()?.role === 'admin') {
+        toast({
+          title: "Success",
+          description: "Logged in successfully",
+        });
+        navigate('/admin/dashboard');
+      } else {
+        throw new Error('Unauthorized access');
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: error.message || "An error occurred during login",
+        description: error instanceof Error ? error.message : "An error occurred during login",
         variant: "destructive",
       });
     } finally {

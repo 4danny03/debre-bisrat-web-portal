@@ -12,7 +12,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { supabase } from "@/integrations/supabase/client";
+import { useFirebase } from '@/integrations/firebase/context';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DonationPurpose {
   value: string;
@@ -54,6 +55,8 @@ const Donation: React.FC = () => {
   const { t } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { logEvent } = useFirebase();
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [amount, setAmount] = useState("");
   const [customAmount, setCustomAmount] = useState("");
@@ -83,6 +86,12 @@ const Donation: React.FC = () => {
     if (value === '' || !isNaN(parseFloat(value))) {
       setCustomAmount(value);
       setAmount(value);
+      
+      // Log custom amount selection
+      logEvent('select_donation_amount', {
+        amount_type: 'custom',
+        amount: parseFloat(value) || 0
+      });
     }
   };
 
@@ -90,6 +99,12 @@ const Donation: React.FC = () => {
   const handleAmountSelect = (value: string) => {
     setAmount(value);
     setCustomAmount("");
+    
+    // Log suggested amount selection
+    logEvent('select_donation_amount', {
+      amount_type: 'suggested',
+      amount: parseFloat(value)
+    });
   };
 
   // Validate contact format
@@ -126,6 +141,32 @@ const Donation: React.FC = () => {
     }
   }, [contact, isAnonymous]);
 
+  useEffect(() => {
+    // Log page view
+    logEvent('page_view', {
+      page_name: 'donation',
+      page_title: 'Donation Page'
+    });
+  }, [logEvent]);
+
+  // Track donation type changes
+  useEffect(() => {
+    if (donationType) {
+      logEvent('select_donation_type', {
+        type: donationType
+      });
+    }
+  }, [donationType, logEvent]);
+
+  // Track purpose changes
+  useEffect(() => {
+    if (purpose) {
+      logEvent('select_donation_purpose', {
+        purpose: purpose
+      });
+    }
+  }, [purpose, logEvent]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -136,11 +177,28 @@ const Donation: React.FC = () => {
         description: t("contact_required"),
         variant: "destructive",
       });
+
+      // Log validation error
+      logEvent('donation_validation_error', {
+        error_type: 'contact_validation',
+        is_anonymous: isAnonymous
+      });
       return;
     }
     
     setIsSubmitting(true);
     setContactError(false);
+
+    // Log donation attempt
+    logEvent('begin_checkout', {
+      currency: 'GBP',
+      value: parseFloat(amount),
+      donation_type: donationType,
+      purpose: purpose,
+      is_anonymous: isAnonymous,
+      is_gift_aid: isGiftAid,
+      payment_method: paymentMethod
+    });
     
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
@@ -158,12 +216,26 @@ const Donation: React.FC = () => {
       if (error) throw error;
 
       if (data?.url) {
+        // Log successful checkout redirect
+        logEvent('checkout_redirect', {
+          currency: 'GBP',
+          value: parseFloat(amount),
+          donation_type: donationType,
+          purpose: purpose
+        });
         window.location.href = data.url;
       } else {
         throw new Error("Failed to generate checkout URL");
       }
     } catch (error) {
       console.error("Payment error:", error);
+      
+      // Log payment error
+      logEvent('donation_error', {
+        error_type: 'payment_processing',
+        error_message: error.message || 'Unknown error'
+      });
+      
       toast({
         title: "Payment Error",
         description: error.message || "Failed to process payment. Please try again.",

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -18,8 +18,129 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from 'lucide-react';
+import { useFirebase } from '@/integrations/firebase/context';
+import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { useToast } from '@/components/ui/use-toast';
+
+interface Event {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  location: string;
+  status: 'scheduled' | 'cancelled' | 'completed';
+  created_at: string;
+  updated_at: string;
+}
 
 export default function Events() {
+  const [events, setEvents] = useState<Event[]>([]);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { db } = useFirebase();
+  const { toast } = useToast();
+  const [newEvent, setNewEvent] = useState({
+    title: '',
+    description: '',
+    date: '',
+    location: '',
+    status: 'scheduled' as const
+  });
+
+  useEffect(() => {
+    loadEvents();
+  }, []);
+
+  const loadEvents = async () => {
+    try {
+      const eventsSnapshot = await getDocs(collection(db, 'events'));
+      const eventsData = eventsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Event[];
+      setEvents(eventsData);
+    } catch (error) {
+      console.error('Error loading events:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load events',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleAddEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      await addDoc(collection(db, 'events'), {
+        ...newEvent,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+
+      toast({
+        title: 'Success',
+        description: 'Event added successfully'
+      });
+      
+      setIsAddDialogOpen(false);
+      setNewEvent({
+        title: '',
+        description: '',
+        date: '',
+        location: '',
+        status: 'scheduled'
+      });
+      loadEvents();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to add event',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteEvent = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'events', id));
+      toast({
+        title: 'Success',
+        description: 'Event deleted successfully'
+      });
+      loadEvents();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to delete event',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const updateEventStatus = async (id: string, status: Event['status']) => {
+    try {
+      await updateDoc(doc(db, 'events', id), {
+        status,
+        updated_at: new Date().toISOString()
+      });
+      toast({
+        title: 'Success',
+        description: 'Event status updated successfully'
+      });
+      loadEvents();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to update event status',
+        variant: 'destructive'
+      });
+    }
+  };
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   return (

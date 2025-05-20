@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
+import { useFirebase } from '@/integrations/firebase/context';
+import { addDoc, collection } from 'firebase/firestore';
 
 const MembershipRegistration: React.FC = () => {
   const { t, language } = useLanguage();
@@ -20,17 +21,35 @@ const MembershipRegistration: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      // Get form data
+      const { db } = useFirebase();
       const formData = new FormData(e.target as HTMLFormElement);
       const amount = "100"; // Membership fee in dollars
 
-      // Call Stripe checkout for membership fee payment
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { 
+      // Create member record
+      const memberRef = await addDoc(collection(db, 'members'), {
+        full_name: formData.get('name'),
+        email: formData.get('email'),
+        phone: formData.get('phone'),
+        address: formData.get('address'),
+        membership_type: formData.get('membershipType'),
+        membership_status: 'pending',
+        join_date: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+
+      // Call Stripe checkout through Firebase Function
+      const response = await fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           amount,
           donationType: "one_time",
           purpose: "membership_fee",
           email: formData.get('email'),
+          memberId: memberRef.id,
           metadata: {
             name: formData.get('name'),
             phone: formData.get('phone'),
@@ -38,10 +57,11 @@ const MembershipRegistration: React.FC = () => {
             address: formData.get('address'),
             membershipType: formData.get('membershipType')
           }
-        }
+        }),
       });
 
-      if (error) throw error;
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to create checkout session');
 
       if (data?.url) {
         // Redirect to Stripe Checkout

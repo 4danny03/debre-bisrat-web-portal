@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -11,12 +11,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { supabase } from '@/integrations/supabase/client';
+import { useFirebase } from '@/integrations/firebase/context';
+import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 import { useToast } from '@/components/ui/use-toast';
 
 export default function Settings() {
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+  const { db } = useFirebase();
   const [settings, setSettings] = useState({
     churchName: '',
     churchAddress: '',
@@ -27,20 +29,35 @@ export default function Settings() {
     maintenanceMode: false,
   });
 
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const settingsDoc = await getDoc(doc(db, 'site_settings', '1'));
+        if (settingsDoc.exists()) {
+          setSettings(settingsDoc.data());
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load settings",
+          variant: "destructive",
+        });
+      }
+    };
+
+    loadSettings();
+  }, [db, toast]);
+
   const handleSave = async () => {
     try {
       setSaving(true);
       
-      // Update settings in Supabase
-      const { error } = await supabase
-        .from('site_settings')
-        .upsert({
-          id: 1, // Using a single row for site settings
-          ...settings,
-          updated_at: new Date().toISOString(),
-        });
-
-      if (error) throw error;
+      // Update settings in Firebase
+      await setDoc(doc(db, 'site_settings', '1'), {
+        ...settings,
+        updated_at: new Date().toISOString(),
+      });
 
       toast({
         title: "Success",
@@ -49,7 +66,7 @@ export default function Settings() {
     } catch (error) {
       toast({
         title: "Error",
-        description: error.message || "Error saving settings",
+        description: error instanceof Error ? error.message : "Error saving settings",
         variant: "destructive",
       });
     } finally {
