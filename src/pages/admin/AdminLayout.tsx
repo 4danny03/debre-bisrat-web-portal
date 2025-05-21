@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link, Outlet } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useFirebase } from '@/integrations/firebase/context';
-import { signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { supabase } from '@/integrations/supabase/client';
 import {
   LayoutDashboard,
   Calendar,
@@ -15,7 +13,6 @@ import {
 export default function AdminLayout() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { auth, db } = useFirebase();
 
   useEffect(() => {
     checkAuth();
@@ -23,17 +20,21 @@ export default function AdminLayout() {
 
   const checkAuth = async () => {
     try {
-      const user = auth.currentUser;
-      if (!user) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
         navigate('/admin/login');
         return;
       }
 
       // Check if user has admin role
-      const profileDoc = await getDoc(doc(db, 'profiles', user.uid));
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
       
-      if (!profileDoc.exists() || profileDoc.data()?.role !== 'admin') {
-        await signOut(auth);
+      if (error || !profile || profile.role !== 'admin') {
+        await supabase.auth.signOut();
         navigate('/admin/login');
         return;
       }
@@ -46,7 +47,7 @@ export default function AdminLayout() {
   };
 
   const handleSignOut = async () => {
-    await signOut(auth);
+    await supabase.auth.signOut();
     navigate('/admin/login');
   };
 
@@ -55,43 +56,41 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="flex h-screen">
-        {/* Sidebar */}
-        <aside className="w-64 bg-white shadow-md">
-          <div className="p-4">
-            <h2 className="text-xl font-bold">Admin Dashboard</h2>
-          </div>
-          <nav className="mt-4">
-            <NavItem to="/admin/dashboard" icon={<LayoutDashboard size={20} />}>
-              Dashboard
-            </NavItem>
-            <NavItem to="/admin/events" icon={<Calendar size={20} />}>
-              Events
-            </NavItem>
-            <NavItem to="/admin/gallery" icon={<Image size={20} />}>
-              Gallery
-            </NavItem>
-            <NavItem to="/admin/settings" icon={<Settings size={20} />}>
-              Settings
-            </NavItem>
-          </nav>
-          <div className="absolute bottom-0 w-64 p-4 border-t">
-            <Button
-              variant="ghost"
-              className="w-full justify-start"
-              onClick={handleSignOut}
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign out
-            </Button>
-          </div>
-        </aside>
+    <div className="min-h-screen flex">
+      {/* Sidebar */}
+      <div className="w-64 bg-gray-900 text-white p-4">
+        <div className="mb-8">
+          <h1 className="text-xl font-bold">Admin Dashboard</h1>
+        </div>
+        <nav className="space-y-2">
+          <NavItem to="/admin/dashboard" icon={<LayoutDashboard className="w-5 h-5" />}>
+            Dashboard
+          </NavItem>
+          <NavItem to="/admin/events" icon={<Calendar className="w-5 h-5" />}>
+            Events
+          </NavItem>
+          <NavItem to="/admin/gallery" icon={<Image className="w-5 h-5" />}>
+            Gallery
+          </NavItem>
+          <NavItem to="/admin/settings" icon={<Settings className="w-5 h-5" />}>
+            Settings
+          </NavItem>
+        </nav>
+        <div className="mt-auto pt-4">
+          <Button
+            variant="ghost"
+            className="w-full justify-start text-white hover:text-white hover:bg-gray-800"
+            onClick={handleSignOut}
+          >
+            <LogOut className="w-5 h-5 mr-2" />
+            Sign Out
+          </Button>
+        </div>
+      </div>
 
-        {/* Main content */}
-        <main className="flex-1 overflow-y-auto p-8">
-          <Outlet />
-        </main>
+      {/* Main content */}
+      <div className="flex-1 p-8">
+        <Outlet />
       </div>
     </div>
   );
@@ -101,10 +100,10 @@ function NavItem({ to, icon, children }: { to: string; icon: React.ReactNode; ch
   return (
     <Link
       to={to}
-      className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100"
+      className="flex items-center p-2 text-gray-300 rounded-lg hover:bg-gray-800 hover:text-white transition-colors"
     >
-      <span className="mr-2">{icon}</span>
-      {children}
+      {icon}
+      <span className="ml-3">{children}</span>
     </Link>
   );
 }

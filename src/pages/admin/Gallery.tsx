@@ -10,17 +10,22 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { ImagePlus, Trash2, Edit } from 'lucide-react';
-import { useFirebase } from '@/integrations/firebase/context';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { collection, addDoc, getDocs, doc, deleteDoc } from 'firebase/firestore';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
+interface GalleryImage {
+  id: string;
+  title: string;
+  description: string | null;
+  url: string;
+  created_at: string;
+}
+
 export default function GalleryManager() {
-  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [images, setImages] = useState<GalleryImage[]>([]);
+  const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [images, setImages] = useState<Array<{ id: string; url: string; title: string }>>([]);
   const { toast } = useToast();
-  const { storage, db } = useFirebase();
 
   useEffect(() => {
     loadImages();
@@ -28,55 +33,74 @@ export default function GalleryManager() {
 
   const loadImages = async () => {
     try {
-      const querySnapshot = await getDocs(collection(db, 'gallery'));
-      const loadedImages = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data() as { url: string; title: string }
-      }));
-      setImages(loadedImages);
+      const { data, error } = await supabase
+        .from('gallery')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setImages(data || []);
     } catch (error) {
       console.error('Error loading images:', error);
       toast({
         title: "Error",
         description: "Failed to load gallery images",
-        variant: "destructive"
+        variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
+    const file = formData.get('file') as File;
+    const title = formData.get('title') as string;
+    const description = formData.get('description') as string;
+
+    if (!file) return;
+
+    setUploading(true);
     try {
-      setUploading(true);
-      const file = e.target.files?.[0];
-      if (!file) return;
-
+      // Upload file to storage bucket
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `gallery/${fileName}`;
-      const storageRef = ref(storage, filePath);
+      const filePath = `${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from('gallery')
+        .upload(filePath, file);
 
-      // Upload the file
-      await uploadBytes(storageRef, file);
-      const downloadUrl = await getDownloadURL(storageRef);
+      if (uploadError) throw uploadError;
 
-      // Save image metadata to database
-      // Add to Firestore
-      await addDoc(collection(db, 'gallery'), {
-        url: downloadUrl,
-        title: file.name,
-        createdAt: new Date().toISOString()
-      });
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('gallery')
+        .getPublicUrl(filePath);
+
+      // Create database entry
+      const { error: dbError } = await supabase
+        .from('gallery')
+        .insert([{
+          title,
+          description,
+          url: publicUrl,
+        }]);
+
+      if (dbError) throw dbError;
 
       toast({
         title: "Success",
         description: "Image uploaded successfully",
       });
-      setIsUploadDialogOpen(false);
-      loadImages(); // Refresh the gallery
+      loadImages();
+      form.reset();
     } catch (error) {
+      console.error('Error uploading image:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Error uploading image",
+        description: "Failed to upload image",
         variant: "destructive",
       });
     } finally {
@@ -84,60 +108,91 @@ export default function GalleryManager() {
     }
   };
 
-  const handleDelete = async (id: string, imageUrl: string) => {
+  const handleDelete = async (image: GalleryImage) => {
     try {
-      // Delete from Storage
-      const storageRef = ref(storage, imageUrl);
-      await deleteObject(storageRef);
+      // Delete from storage
+      const filePath = image.url.split('/').pop();
+      if (filePath) {
+        const { error: storageError } = await supabase.storage
+          .from('gallery')
+          .remove([filePath]);
 
-      // Delete from Firestore
-      await deleteDoc(doc(db, 'gallery', id));
+        if (storageError) throw storageError;
+      }
+
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from('gallery')
+        .delete()
+        .eq('id', image.id);
+
+      if (dbError) throw dbError;
 
       toast({
         title: "Success",
         description: "Image deleted successfully",
       });
-      loadImages(); // Refresh the gallery
+      loadImages();
     } catch (error) {
+      console.error('Error deleting image:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Error deleting image",
+        description: "Failed to delete image",
         variant: "destructive",
       });
     }
   };
 
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Gallery Management</h1>
-        <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">Gallery</h2>
+        <Dialog>
           <DialogTrigger asChild>
             <Button>
-              <ImagePlus className="mr-2 h-4 w-4" />
-              Upload Image
+              <ImagePlus className="w-4 h-4 mr-2" />
+              Add Image
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Upload New Image</DialogTitle>
+              <DialogTitle>Upload Image</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Select Image</label>
+            <form onSubmit={handleUpload} className="space-y-4">
+              <div>
                 <Input
                   type="file"
+                  name="file"
                   accept="image/*"
-                  onChange={handleUpload}
-                  disabled={uploading}
+                  required
                 />
               </div>
-            </div>
+              <div>
+                <Input
+                  name="title"
+                  placeholder="Image Title"
+                  required
+                />
+              </div>
+              <div>
+                <Input
+                  name="description"
+                  placeholder="Image Description"
+                />
+              </div>
+              <Button type="submit" disabled={uploading}>
+                {uploading ? 'Uploading...' : 'Upload'}
+              </Button>
+            </form>
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {images.map((image) => (
           <Card key={image.id}>
             <CardContent className="p-4">
@@ -148,16 +203,20 @@ export default function GalleryManager() {
                   className="object-cover rounded-lg"
                 />
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">{image.title}</span>
-                <div className="space-x-2">
-                  <Button size="sm" variant="outline">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button size="sm" variant="destructive">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="font-semibold">{image.title}</h3>
+                  {image.description && (
+                    <p className="text-sm text-gray-500">{image.description}</p>
+                  )}
                 </div>
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  onClick={() => handleDelete(image)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
               </div>
             </CardContent>
           </Card>

@@ -1,4 +1,4 @@
-import React from "react";
+import { type FC } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useState } from "react";
@@ -8,10 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useFirebase } from '@/integrations/firebase/context';
-import { addDoc, collection } from 'firebase/firestore';
+import { supabase } from '@/integrations/supabase/client';
 
-const MembershipRegistration: React.FC = () => {
+const MembershipRegistration: FC = () => {
   const { t, language } = useLanguage();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,24 +20,27 @@ const MembershipRegistration: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      const { db } = useFirebase();
       const formData = new FormData(e.target as HTMLFormElement);
       const amount = "100"; // Membership fee in dollars
 
       // Create member record
-      const memberRef = await addDoc(collection(db, 'members'), {
-        full_name: formData.get('name'),
-        email: formData.get('email'),
-        phone: formData.get('phone'),
-        address: formData.get('address'),
-        membership_type: formData.get('membershipType'),
-        membership_status: 'pending',
-        join_date: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
+      const { error: memberError } = await supabase
+        .from('members')
+        .insert([{
+          full_name: formData.get('name'),
+          email: formData.get('email'),
+          phone: formData.get('phone'),
+          address: formData.get('address'),
+          membership_type: formData.get('membershipType'),
+          membership_status: 'pending',
+          join_date: new Date().toISOString(),
+        }]);
 
-      // Call Stripe checkout through Firebase Function
+      if (memberError) {
+        throw memberError;
+      }
+
+      // Call Stripe checkout through Edge Function
       const response = await fetch('/api/create-checkout', {
         method: 'POST',
         headers: {
@@ -49,32 +51,24 @@ const MembershipRegistration: React.FC = () => {
           donationType: "one_time",
           purpose: "membership_fee",
           email: formData.get('email'),
-          memberId: memberRef.id,
-          metadata: {
-            name: formData.get('name'),
-            phone: formData.get('phone'),
-            language: formData.get('language'),
-            address: formData.get('address'),
-            membershipType: formData.get('membershipType')
-          }
+          name: formData.get('name'),
+          address: formData.get('address')
         }),
       });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Failed to create checkout session');
-
-      if (data?.url) {
-        // Redirect to Stripe Checkout
-        window.location.href = data.url;
-      } else {
-        throw new Error("Failed to generate checkout URL");
+      if (!response.ok) {
+        throw new Error('Payment initiation failed');
       }
 
+      const data = await response.json();
+      window.location.href = data.url;
+
     } catch (error) {
+      console.error('Membership registration error:', error);
       toast({
-        title: "Error",
-        description: "Failed to process registration. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
+        title: t("Error"),
+        description: t("membership.error_message")
       });
     } finally {
       setIsSubmitting(false);
@@ -83,113 +77,50 @@ const MembershipRegistration: React.FC = () => {
 
   return (
     <Layout>
-      <div className="py-16 px-6">
-        <div className="container mx-auto max-w-2xl">
-          <Card className="border-church-gold">
-            <CardHeader className="bg-gradient-to-r from-church-burgundy to-church-burgundy/90 text-white">
-              <CardTitle className="text-church-gold text-3xl">{t("membership_registration_title") || "Membership Registration"}</CardTitle>
-              <CardDescription className="text-white/90 mt-2">
-                {t("membership_registration_description") || "Join our church community by registering as a member. Annual membership fee is $100."}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-church-burgundy">
-                    {t("full_name")}
-                  </Label>
-                  <Input 
-                    id="name" 
-                    name="name"
-                    required 
-                    className="border-church-burgundy/30 focus:border-church-burgundy"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-church-burgundy">
-                    {t("email")}
-                  </Label>
-                  <Input 
-                    id="email" 
-                    name="email"
-                    type="email" 
-                    required
-                    className="border-church-burgundy/30 focus:border-church-burgundy"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-church-burgundy">
-                    {t("phone")}
-                  </Label>
-                  <Input 
-                    id="phone" 
-                    name="phone"
-                    type="tel" 
-                    required
-                    className="border-church-burgundy/30 focus:border-church-burgundy"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="address" className="text-church-burgundy">
-                    {t("address") || "Address"}
-                  </Label>
-                  <Input 
-                    id="address" 
-                    name="address"
-                    required
-                    className="border-church-burgundy/30 focus:border-church-burgundy"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="membershipType" className="text-church-burgundy">
-                    {t("membership_type") || "Membership Type"}
-                  </Label>
-                  <Select defaultValue="individual" name="membershipType">
-                    <SelectTrigger className="border-church-burgundy/30 focus:border-church-burgundy">
-                      <SelectValue placeholder={t("select_membership_type") || "Select Membership Type"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="individual">{t("individual_membership") || "Individual Membership"}</SelectItem>
-                      <SelectItem value="family">{t("family_membership") || "Family Membership"}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="language" className="text-church-burgundy">
-                    {t("preferred_language")}
-                  </Label>
-                  <Select defaultValue={language} name="language">
-                    <SelectTrigger className="border-church-burgundy/30 focus:border-church-burgundy">
-                      <SelectValue placeholder={t("preferred_language")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="en">{t("english")}</SelectItem>
-                      <SelectItem value="am">{t("amharic")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="rounded-lg bg-gray-50 p-4 text-sm text-gray-600">
-                  <p>{t("membership_fee_notice") || "Annual Membership Fee: $100"}</p>
-                  <p className="mt-1">{t("membership_fee_description") || "This fee helps support our church's activities and maintenance."}</p>
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  disabled={isSubmitting}
-                  className="bg-church-burgundy hover:bg-church-burgundy/90 w-full"
-                >
-                  {isSubmitting ? t("processing") || "Processing..." : t("register_and_pay") || "Register & Pay $100"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="container mx-auto p-4">
+        <Card className="max-w-2xl mx-auto">
+          <CardHeader>
+            <CardTitle>{t("membership.title")}</CardTitle>
+            <CardDescription>{t("membership.description")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">{t("membership.name")}</Label>
+                <Input id="name" name="name" required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">{t("membership.email")}</Label>
+                <Input id="email" name="email" type="email" required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">{t("membership.phone")}</Label>
+                <Input id="phone" name="phone" type="tel" required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="address">{t("membership.address")}</Label>
+                <Input id="address" name="address" required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="membershipType">{t("membership.type")}</Label>
+                <Select name="membershipType" defaultValue="regular" required>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="regular">{t("membership.types.regular")}</SelectItem>
+                    <SelectItem value="student">{t("membership.types.student")}</SelectItem>
+                    <SelectItem value="senior">{t("membership.types.senior")}</SelectItem>
+                    <SelectItem value="family">{t("membership.types.family")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? t("membership.submitting") : t("membership.submit")}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </Layout>
   );

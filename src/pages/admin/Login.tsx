@@ -3,9 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useFirebase } from '@/integrations/firebase/context';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
 export default function AdminLogin() {
@@ -14,28 +12,37 @@ export default function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { auth, db } = useFirebase();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) throw signInError;
+
       // Check if user has admin role
-      const profileDoc = await getDoc(doc(db, 'profiles', user.uid));
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profileError) throw profileError;
       
-      if (profileDoc.exists() && profileDoc.data()?.role === 'admin') {
-        toast({
-          title: "Success",
-          description: "Logged in successfully",
-        });
-        navigate('/admin/dashboard');
-      } else {
+      if (profile?.role !== 'admin') {
         throw new Error('Unauthorized access');
       }
+
+      toast({
+        title: "Success",
+        description: "Logged in successfully",
+      });
+      navigate('/admin/dashboard');
     } catch (error) {
       toast({
         title: "Error",

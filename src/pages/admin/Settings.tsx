@@ -9,64 +9,86 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { useFirebase } from '@/integrations/firebase/context';
-import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
+interface Settings {
+  church_name: string;
+  church_address: string;
+  phone_number: string;
+  email: string;
+  enable_donations: boolean;
+  enable_membership: boolean;
+  maintenance_mode: boolean;
+}
+
 export default function Settings() {
+  const [settings, setSettings] = useState<Settings>({
+    church_name: '',
+    church_address: '',
+    phone_number: '',
+    email: '',
+    enable_donations: true,
+    enable_membership: true,
+    maintenance_mode: false,
+  });
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
-  const { db } = useFirebase();
-  const [settings, setSettings] = useState({
-    churchName: '',
-    churchAddress: '',
-    phoneNumber: '',
-    email: '',
-    enableDonations: true,
-    enableMembership: true,
-    maintenanceMode: false,
-  });
 
   useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const settingsDoc = await getDoc(doc(db, 'site_settings', '1'));
-        if (settingsDoc.exists()) {
-          setSettings(settingsDoc.data());
-        }
-      } catch (error) {
-        console.error('Error loading settings:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load settings",
-          variant: "destructive",
-        });
-      }
-    };
-
     loadSettings();
-  }, [db, toast]);
+  }, []);
 
-  const handleSave = async () => {
+  const loadSettings = async () => {
     try {
-      setSaving(true);
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('*')
+        .single();
+
+      if (error) throw error;
       
-      // Update settings in Firebase
-      await setDoc(doc(db, 'site_settings', '1'), {
-        ...settings,
-        updated_at: new Date().toISOString(),
+      if (data) {
+        setSettings(data);
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load settings",
+        variant: "destructive",
       });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+
+    try {
+      const { error } = await supabase
+        .from('site_settings')
+        .upsert({
+          id: 1, // Use a constant ID since we only have one settings record
+          ...settings,
+          updated_at: new Date().toISOString(),
+        });
+
+      if (error) throw error;
 
       toast({
         title: "Success",
         description: "Settings saved successfully",
       });
     } catch (error) {
+      console.error('Error saving settings:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Error saving settings",
+        description: "Failed to save settings",
         variant: "destructive",
       });
     } finally {
@@ -74,57 +96,59 @@ export default function Settings() {
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Site Settings</h1>
+  const handleChange = (field: keyof Settings, value: string | boolean) => {
+    setSettings(prev => ({ ...prev, [field]: value }));
+  };
 
-      <Card>
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <Card className="mb-6">
         <CardHeader>
           <CardTitle>General Settings</CardTitle>
-          <CardDescription>Manage your church website's basic information</CardDescription>
+          <CardDescription>Configure basic church information</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="churchName">Church Name</Label>
             <Input
               id="churchName"
-              value={settings.churchName}
-              onChange={(e) => setSettings({ ...settings, churchName: e.target.value })}
+              value={settings.church_name}
+              onChange={(e) => handleChange('church_name', e.target.value)}
             />
           </div>
-          
           <div className="space-y-2">
-            <Label htmlFor="churchAddress">Address</Label>
-            <Textarea
-              id="churchAddress"
-              value={settings.churchAddress}
-              onChange={(e) => setSettings({ ...settings, churchAddress: e.target.value })}
+            <Label htmlFor="address">Address</Label>
+            <Input
+              id="address"
+              value={settings.church_address}
+              onChange={(e) => handleChange('church_address', e.target.value)}
             />
           </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="phoneNumber">Phone Number</Label>
-              <Input
-                id="phoneNumber"
-                value={settings.phoneNumber}
-                onChange={(e) => setSettings({ ...settings, phoneNumber: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={settings.email}
-                onChange={(e) => setSettings({ ...settings, email: e.target.value })}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone Number</Label>
+            <Input
+              id="phone"
+              value={settings.phone_number}
+              onChange={(e) => handleChange('phone_number', e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={settings.email}
+              onChange={(e) => handleChange('email', e.target.value)}
+            />
           </div>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="mb-6">
         <CardHeader>
           <CardTitle>Feature Settings</CardTitle>
           <CardDescription>Enable or disable website features</CardDescription>
@@ -133,55 +157,39 @@ export default function Settings() {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Enable Donations</Label>
-              <p className="text-sm text-muted-foreground">
-                Allow visitors to make donations through the website
-              </p>
+              <p className="text-sm text-gray-500">Allow visitors to make donations</p>
             </div>
             <Switch
-              checked={settings.enableDonations}
-              onCheckedChange={(checked) =>
-                setSettings({ ...settings, enableDonations: checked })
-              }
+              checked={settings.enable_donations}
+              onCheckedChange={(checked) => handleChange('enable_donations', checked)}
             />
           </div>
-
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Enable Membership Registration</Label>
-              <p className="text-sm text-muted-foreground">
-                Allow visitors to register as members
-              </p>
+              <Label>Enable Membership</Label>
+              <p className="text-sm text-gray-500">Allow visitors to register for membership</p>
             </div>
             <Switch
-              checked={settings.enableMembership}
-              onCheckedChange={(checked) =>
-                setSettings({ ...settings, enableMembership: checked })
-              }
+              checked={settings.enable_membership}
+              onCheckedChange={(checked) => handleChange('enable_membership', checked)}
             />
           </div>
-
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Maintenance Mode</Label>
-              <p className="text-sm text-muted-foreground">
-                Put the website in maintenance mode
-              </p>
+              <p className="text-sm text-gray-500">Put the website in maintenance mode</p>
             </div>
             <Switch
-              checked={settings.maintenanceMode}
-              onCheckedChange={(checked) =>
-                setSettings({ ...settings, maintenanceMode: checked })
-              }
+              checked={settings.maintenance_mode}
+              onCheckedChange={(checked) => handleChange('maintenance_mode', checked)}
             />
           </div>
         </CardContent>
       </Card>
 
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saving}>
-          {saving ? 'Saving...' : 'Save Changes'}
-        </Button>
-      </div>
-    </div>
+      <Button type="submit" disabled={saving}>
+        {saving ? 'Saving...' : 'Save Settings'}
+      </Button>
+    </form>
   );
 }
