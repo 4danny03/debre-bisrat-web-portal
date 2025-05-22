@@ -8,6 +8,7 @@ import {
   Image,
   Settings,
   LogOut,
+  Users as UsersIcon,
 } from 'lucide-react';
 
 export default function AdminLayout() {
@@ -71,6 +72,9 @@ export default function AdminLayout() {
           </NavItem>
           <NavItem to="/admin/gallery" icon={<Image className="w-5 h-5" />}>
             Gallery
+          </NavItem>
+          <NavItem to="/admin/users" icon={<UsersIcon className="w-5 h-5" />}>
+            Users
           </NavItem>
           <NavItem to="/admin/settings" icon={<Settings className="w-5 h-5" />}>
             Settings

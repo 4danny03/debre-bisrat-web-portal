@@ -1,0 +1,137 @@
+import { serve }import { serve } from "himport { serve,import { serve } from "http/server.ts";
+import { createClient } from "@supabase/supabase-js";
+
+interface GenerateCodeResponse {
+  code: string;
+}
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+}; from "./deps.ts";
+
+interface CustomError extends Error {
+  message: string;
+}
+
+interface GenerateCodeResponse {
+  code: string;
+}
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+serve(async (req: Request) => {std@0.190.0/http/server.ts";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+
+declare global {
+  interface Deno {
+    env: {
+      get(key: string): string | undefined;
+    };
+  }
+}
+
+interface CustomError extends Error {
+  message: string;
+}
+
+interface GenerateCodeResponse {
+  code: string;
+}
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+const handler = async (req: Request) => {no.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+
+interface CustomError extends Error {
+  message: string;
+}
+
+interface GenerateCodeResponse {
+  code: string;
+}
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+const handler = async (req: Request) => {from "@std/http/server";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
+
+interface CustomError extends Error {
+  message: string;
+}
+
+interface GenerateCodeResponse {
+  code: string;
+}
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+serve(async (req: Request) => {
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    // Create Supabase client
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+    // Get auth header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('No authorization header');
+    }
+
+    // Set auth context for the client
+    const { data: sessionData, error: sessionError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (sessionError || !sessionData.user) {
+      throw new Error('Invalid authentication token');
+    }
+
+    // Call the function to generate code
+    const { data, error } = await supabase
+      .rpc<string, GenerateCodeResponse>('generate_admin_registration_code');
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return new Response(
+      JSON.stringify({ code: data }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      }
+    );
+  } catch (err: unknown) {
+    const error = err as CustomError;
+    return new Response(
+      JSON.stringify({ 
+        error: error.message || 'An unknown error occurred',
+        status: 'error'
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      }
+    );
+  }
+});

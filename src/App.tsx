@@ -19,6 +19,7 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import AdminEvents from "./pages/admin/Events";
 import AdminGallery from "./pages/admin/Gallery";
 import AdminSettings from "./pages/admin/Settings";
+import AdminUsers from "./pages/admin/Users";
 import { LanguageProvider } from "./contexts/LanguageContext";
 
 export default function App(): React.ReactElement {
@@ -43,6 +44,7 @@ export default function App(): React.ReactElement {
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="events" element={<AdminEvents />} />
               <Route path="gallery" element={<AdminGallery />} />
+              <Route path="users" element={<AdminUsers />} />
               <Route path="settings" element={<AdminSettings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
