@@ -13,10 +13,12 @@ import {
   DollarSign,
   Menu,
   X,
+  Settings,
+  LogOut,
+  Users as UsersIcon,
+  Home,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-  Users as UsersIcon,
-} from 'lucide-react';
 
 export default function AdminLayout() {
   const [loading, setLoading] = useState(true);
@@ -64,6 +66,13 @@ export default function AdminLayout() {
   };
 
   const navigationItems = [
+    {
+      to: "/",
+      icon: Home,
+      label: "Main Website",
+      description: "Return to public site",
+      isExternal: true,
+    },
     {
       to: "/admin/dashboard",
       icon: LayoutDashboard,
@@ -170,7 +179,27 @@ export default function AdminLayout() {
               const Icon = item.icon;
               const isActive = location.pathname === item.to;
 
-              return (
+              return item.isExternal ? (
+                <a
+                  key={item.to}
+                  href={item.to}
+                  className={cn(
+                    "flex items-center p-3 rounded-lg transition-colors group",
+                    "text-white/90 hover:bg-church-burgundy/20 hover:text-white bg-church-burgundy/10",
+                  )}
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <Icon className="w-5 h-5 mr-3 flex-shrink-0 text-church-gold" />
+                  <div className="flex-1">
+                    <div className="font-medium text-church-gold">
+                      {item.label}
+                    </div>
+                    <div className="text-xs text-white/50">
+                      {item.description}
+                    </div>
+                  </div>
+                </a>
+              ) : (
                 <Link
                   key={item.to}
                   to={item.to}
@@ -227,36 +256,6 @@ export default function AdminLayout() {
               </div>
             </Button>
           </div>
-      <div className="w-64 bg-gray-900 text-white p-4">
-        <div className="mb-8">
-          <h1 className="text-xl font-bold">Admin Dashboard</h1>
-        </div>
-        <nav className="space-y-2">
-          <NavItem to="/admin/dashboard" icon={<LayoutDashboard className="w-5 h-5" />}>
-            Dashboard
-          </NavItem>
-          <NavItem to="/admin/events" icon={<Calendar className="w-5 h-5" />}>
-            Events
-          </NavItem>
-          <NavItem to="/admin/gallery" icon={<Image className="w-5 h-5" />}>
-            Gallery
-          </NavItem>
-          <NavItem to="/admin/users" icon={<UsersIcon className="w-5 h-5" />}>
-            Users
-          </NavItem>
-          <NavItem to="/admin/settings" icon={<Settings className="w-5 h-5" />}>
-            Settings
-          </NavItem>
-        </nav>
-        <div className="mt-auto pt-4">
-          <Button
-            variant="ghost"
-            className="w-full justify-start text-white hover:text-white hover:bg-gray-800"
-            onClick={handleSignOut}
-          >
-            <LogOut className="w-5 h-5 mr-2" />
-            Sign Out
-          </Button>
         </div>
       </div>
 
