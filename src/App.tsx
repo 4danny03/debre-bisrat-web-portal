@@ -26,6 +26,7 @@ import AdminMembers from "./pages/admin/Members";
 import AdminTestimonials from "./pages/admin/Testimonials";
 import AdminPrayerRequests from "./pages/admin/PrayerRequests";
 import AdminDonations from "./pages/admin/Donations";
+import AdminUsers from "./pages/admin/Users"
 import { LanguageProvider } from "./contexts/LanguageContext";
 
 export default function App(): React.ReactElement {
@@ -65,6 +66,8 @@ export default function App(): React.ReactElement {
               <Route path="testimonials" element={<AdminTestimonials />} />
               <Route path="prayer-requests" element={<AdminPrayerRequests />} />
               <Route path="donations" element={<AdminDonations />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="settings" element={<AdminSettings />} />
             </Route>
 
             {/* Add this before the catchall route */}
