@@ -1,414 +1,401 @@
 import { supabase } from "./client";
-import { Database } from "./types";
-
-type Profile = Database["public"]["Tables"]["profiles"]["Row"];
-type Member = Database["public"]["Tables"]["members"]["Row"];
-type Donation = Database["public"]["Tables"]["donations"]["Row"];
-type Event = Database["public"]["Tables"]["events"]["Row"];
-type Announcement = Database["public"]["Tables"]["announcements"]["Row"];
-type Sermon = Database["public"]["Tables"]["sermons"]["Row"];
-type Testimonial = Database["public"]["Tables"]["testimonials"]["Row"];
-type PrayerRequest = Database["public"]["Tables"]["prayer_requests"]["Row"];
 
 export const api = {
-  auth: {
-    // Auth related functions
-    getCurrentUser: async () => {
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
+  sermons: {
+    getSermons: async () => {
+      const { data, error } = await supabase
+        .from("sermons")
+        .select("*")
+        .order("sermon_date", { ascending: false });
+
       if (error) throw error;
-      return session?.user;
+      return data;
     },
-    getProfile: async (userId: string): Promise<Profile | null> => {
+    getFeaturedSermons: async (limit = 3) => {
+      const { data, error } = await supabase
+        .from("sermons")
+        .select("*")
+        .eq("is_featured", true)
+        .order("sermon_date", { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return data;
+    },
+    getSermonById: async (id: string) => {
+      const { data, error } = await supabase
+        .from("sermons")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    createSermon: async (sermon: any) => {
+      const { data, error } = await supabase
+        .from("sermons")
+        .insert([sermon])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    updateSermon: async (id: string, updates: any) => {
+      const { data, error } = await supabase
+        .from("sermons")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    deleteSermon: async (id: string) => {
+      const { error } = await supabase.from("sermons").delete().eq("id", id);
+
+      if (error) throw error;
+      return true;
+    },
+  },
+  events: {
+    getEvents: async () => {
+      const { data, error } = await supabase
+        .from("events")
+        .select("*")
+        .order("event_date", { ascending: true });
+
+      if (error) throw error;
+      return data;
+    },
+    getUpcomingEvents: async (limit = 3) => {
+      const today = new Date().toISOString().split("T")[0];
+      const { data, error } = await supabase
+        .from("events")
+        .select("*")
+        .gte("event_date", today)
+        .order("event_date", { ascending: true })
+        .limit(limit);
+
+      if (error) throw error;
+      return data;
+    },
+    getEventById: async (id: string) => {
+      const { data, error } = await supabase
+        .from("events")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    createEvent: async (event: any) => {
+      const { data, error } = await supabase
+        .from("events")
+        .insert([event])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    updateEvent: async (id: string, updates: any) => {
+      const { data, error } = await supabase
+        .from("events")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    deleteEvent: async (id: string) => {
+      const { error } = await supabase.from("events").delete().eq("id", id);
+
+      if (error) throw error;
+      return true;
+    },
+  },
+  members: {
+    getMembers: async () => {
+      const { data, error } = await supabase
+        .from("members")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    getMemberById: async (id: string) => {
+      const { data, error } = await supabase
+        .from("members")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    createMember: async (member: any) => {
+      const { data, error } = await supabase
+        .from("members")
+        .insert([member])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    updateMember: async (id: string, updates: any) => {
+      const { data, error } = await supabase
+        .from("members")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    deleteMember: async (id: string) => {
+      const { error } = await supabase.from("members").delete().eq("id", id);
+
+      if (error) throw error;
+      return true;
+    },
+  },
+  gallery: {
+    getGalleryImages: async () => {
+      const { data, error } = await supabase
+        .from("gallery")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    getImageById: async (id: string) => {
+      const { data, error } = await supabase
+        .from("gallery")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    addImage: async (image: any) => {
+      const { data, error } = await supabase
+        .from("gallery")
+        .insert([image])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    updateImage: async (id: string, updates: any) => {
+      const { data, error } = await supabase
+        .from("gallery")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    deleteImage: async (id: string) => {
+      const { error } = await supabase.from("gallery").delete().eq("id", id);
+
+      if (error) throw error;
+      return true;
+    },
+  },
+  testimonials: {
+    getTestimonials: async (approvedOnly = true) => {
+      let query = supabase.from("testimonials").select("*");
+
+      if (approvedOnly) {
+        query = query.eq("is_approved", true);
+      }
+
+      const { data, error } = await query.order("created_at", {
+        ascending: false,
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    getTestimonialById: async (id: string) => {
+      const { data, error } = await supabase
+        .from("testimonials")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    addTestimonial: async (testimonial: any) => {
+      const { data, error } = await supabase
+        .from("testimonials")
+        .insert([testimonial])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    updateTestimonial: async (id: string, updates: any) => {
+      const { data, error } = await supabase
+        .from("testimonials")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    deleteTestimonial: async (id: string) => {
+      const { error } = await supabase
+        .from("testimonials")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+      return true;
+    },
+  },
+  prayerRequests: {
+    getPrayerRequests: async (publicOnly = true) => {
+      let query = supabase.from("prayer_requests").select("*");
+
+      if (publicOnly) {
+        query = query.eq("is_public", true);
+      }
+
+      const { data, error } = await query.order("created_at", {
+        ascending: false,
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    getPrayerRequestById: async (id: string) => {
+      const { data, error } = await supabase
+        .from("prayer_requests")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    addPrayerRequest: async (request: any) => {
+      const { data, error } = await supabase
+        .from("prayer_requests")
+        .insert([request])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    updatePrayerRequest: async (id: string, updates: any) => {
+      const { data, error } = await supabase
+        .from("prayer_requests")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    deletePrayerRequest: async (id: string) => {
+      const { error } = await supabase
+        .from("prayer_requests")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+      return true;
+    },
+  },
+  donations: {
+    getDonations: async () => {
+      const { data, error } = await supabase
+        .from("donations")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    getDonationById: async (id: string) => {
+      const { data, error } = await supabase
+        .from("donations")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    updateDonation: async (id: string, updates: any) => {
+      const { data, error } = await supabase
+        .from("donations")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+  },
+  users: {
+    getUsers: async () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", userId)
-        .single();
+        .order("created_at", { ascending: false });
+
       if (error) throw error;
       return data;
     },
-  },
-
-  members: {
-    // Member management
-    getMembers: async (filters?: {
-      status?: string;
-      type?: string;
-      search?: string;
-    }): Promise<Member[]> => {
-      let query = supabase.from("members").select("*");
-
-      if (filters?.status) {
-        query = query.eq("membership_status", filters.status);
-      }
-      if (filters?.type) {
-        query = query.eq("membership_type", filters.type);
-      }
-      if (filters?.search) {
-        query = query.ilike("full_name", `%${filters.search}%`);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data;
-    },
-
-    createMember: async (
-      memberData: Omit<Member, "id" | "created_at" | "updated_at">,
-    ) => {
+    getUserById: async (id: string) => {
       const { data, error } = await supabase
-        .from("members")
-        .insert([memberData])
+        .from("profiles")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    updateUser: async (id: string, updates: any) => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .update(updates)
+        .eq("id", id)
         .select()
         .single();
-      if (error) throw error;
-      return data;
-    },
-  },
-
-  events: {
-    // Event management
-    getEvents: async (filters?: {
-      status?: string;
-      type?: string;
-      from?: Date;
-      to?: Date;
-    }): Promise<Event[]> => {
-      let query = supabase.from("events").select("*");
-
-      if (filters?.status) {
-        query = query.eq("status", filters.status);
-      }
-      if (filters?.type) {
-        query = query.eq("event_type", filters.type);
-      }
-      if (filters?.from) {
-        query = query.gte("date", filters.from.toISOString());
-      }
-      if (filters?.to) {
-        query = query.lte("date", filters.to.toISOString());
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data;
-    },
-
-    createEvent: async (
-      eventData: Omit<Event, "id" | "created_at" | "updated_at">,
-    ) => {
-      const { data, error } = await supabase
-        .from("events")
-        .insert([eventData])
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-  },
-
-  donations: {
-    // Donation tracking
-    getDonations: async (filters?: {
-      status?: string;
-      type?: string;
-      from?: Date;
-      to?: Date;
-    }): Promise<Donation[]> => {
-      let query = supabase.from("donations").select("*");
-
-      if (filters?.status) {
-        query = query.eq("status", filters.status);
-      }
-      if (filters?.type) {
-        query = query.eq("donation_type", filters.type);
-      }
-      if (filters?.from) {
-        query = query.gte("created_at", filters.from.toISOString());
-      }
-      if (filters?.to) {
-        query = query.lte("created_at", filters.to.toISOString());
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data;
-    },
-
-    createDonation: async (
-      donationData: Omit<Donation, "id" | "created_at" | "updated_at">,
-    ) => {
-      const { data, error } = await supabase
-        .from("donations")
-        .insert([donationData])
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-  },
-
-  announcements: {
-    // Announcement management
-    getAnnouncements: async (filters?: {
-      type?: string;
-      active?: boolean;
-    }): Promise<Announcement[]> => {
-      let query = supabase.from("announcements").select("*");
-
-      if (filters?.type) {
-        query = query.eq("announcement_type", filters.type);
-      }
-      if (filters?.active !== undefined) {
-        query = query.eq("is_active", filters.active);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data;
-    },
-
-    createAnnouncement: async (
-      announcementData: Omit<Announcement, "id" | "created_at" | "updated_at">,
-    ) => {
-      const { data, error } = await supabase
-        .from("announcements")
-        .insert([announcementData])
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-  },
-
-  sermons: {
-    // Sermon management
-    getSermons: async (filters?: { featured?: boolean; limit?: number }) => {
-      const { data, error } = await supabase.functions.invoke(
-        "supabase-functions-sermons",
-        {
-          method: "GET",
-          queryParams: {
-            featured: filters?.featured ? "true" : undefined,
-            limit: filters?.limit?.toString(),
-          },
-        },
-      );
-
-      if (error) throw error;
-      return data.sermons;
-    },
-
-    getSermonById: async (id: string) => {
-      const { data, error } = await supabase.functions.invoke(
-        "supabase-functions-sermons",
-        {
-          method: "GET",
-          queryParams: { id },
-        },
-      );
-
-      if (error) throw error;
-      return data.sermons;
-    },
-
-    createSermon: async (sermonData: {
-      title: string;
-      description?: string;
-      scripture_reference?: string;
-      audio_url?: string;
-      preacher?: string;
-      sermon_date: string;
-      is_featured?: boolean;
-    }) => {
-      const { data, error } = await supabase.functions.invoke(
-        "supabase-functions-sermons",
-        {
-          method: "POST",
-          body: sermonData,
-        },
-      );
-
-      if (error) throw error;
-      return data.sermon;
-    },
-
-    updateSermon: async (id: string, sermonData: Partial<Sermon>) => {
-      const { data, error } = await supabase.functions.invoke(
-        "supabase-functions-sermons",
-        {
-          method: "PUT",
-          queryParams: { id },
-          body: sermonData,
-        },
-      );
-
-      if (error) throw error;
-      return data.sermon;
-    },
-
-    deleteSermon: async (id: string) => {
-      const { data, error } = await supabase.functions.invoke(
-        "supabase-functions-sermons",
-        {
-          method: "DELETE",
-          queryParams: { id },
-        },
-      );
 
       if (error) throw error;
       return data;
     },
-  },
-
-  testimonials: {
-    // Testimonial management
-    getTestimonials: async (showAll = false) => {
-      const { data, error } = await supabase.functions.invoke(
-        "supabase-functions-testimonials",
-        {
-          method: "GET",
-          queryParams: { all: showAll ? "true" : undefined },
-        },
-      );
+    deleteUser: async (id: string) => {
+      const { error } = await supabase.from("profiles").delete().eq("id", id);
 
       if (error) throw error;
-      return data.testimonials;
-    },
-
-    getTestimonialById: async (id: string) => {
-      const { data, error } = await supabase.functions.invoke(
-        "supabase-functions-testimonials",
-        {
-          method: "GET",
-          queryParams: { id },
-        },
-      );
-
-      if (error) throw error;
-      return data.testimonials;
-    },
-
-    submitTestimonial: async (testimonialData: {
-      name: string;
-      content: string;
-    }) => {
-      const { data, error } = await supabase.functions.invoke(
-        "supabase-functions-testimonials",
-        {
-          method: "POST",
-          body: testimonialData,
-        },
-      );
-
-      if (error) throw error;
-      return data;
-    },
-
-    approveTestimonial: async (id: string, isApproved: boolean) => {
-      const { data, error } = await supabase.functions.invoke(
-        "supabase-functions-testimonials",
-        {
-          method: "PUT",
-          queryParams: { id },
-          body: { is_approved: isApproved },
-        },
-      );
-
-      if (error) throw error;
-      return data.testimonial;
-    },
-
-    deleteTestimonial: async (id: string) => {
-      const { data, error } = await supabase.functions.invoke(
-        "supabase-functions-testimonials",
-        {
-          method: "DELETE",
-          queryParams: { id },
-        },
-      );
-
-      if (error) throw error;
-      return data;
-    },
-  },
-
-  prayerRequests: {
-    // Prayer request management
-    getPrayerRequests: async () => {
-      const { data, error } = await supabase.functions.invoke(
-        "supabase-functions-prayer-requests",
-        {
-          method: "GET",
-        },
-      );
-
-      if (error) throw error;
-      return data.prayer_requests;
-    },
-
-    getPrayerRequestById: async (id: string) => {
-      const { data, error } = await supabase.functions.invoke(
-        "supabase-functions-prayer-requests",
-        {
-          method: "GET",
-          queryParams: { id },
-        },
-      );
-
-      if (error) throw error;
-      return data.prayer_requests;
-    },
-
-    submitPrayerRequest: async (requestData: {
-      name: string;
-      email?: string;
-      request: string;
-      is_public?: boolean;
-    }) => {
-      const { data, error } = await supabase.functions.invoke(
-        "supabase-functions-prayer-requests",
-        {
-          method: "POST",
-          body: requestData,
-        },
-      );
-
-      if (error) throw error;
-      return data.prayer_request;
-    },
-
-    markPrayerRequestAsAnswered: async (id: string, isAnswered: boolean) => {
-      const { data, error } = await supabase.functions.invoke(
-        "supabase-functions-prayer-requests",
-        {
-          method: "PUT",
-          queryParams: { id },
-          body: { is_answered: isAnswered },
-        },
-      );
-
-      if (error) throw error;
-      return data.prayer_request;
-    },
-  },
-
-  storage: {
-    // File storage helpers
-    uploadFile: async (bucket: string, path: string, file: File) => {
-      const { data, error } = await supabase.storage
-        .from(bucket)
-        .upload(path, file);
-      if (error) throw error;
-      return data;
-    },
-
-    getPublicUrl: (bucket: string, path: string) => {
-      const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-      return data.publicUrl;
+      return true;
     },
   },
 };

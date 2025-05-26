@@ -12,6 +12,7 @@ import NotFound from "./pages/NotFound";
 import MembershipRegistration from "./pages/MembershipRegistration";
 import Donation from "./pages/Donation";
 import DonationSuccess from "./pages/DonationSuccess";
+import DonationDemo from "./pages/DonationDemo";
 import Gallery from "./pages/Gallery";
 import Services from "./pages/Services";
 import Sermons from "./pages/Sermons";
@@ -26,7 +27,7 @@ import AdminMembers from "./pages/admin/Members";
 import AdminTestimonials from "./pages/admin/Testimonials";
 import AdminPrayerRequests from "./pages/admin/PrayerRequests";
 import AdminDonations from "./pages/admin/Donations";
-import AdminUsers from "./pages/admin/Users"
+import AdminUsers from "./pages/admin/Users";
 import { LanguageProvider } from "./contexts/LanguageContext";
 
 export default function App(): React.ReactElement {
@@ -53,6 +54,7 @@ export default function App(): React.ReactElement {
             <Route path="/membership" element={<MembershipRegistration />} />
             <Route path="/donation" element={<Donation />} />
             <Route path="/donation-success" element={<DonationSuccess />} />
+            <Route path="/donation-demo" element={<DonationDemo />} />
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/services" element={<Services />} />
             <Route path="/sermons" element={<Sermons />} />
