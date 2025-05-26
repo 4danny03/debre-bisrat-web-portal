@@ -9,6 +9,156 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      donations: {
+        Row: {
+          amount: number
+          created_at: string | null
+          donor_email: string | null
+          donor_name: string | null
+          id: string
+          is_anonymous: boolean | null
+          payment_id: string | null
+          payment_method: string | null
+          payment_status: string | null
+          purpose: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          donor_email?: string | null
+          donor_name?: string | null
+          id?: string
+          is_anonymous?: boolean | null
+          payment_id?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          purpose?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          donor_email?: string | null
+          donor_name?: string | null
+          id?: string
+          is_anonymous?: boolean | null
+          payment_id?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          purpose?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      events: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          event_date: string
+          event_time: string | null
+          id: string
+          image_url: string | null
+          is_featured: boolean | null
+          location: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          event_date: string
+          event_time?: string | null
+          id?: string
+          image_url?: string | null
+          is_featured?: boolean | null
+          location?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          event_date?: string
+          event_time?: string | null
+          id?: string
+          image_url?: string | null
+          is_featured?: boolean | null
+          location?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      gallery: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string
+          is_featured: boolean | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url: string
+          is_featured?: boolean | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string
+          is_featured?: boolean | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      members: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string
+          id: string
+          membership_date: string | null
+          membership_status: string | null
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          membership_date?: string | null
+          membership_status?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          membership_date?: string | null
+          membership_status?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       prayer_requests: {
         Row: {
           created_at: string | null
@@ -38,6 +188,30 @@ export type Database = {
           is_public?: boolean | null
           name?: string
           request?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          role: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id: string
+          role?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          role?: string | null
           updated_at?: string | null
         }
         Relationships: []

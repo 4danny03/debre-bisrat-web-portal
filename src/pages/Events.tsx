@@ -1,163 +1,135 @@
-import React from 'react';
-import Layout from '../components/Layout';
-import { useLanguage } from '../contexts/LanguageContext';
-import { Calendar } from '../components/ui/calendar';
-import { Card } from '../components/ui/card';
-import { addDays, format, isSameDay } from 'date-fns';
+import { useState, useEffect } from "react";
+import Layout from "../components/Layout";
+import { useLanguage } from "../contexts/LanguageContext";
+import { api } from "@/integrations/supabase/api";
+import { format } from "date-fns";
+import { Calendar, MapPin, Clock } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
-interface ChurchEvent {
-  date: Date;
-  title: { en: string; am: string };
-  description: { en: string; am: string };
-  type: 'major' | 'regular' | 'community';
-  icon?: string;
+interface Event {
+  id: string;
+  title: string;
+  description: string | null;
+  event_date: string;
+  event_time: string | null;
+  location: string | null;
+  image_url: string | null;
+  is_featured: boolean;
+  created_at: string;
 }
 
-const Events: React.FC = () => {
-  const { language } = useLanguage();
-  const [date, setDate] = React.useState<Date>(new Date());
-  
-  // Ethiopian months in Amharic
-  const amharicMonths = [
-    'መስከረም', 'ጥቅምት', 'ኅዳር', 'ታኅሣሥ', 'ጥር', 'የካቲት',
-    'መጋቢት', 'ሚያዝያ', 'ግንቦት', 'ሰኔ', 'ሐምሌ', 'ነሐሴ', 'ጷጉሜን'
-  ];
-  
-  // Define church events
-  const churchEvents: ChurchEvent[] = [
-    {
-      date: new Date(2025, 4, 19), // May 19, 2025
-      title: {
-        en: "St. Gabriel Monthly Commemoration",
-        am: "የቅዱስ ገብርኤል ወርሃዊ ተዝካር"
-      },
-      description: {
-        en: "Monthly commemoration of St. Gabriel with special prayers and services",
-        am: "የቅዱስ ገብርኤል ወርሃዊ መታሰቢያ በተለየ ጸሎትና አገልግሎት"
-      },
-      type: 'major',
-      icon: '/images/church-icon.png'
-    },
-    {
-      date: new Date(2025, 4, 25), // May 25, 2025
-      title: {
-        en: "Sunday School",
-        am: "የሰንበት ትምህርት ቤት"
-      },
-      description: {
-        en: "Weekly Sunday school for children and youth",
-        am: "የልጆችና የወጣቶች ሰንበት ትምህርት ቤት"
-      },
-      type: 'regular'
-    },
-    {
-      date: new Date(2025, 5, 19), // June 19, 2025
-      title: {
-        en: "Church Foundation Day",
-        am: "የቤተክርስቲያን መሰረት የተጣለበት ቀን"
-      },
-      description: {
-        en: "Anniversary celebration of our church's foundation",
-        am: "የቤተክርስቲያናችን መሰረት የተጣለበት ቀን በዓል"
-      },
-      type: 'major',
-      icon: '/images/church-front.jpg'
-    }
-  ];
+export default function Events() {
+  const { t } = useLanguage();
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const eventsForDay = (day: Date) => 
-    churchEvents.filter(event => isSameDay(event.date, day));
+  useEffect(() => {
+    loadEvents();
+  }, []);
 
-  const formatDate = (date: Date) => {
-    if (language === 'am') {
-      const day = date.getDate();
-      const month = amharicMonths[date.getMonth()];
-      const year = date.getFullYear();
-      return `${month} ${day}፣ ${year}`;
+  const loadEvents = async () => {
+    try {
+      setLoading(true);
+      const data = await api.events.getEvents();
+      setEvents(data || []);
+    } catch (error) {
+      console.error("Error loading events:", error);
+    } finally {
+      setLoading(false);
     }
-    return format(date, 'MMMM d, yyyy');
   };
 
   return (
     <Layout>
-      <div className="min-h-screen py-12 px-4 sm:px-6">
-        <div className="container mx-auto">
-          <div 
-            className="relative rounded-lg overflow-hidden mb-12 h-64 bg-cover bg-center"
-            style={{ backgroundImage: 'url("/images/timket-celebration.jpg")' }}
-          >
-            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-              <h1 className="text-4xl md:text-5xl text-white font-serif">
-                {language === 'en' ? 'Church Events' : 'የቤተክርስቲያን በዓላት'}
-              </h1>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-            <Card className="md:col-span-8 p-6 bg-white shadow-lg rounded-lg">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={(date) => date && setDate(date)}
-                className="rounded-md"
-                modifiers={{
-                  event: (date) => churchEvents.some(event => isSameDay(event.date, date))
-                }}
-                modifiersStyles={{
-                  event: { 
-                    fontWeight: 'bold',
-                    backgroundColor: 'var(--church-burgundy)',
-                    color: 'white',
-                    borderRadius: '50%'
-                  }
-                }}
-              />
-            </Card>
-
-            <div className="md:col-span-4">
-              <Card className="p-6 bg-white shadow-lg rounded-lg">
-                <h2 className="text-2xl font-serif text-church-burgundy mb-4">
-                  {language === 'en' ? 'Events on ' : 'በዚህ ቀን ያሉ በዓላት '}
-                  {formatDate(date)}
-                </h2>
-                
-                {eventsForDay(date).length > 0 ? (
-                  <div className="space-y-4">
-                    {eventsForDay(date).map((event, index) => (
-                      <div 
-                        key={index}
-                        className="p-4 rounded-lg border border-church-gold bg-church-cream"
-                      >
-                        {event.icon && (
-                          <img 
-                            src={event.icon} 
-                            alt={event.title[language]} 
-                            className="w-full h-32 object-cover rounded-lg mb-4"
-                          />
-                        )}
-                        <h3 className="text-xl font-serif text-church-burgundy">
-                          {event.title[language]}
-                        </h3>
-                        <p className="mt-2 text-gray-600">
-                          {event.description[language]}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500">
-                    {language === 'en' 
-                      ? 'No events scheduled for this day' 
-                      : 'በዚህ ቀን የተያዘ መርሐ ግብር የለም'}
-                  </p>
-                )}
-              </Card>
-            </div>
-          </div>
+      <div className="container mx-auto px-4 py-12">
+        <div className="text-center mb-12">
+          <h1 className="text-3xl md:text-4xl font-bold text-church-burgundy mb-4">
+            {t("events") || "Church Events"}
+          </h1>
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            Join us for our upcoming events and celebrations. Our church hosts
+            various activities throughout the year for all members of our
+            community.
+          </p>
         </div>
+
+        {loading ? (
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {[...Array(3)].map((_, i) => (
+              <Card key={i} className="overflow-hidden">
+                <Skeleton className="h-48 w-full" />
+                <CardContent className="p-6">
+                  <Skeleton className="h-6 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-1/2 mb-4" />
+                  <Skeleton className="h-20 w-full mb-4" />
+                  <div className="flex justify-between">
+                    <Skeleton className="h-10 w-24" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : events.length > 0 ? (
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {events.map((event) => (
+              <Card key={event.id} className="overflow-hidden">
+                {event.image_url ? (
+                  <div
+                    className="h-48 bg-cover bg-center"
+                    style={{ backgroundImage: `url(${event.image_url})` }}
+                  />
+                ) : (
+                  <div className="h-48 bg-church-burgundy/10 flex items-center justify-center">
+                    <Calendar className="h-12 w-12 text-church-burgundy/30" />
+                  </div>
+                )}
+                <CardContent className="p-6">
+                  <h3 className="text-xl font-bold text-church-burgundy mb-2">
+                    {event.title}
+                  </h3>
+                  <div className="flex items-center text-gray-600 mb-4">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    <span>
+                      {format(new Date(event.event_date), "MMMM d, yyyy")}
+                    </span>
+                    {event.event_time && (
+                      <>
+                        <Clock className="h-4 w-4 ml-4 mr-2" />
+                        <span>{event.event_time}</span>
+                      </>
+                    )}
+                  </div>
+                  {event.location && (
+                    <div className="flex items-center text-gray-600 mb-4">
+                      <MapPin className="h-4 w-4 mr-2" />
+                      <span>{event.location}</span>
+                    </div>
+                  )}
+                  <p className="text-gray-600 mb-6 line-clamp-3">
+                    {event.description}
+                  </p>
+                  <div className="flex justify-between">
+                    <Button variant="outline" className="text-church-burgundy">
+                      Learn More
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <h3 className="text-xl text-gray-600">
+              No upcoming events at this time.
+            </h3>
+            <p className="mt-2 text-gray-500">
+              Please check back later for future events.
+            </p>
+          </div>
+        )}
       </div>
     </Layout>
   );
-};
-
-export default Events;
+}

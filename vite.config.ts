@@ -1,47 +1,21 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
-import { tempo } from "tempo-devtools/dist/vite";
+import { tempo } from "tempo-devtools/dist/vite"; // Add this import
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  server: {
-    host: "::",
-    port: 8080,
-    allowedHosts: process.env.TEMPO === "true" ? true : undefined,
-  },
+export default defineConfig({
   plugins: [
     react(),
-    tempo(),
-    mode === "development" && componentTagger(),
-  ].filter(Boolean),
+    tempo(), // Add the tempo plugin
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          "react-vendor": ["react", "react-dom", "react-router-dom"],
-          "ui-vendor": [
-            "@radix-ui/react-accordion",
-            "@radix-ui/react-alert-dialog",
-            "@radix-ui/react-avatar",
-            "@radix-ui/react-dialog",
-            "@radix-ui/react-dropdown-menu",
-            "@radix-ui/react-label",
-            "@radix-ui/react-popover",
-            "@radix-ui/react-select",
-            "@radix-ui/react-slot",
-            "@radix-ui/react-toast",
-          ],
-        },
-      },
-    },
-    sourcemap: mode === "development",
-    minify: mode === "production",
+  server: {
+    // @ts-ignore
+    allowedHosts: process.env.TEMPO === "true" ? true : undefined,
   },
-}));
+});
