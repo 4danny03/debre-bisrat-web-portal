@@ -15,25 +15,66 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 interface ServiceItemProps {
   title: string;
   description: string;
   time: string;
+  imageUrl?: string;
 }
 
 const ServiceItem: React.FC<ServiceItemProps> = ({
   title,
   description,
   time,
+  imageUrl,
 }) => {
   return (
     <div className="border-l-2 border-church-gold pl-4 mb-6">
+      {imageUrl && (
+        <div className="mb-3 rounded-md overflow-hidden w-24 h-24 float-right ml-3">
+          <img
+            src={imageUrl}
+            alt={title}
+            className="object-cover w-full h-full transition-transform hover:scale-105 duration-300 rounded-md"
+          />
+        </div>
+      )}
       <h3 className="text-xl font-serif text-church-burgundy">{title}</h3>
       <p className="text-sm text-gray-500 mb-2">{time}</p>
       <p className="text-gray-700">{description}</p>
     </div>
   );
+};
+
+// Religious service images mapping
+const religiousServiceImages = {
+  "Christian Initiation": "/images/religious/palm-sunday.jpg",
+  "ክርስትና ማስነሳት": "/images/religious/palm-sunday.jpg",
+  "Qendil Prayer": "/images/religious/crucifixion.jpg",
+  "ጸሎተ ቀንዲል": "/images/religious/crucifixion.jpg",
+  "Marriage and Communion Education": "/images/religious/procession.jpg",
+  "የጋብቻና የቁርባን ትምህርት": "/images/religious/procession.jpg",
+  "Counseling Services": "/images/religious/palm-sunday.jpg",
+  "የምክር አገልግሎት": "/images/religious/palm-sunday.jpg",
+  "Marriage Ceremony": "/images/religious/procession.jpg",
+  "ጋብቻ መፈፀም": "/images/religious/procession.jpg",
+  "Funeral Prayer": "/images/religious/crucifixion.jpg",
+  "ጸሎተ ፍትሐት": "/images/religious/crucifixion.jpg",
+  "Holy Water Baptism": "/images/religious/procession.jpg",
+  "ጸበል መጠመቅ": "/images/religious/procession.jpg",
+  "Entering Lent": "/images/religious/palm-sunday.jpg",
+  "ሱባኤ መግባት": "/images/religious/palm-sunday.jpg",
+  "Qeder Baptism": "/images/religious/procession.jpg",
+  "የቄደር ጥምቀት": "/images/religious/procession.jpg",
+  "Divine Liturgy (Kidase)": "/images/religious/crucifixion.jpg",
+  ቅዳሴ: "/images/religious/crucifixion.jpg",
+};
+
+// Function to get a religious image based on service title
+const getServiceImage = (title: string): string | undefined => {
+  return religiousServiceImages[title];
 };
 
 const Services: React.FC = () => {
@@ -172,6 +213,7 @@ const Services: React.FC = () => {
                     title={service.title}
                     description={service.description}
                     time={service.time}
+                    imageUrl={getServiceImage(service.title)}
                   />
                 ))}
               </CardContent>
@@ -195,6 +237,7 @@ const Services: React.FC = () => {
                     title={service.title}
                     description={service.description}
                     time={service.time}
+                    imageUrl={getServiceImage(service.title)}
                   />
                 ))}
               </CardContent>

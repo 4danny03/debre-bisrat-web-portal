@@ -20,6 +20,26 @@ interface Event {
   created_at: string;
 }
 
+// Religious event images mapping
+const religiousEventImages = [
+  "/images/events/religious-event-1.jpg",
+  "/images/events/religious-event-2.jpg",
+  "/images/events/religious-event-3.jpg",
+  "/images/church-interior.jpg",
+  "/images/timket-celebration.jpg",
+];
+
+// Function to get a religious image based on event data
+const getReligiousImage = (event: Event): string => {
+  // If the event already has an image, use it
+  if (event.image_url) return event.image_url;
+
+  // Otherwise, assign a religious image based on the event id (for consistency)
+  const imageIndex =
+    parseInt(event.id.charAt(0), 16) % religiousEventImages.length;
+  return religiousEventImages[imageIndex];
+};
+
 export default function Events() {
   const { t } = useLanguage();
   const [events, setEvents] = useState<Event[]>([]);
@@ -75,16 +95,12 @@ export default function Events() {
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {events.map((event) => (
               <Card key={event.id} className="overflow-hidden">
-                {event.image_url ? (
-                  <div
-                    className="h-48 bg-cover bg-center"
-                    style={{ backgroundImage: `url(${event.image_url})` }}
-                  />
-                ) : (
-                  <div className="h-48 bg-church-burgundy/10 flex items-center justify-center">
-                    <Calendar className="h-12 w-12 text-church-burgundy/30" />
-                  </div>
-                )}
+                <div
+                  className="h-48 bg-cover bg-center"
+                  style={{
+                    backgroundImage: `url(${getReligiousImage(event)})`,
+                  }}
+                />
                 <CardContent className="p-6">
                   <h3 className="text-xl font-bold text-church-burgundy mb-2">
                     {event.title}
