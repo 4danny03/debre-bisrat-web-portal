@@ -17,7 +17,7 @@ const Home: React.FC = () => {
         language === "en"
           ? "St. Gabriel Monthly Commemoration"
           : "የቅዱስ ገብርኤል ወርሃዊ ተዝካር",
-      image: "/images/religious/palm-sunday.jpg",
+      image: "/images/religious/church-service.jpg",
     },
     {
       date: "May 25, 2025",
@@ -25,7 +25,7 @@ const Home: React.FC = () => {
         language === "en"
           ? "Sunday School for Children"
           : "የሰንበት ትምህርት ቤት ለልጆች",
-      image: "/images/religious/crucifixion.jpg",
+      image: "/images/gallery/church/church-service.jpg",
     },
     {
       date: "June 19, 2025",
@@ -33,14 +33,14 @@ const Home: React.FC = () => {
         language === "en"
           ? "Church Foundation Anniversary"
           : "የቤተክርስቲያን መሰረት የተጣለበት ቀን",
-      image: "/images/religious/procession.jpg",
+      image: "/images/gallery/church-service.jpg",
     },
   ];
 
   // Slides for the image slider
   const sliderContent = [
     {
-      image: "/images/church-front.jpg",
+      image: "/images/gallery/church-front.jpg",
       title:
         language === "en"
           ? "Welcome to Our Church"
@@ -59,7 +59,7 @@ const Home: React.FC = () => {
           : "የኢየሱስ ክርስቶስ ወደ ኢየሩሳሌም መግባትን የሚያስታውስ",
     },
     {
-      image: "/images/religious/crucifixion.jpg",
+      image: "/images/gallery/church-service.jpg",
       title: language === "en" ? "Holy Sacrifice" : "ቅዱስ መስዋዕት",
       content:
         language === "en"
@@ -99,7 +99,7 @@ const Home: React.FC = () => {
                         <p className="text-lg">{event.title}</p>
                       </div>
                       {event.image && (
-                        <div className="w-16 h-16 rounded-md overflow-hidden ml-2 flex-shrink-0">
+                        <div className="w-20 h-20 rounded-md overflow-hidden ml-3 flex-shrink-0">
                           <img
                             src={event.image}
                             alt={event.title}
@@ -111,11 +111,10 @@ const Home: React.FC = () => {
                   ))}
                 </ul>
                 <div className="mt-6">
-                  <Link
-                    to="/events"
-                    className="text-church-burgundy hover:text-church-gold transition-colors flex items-center"
-                  >
-                    {t("view_all_events")} →
+                  <Link to="/events">
+                    <Button className="bg-church-burgundy hover:bg-church-burgundy/90 text-white font-semibold">
+                      {t("view all")} →
+                    </Button>
                   </Link>
                 </div>
               </div>
@@ -137,16 +136,16 @@ const Home: React.FC = () => {
                 </p>
 
                 <div className="flex flex-col space-y-4">
-                  <Button className="bg-church-gold hover:bg-church-gold/90 text-church-burgundy font-semibold">
-                    {t("donate_now")}
-                  </Button>
+                  <Link to="/donation">
+                    <Button className="w-full bg-church-gold hover:bg-church-gold/90 text-church-burgundy font-semibold">
+                      {t("donate_now")}
+                    </Button>
+                  </Link>
 
                   <Link
                     to="/donation"
                     className="text-church-burgundy hover:text-church-gold transition-colors text-center"
-                  >
-                    {t("learn_more_about_giving")} →
-                  </Link>
+                  ></Link>
                 </div>
               </div>
             </div>

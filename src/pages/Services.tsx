@@ -1,13 +1,22 @@
-import React from "react";
+import React, { useState } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
-import { Settings } from "lucide-react";
+import {
+  Settings,
+  Calendar,
+  Clock,
+  User,
+  Mail,
+  Phone,
+  CalendarCheck,
+} from "lucide-react";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import {
   Accordion,
@@ -16,12 +25,28 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/components/ui/use-toast";
+import { format } from "date-fns";
 
 interface ServiceItemProps {
   title: string;
   description: string;
   time: string;
   imageUrl?: string;
+  requiresAppointment?: boolean;
 }
 
 const ServiceItem: React.FC<ServiceItemProps> = ({
@@ -29,11 +54,40 @@ const ServiceItem: React.FC<ServiceItemProps> = ({
   description,
   time,
   imageUrl,
+  requiresAppointment = false,
 }) => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { language } = useLanguage();
+  const { toast } = useToast();
+  const handleAppointmentSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get("name") as string;
+    const email = formData.get("email") as string;
+    const phone = formData.get("phone") as string;
+    const date = formData.get("date") as string;
+    const time = formData.get("time") as string;
+    const notes = formData.get("notes") as string;
+
+    // In a real application, you would send this data to your backend
+    console.log({ name, email, phone, date, time, notes, service: title });
+
+    // Show success message
+    toast({
+      title: language === "en" ? "Appointment Request Sent" : "የቀጠሮ ጥያቄ ተልኳል",
+      description:
+        language === "en"
+          ? `We've received your request for ${title}. We'll contact you soon to confirm.`
+          : `ለ${title} የቀጠሮ ጥያቄዎን ተቀብለናል። በቅርቡ ለማረጋገጥ እናገኝዎታለን።`,
+    });
+
+    setIsDialogOpen(false);
+  };
+
   return (
     <div className="border-l-2 border-church-gold pl-4 mb-6">
       {imageUrl && (
-        <div className="mb-3 rounded-md overflow-hidden w-24 h-24 float-right ml-3">
+        <div className="mb-3 rounded-md overflow-hidden w-32 h-32 float-right ml-4">
           <img
             src={imageUrl}
             alt={title}
@@ -44,6 +98,125 @@ const ServiceItem: React.FC<ServiceItemProps> = ({
       <h3 className="text-xl font-serif text-church-burgundy">{title}</h3>
       <p className="text-sm text-gray-500 mb-2">{time}</p>
       <p className="text-gray-700">{description}</p>
+
+      {requiresAppointment && (
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button
+              variant="outline"
+              size="xs"
+              className="mt-2 bg-church-burgundy text-white hover:bg-church-burgundy/90 text-xs py-1 px-2"
+            >
+              <CalendarCheck className="mr-1 h-3 w-3" />
+              {language === "en" ? "Request Appointment" : "ቀጠሮ ይጠይቁ"}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>
+                {language === "en" ? "Request Appointment" : "ቀጠሮ ይጠይቁ"}
+              </DialogTitle>
+              <DialogDescription>
+                {language === "en"
+                  ? `Fill out this form to request an appointment for ${title}.`
+                  : `ለ${title} ቀጠሮ ለመጠየቅ ይህን ቅጽ ይሙሉ።`}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleAppointmentSubmit}>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="name" className="text-right">
+                    <User className="h-4 w-4 inline mr-1" />
+                    {language === "en" ? "Name" : "ስም"}
+                  </Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    className="col-span-3"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="email" className="text-right">
+                    <Mail className="h-4 w-4 inline mr-1" />
+                    {language === "en" ? "Email" : "ኢሜይል"}
+                  </Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    className="col-span-3"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="phone" className="text-right">
+                    <Phone className="h-4 w-4 inline mr-1" />
+                    {language === "en" ? "Phone" : "ስልክ"}
+                  </Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    className="col-span-3"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="date" className="text-right">
+                    <Calendar className="h-4 w-4 inline mr-1" />
+                    {language === "en" ? "Date" : "ቀን"}
+                  </Label>
+                  <Input
+                    id="date"
+                    name="date"
+                    type="date"
+                    className="col-span-3"
+                    min={format(new Date(), "yyyy-MM-dd")}
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="time" className="text-right">
+                    <Clock className="h-4 w-4 inline mr-1" />
+                    {language === "en" ? "Time" : "ሰዓት"}
+                  </Label>
+                  <Input
+                    id="time"
+                    name="time"
+                    type="time"
+                    className="col-span-3"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="notes" className="text-right">
+                    {language === "en" ? "Notes" : "ማስታወሻዎች"}
+                  </Label>
+                  <Textarea
+                    id="notes"
+                    name="notes"
+                    className="col-span-3"
+                    placeholder={
+                      language === "en"
+                        ? "Any additional information..."
+                        : "ማንኛውም ተጨማሪ መረጃ..."
+                    }
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  type="submit"
+                  className="bg-church-burgundy hover:bg-church-burgundy/90"
+                >
+                  {language === "en" ? "Submit Request" : "ጥያቄ አስገባ"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
@@ -52,24 +225,24 @@ const ServiceItem: React.FC<ServiceItemProps> = ({
 const religiousServiceImages = {
   "Christian Initiation": "/images/religious/palm-sunday.jpg",
   "ክርስትና ማስነሳት": "/images/religious/palm-sunday.jpg",
-  "Qendil Prayer": "/images/religious/crucifixion.jpg",
-  "ጸሎተ ቀንዲል": "/images/religious/crucifixion.jpg",
-  "Marriage and Communion Education": "/images/religious/procession.jpg",
-  "የጋብቻና የቁርባን ትምህርት": "/images/religious/procession.jpg",
-  "Counseling Services": "/images/religious/palm-sunday.jpg",
-  "የምክር አገልግሎት": "/images/religious/palm-sunday.jpg",
-  "Marriage Ceremony": "/images/religious/procession.jpg",
-  "ጋብቻ መፈፀም": "/images/religious/procession.jpg",
+  "Qendil Prayer": "/images/gallery/church/sanctuary.jpg",
+  "ጸሎተ ቀንዲል": "/images/gallery/church/sanctuary.jpg",
+  "Marriage and Communion Education": "/images/gallery/ceremony-1.jpg",
+  "የጋብቻና የቁርባን ትምህርት": "/images/gallery/ceremony-1.jpg",
+  "Counseling Services": "/images/gallery/church/altar.jpg",
+  "የምክር አገልግሎት": "/images/gallery/church/altar.jpg",
+  "Marriage Ceremony": "/images/gallery/timket.jpg",
+  "ጋብቻ መፈፀም": "/images/gallery/timket.jpg",
   "Funeral Prayer": "/images/religious/crucifixion.jpg",
   "ጸሎተ ፍትሐት": "/images/religious/crucifixion.jpg",
-  "Holy Water Baptism": "/images/religious/procession.jpg",
-  "ጸበል መጠመቅ": "/images/religious/procession.jpg",
-  "Entering Lent": "/images/religious/palm-sunday.jpg",
-  "ሱባኤ መግባት": "/images/religious/palm-sunday.jpg",
-  "Qeder Baptism": "/images/religious/procession.jpg",
-  "የቄደር ጥምቀት": "/images/religious/procession.jpg",
-  "Divine Liturgy (Kidase)": "/images/religious/crucifixion.jpg",
-  ቅዳሴ: "/images/religious/crucifixion.jpg",
+  "Holy Water Baptism": "/images/gallery/timket.jpg",
+  "ጸበል መጠመቅ": "/images/gallery/timket.jpg",
+  "Entering Lent": "/images/religious/procession.jpg",
+  "ሱባኤ መግባት": "/images/religious/procession.jpg",
+  "Qeder Baptism": "/images/gallery/nd14_timket_09-3x1500-1.jpg",
+  "የቄደር ጥምቀት": "/images/gallery/nd14_timket_09-3x1500-1.jpg",
+  "Divine Liturgy (Kidase)": "/images/gallery/church-service.jpg",
+  ቅዳሴ: "/images/gallery/church-service.jpg",
 };
 
 // Function to get a religious image based on service title
@@ -83,20 +256,31 @@ const Services: React.FC = () => {
   // Service data based on the provided church services
   const regularServices = [
     {
-      title: language === "en" ? "Christian Initiation" : "ክርስትና ማስነሳት",
+      title: language === "en" ? "Holy Water Baptism" : "ጸበል መጠመቅ",
       description:
         language === "en"
-          ? "The sacrament of Christian initiation, introducing new members to the faith and church community."
-          : "አዲስ አማኞችን ወደ እምነት እና የቤተክርስቲያን ማህበረሰብ የሚያስተዋውቅ የክርስትና ሥርዓት።",
-      time: language === "en" ? "By appointment" : "በቀጠሮ",
+          ? "Blessing and immersion in holy water for spiritual cleansing and healing."
+          : "ለመንፈሳዊ ንጽህና እና ፈውስ በቅዱስ ውሃ ውስጥ መባረክ እና መጠመቅ።",
+      time: language === "en" ? "Sundays after Divine Liturgy" : "እሁድ ከቅዳሴ በኋላ",
+      requiresAppointment: false,
     },
     {
-      title: language === "en" ? "Qendil Prayer" : "ጸሎተ ቀንዲል",
+      title: language === "en" ? "Marriage Ceremony" : "ጋብቻ መፈፀም",
       description:
         language === "en"
-          ? "Special prayer service with the blessing of oil for healing and spiritual protection."
-          : "ለፈውስ እና ለመንፈሳዊ ጥበቃ ከዘይት ቡራኬ ጋር የሚደረግ ልዩ የጸሎት አገልግሎት።",
+          ? "Traditional Orthodox Christian marriage ceremony following church customs and traditions."
+          : "የቤተክርስቲያን ልማዶችን እና ወጎችን የሚከተል ባህላዊ የኦርቶዶክስ ክርስቲያን የጋብቻ ሥርዓት።",
       time: language === "en" ? "By appointment" : "በቀጠሮ",
+      requiresAppointment: true,
+    },
+    {
+      title: language === "en" ? "Funeral Prayer" : "ጸሎተ ፍትሐት",
+      description:
+        language === "en"
+          ? "Prayer service for the departed, offering comfort to families and commending the soul to God's mercy."
+          : "ለሟቾች የሚደረግ የጸሎት አገልግሎት፣ ለቤተሰቦች መጽናናትን የሚሰጥ እና ነፍስን ለእግዚአብሔር ምሕረት የሚያስረክብ።",
+      time: language === "en" ? "By appointment" : "በቀጠሮ",
+      requiresAppointment: true,
     },
     {
       title:
@@ -111,6 +295,7 @@ const Services: React.FC = () => {
         language === "en"
           ? "Saturdays, 2:00 PM - 4:00 PM"
           : "ቅዳሜ፣ 2:00 ከሰዓት - 4:00 ከሰዓት",
+      requiresAppointment: false,
     },
     {
       title: language === "en" ? "Counseling Services" : "የምክር አገልግሎት",
@@ -119,34 +304,38 @@ const Services: React.FC = () => {
           ? "Counseling services for health issues, addiction, marriage problems, and other personal challenges."
           : "በጤና፣ በሱስ፣ በትዳር እና በሌሎች ችግሮች የምክር አገልግሎት።",
       time: language === "en" ? "By appointment" : "በቀጠሮ",
-    },
-    {
-      title: language === "en" ? "Marriage Ceremony" : "ጋብቻ መፈፀም",
-      description:
-        language === "en"
-          ? "Traditional Orthodox Christian marriage ceremony following church customs and traditions."
-          : "የቤተክርስቲያን ልማዶችን እና ወጎችን የሚከተል ባህላዊ የኦርቶዶክስ ክርስቲያን የጋብቻ ሥርዓት።",
-      time: language === "en" ? "By appointment" : "በቀጠሮ",
-    },
-    {
-      title: language === "en" ? "Funeral Prayer" : "ጸሎተ ፍትሐት",
-      description:
-        language === "en"
-          ? "Prayer service for the departed, offering comfort to families and commending the soul to God's mercy."
-          : "ለሟቾች የሚደረግ የጸሎት አገልግሎት፣ ለቤተሰቦች መጽናናትን የሚሰጥ እና ነፍስን ለእግዚአብሔር ምሕረት የሚያስረክብ።",
-      time: language === "en" ? "By appointment" : "በቀጠሮ",
-    },
-    {
-      title: language === "en" ? "Holy Water Baptism" : "ጸበል መጠመቅ",
-      description:
-        language === "en"
-          ? "Blessing and immersion in holy water for spiritual cleansing and healing."
-          : "ለመንፈሳዊ ንጽህና እና ፈውስ በቅዱስ ውሃ ውስጥ መባረክ እና መጠመቅ።",
-      time: language === "en" ? "Sundays after Divine Liturgy" : "እሁድ ከቅዳሴ በኋላ",
+      requiresAppointment: true,
     },
   ];
 
   const specialServices = [
+    {
+      title: language === "en" ? "Qendil Prayer" : "ጸሎተ ቀንዲል",
+      description:
+        language === "en"
+          ? "Special prayer service with the blessing of oil for healing and spiritual protection."
+          : "ለፈውስ እና ለመንፈሳዊ ጥበቃ ከዘይት ቡራኬ ጋር የሚደረግ ልዩ የጸሎት አገልግሎት።",
+      time: language === "en" ? "By appointment" : "በቀጠሮ",
+      requiresAppointment: true,
+    },
+    {
+      title: language === "en" ? "Qeder Baptism" : "የቄደር ጥምቀት",
+      description:
+        language === "en"
+          ? "Special baptismal service following traditional Ethiopian Orthodox customs."
+          : "ባህላዊ የኢትዮጵያ ኦርቶዶክስ ወጎችን የሚከተል ልዩ የጥምቀት አገልግሎት።",
+      time: language === "en" ? "By appointment" : "በቀጠሮ",
+      requiresAppointment: true,
+    },
+    {
+      title: language === "en" ? "Christian Initiation" : "ክርስትና ማስነሳት",
+      description:
+        language === "en"
+          ? "The sacrament of Christian initiation, introducing new members to the faith and church community."
+          : "አዲስ አማኞችን ወደ እምነት እና የቤተክርስቲያን ማህበረሰብ የሚያስተዋውቅ የክርስትና ሥርዓት።",
+      time: language === "en" ? "By appointment" : "በቀጠሮ",
+      requiresAppointment: true,
+    },
     {
       title: language === "en" ? "Entering Lent" : "ሱባኤ መግባት",
       description:
@@ -157,14 +346,7 @@ const Services: React.FC = () => {
         language === "en"
           ? "Beginning of major fasting periods"
           : "የዋና ዋና የጾም ወቅቶች መጀመሪያ",
-    },
-    {
-      title: language === "en" ? "Qeder Baptism" : "የቄደር ጥምቀት",
-      description:
-        language === "en"
-          ? "Special baptismal service following traditional Ethiopian Orthodox customs."
-          : "ባህላዊ የኢትዮጵያ ኦርቶዶክስ ወጎችን የሚከተል ልዩ የጥምቀት አገልግሎት።",
-      time: language === "en" ? "By appointment" : "በቀጠሮ",
+      requiresAppointment: false,
     },
     {
       title: language === "en" ? "Divine Liturgy (Kidase)" : "ቅዳሴ",
@@ -176,6 +358,7 @@ const Services: React.FC = () => {
         language === "en"
           ? "Sundays, 7:00 AM - 12:00 PM"
           : "እሁድ፣ 7:00 ጠዋት - 12:00 ከሰዓት",
+      requiresAppointment: false,
     },
   ];
 
@@ -214,6 +397,7 @@ const Services: React.FC = () => {
                     description={service.description}
                     time={service.time}
                     imageUrl={getServiceImage(service.title)}
+                    requiresAppointment={service.requiresAppointment}
                   />
                 ))}
               </CardContent>
@@ -238,6 +422,7 @@ const Services: React.FC = () => {
                     description={service.description}
                     time={service.time}
                     imageUrl={getServiceImage(service.title)}
+                    requiresAppointment={service.requiresAppointment}
                   />
                 ))}
               </CardContent>

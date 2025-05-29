@@ -22,11 +22,11 @@ interface Event {
 
 // Religious event images mapping
 const religiousEventImages = [
-  "/images/events/religious-event-1.jpg",
-  "/images/events/religious-event-2.jpg",
-  "/images/events/religious-event-3.jpg",
-  "/images/church-interior.jpg",
-  "/images/timket-celebration.jpg",
+  "/images/religious/palm-sunday.jpg",
+  "/images/religious/crucifixion.jpg",
+  "/images/religious/procession.jpg",
+  "/images/gallery/timket.jpg",
+  "/images/gallery/church-service.jpg",
 ];
 
 // Function to get a religious image based on event data
@@ -96,7 +96,7 @@ export default function Events() {
             {events.map((event) => (
               <Card key={event.id} className="overflow-hidden">
                 <div
-                  className="h-48 bg-cover bg-center"
+                  className="h-56 bg-cover bg-center"
                   style={{
                     backgroundImage: `url(${getReligiousImage(event)})`,
                   }}

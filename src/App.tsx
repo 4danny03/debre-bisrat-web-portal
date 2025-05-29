@@ -2,7 +2,7 @@ import * as React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, HashRouter } from "react-router-dom";
 import routes from "tempo-routes";
 import Home from "./pages/Home";
 import About from "./pages/About";
@@ -31,12 +31,16 @@ import AdminUsers from "./pages/admin/Users";
 import { LanguageProvider } from "./contexts/LanguageContext";
 
 export default function App(): React.ReactElement {
+  // Use HashRouter for GitHub Pages deployment
+  const isProduction = import.meta.env.MODE === "production";
+  const Router = isProduction ? HashRouter : BrowserRouter;
+
   return (
     <LanguageProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <Router>
           <Routes>
             {/* Tempo routes */}
             {import.meta.env.VITE_TEMPO === "true" &&
@@ -78,7 +82,7 @@ export default function App(): React.ReactElement {
             )}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
+        </Router>
       </TooltipProvider>
     </LanguageProvider>
   );
