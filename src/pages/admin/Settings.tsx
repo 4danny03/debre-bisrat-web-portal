@@ -1,17 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Settings {
   church_name: string;
@@ -25,10 +25,10 @@ interface Settings {
 
 export default function Settings() {
   const [settings, setSettings] = useState<Settings>({
-    church_name: '',
-    church_address: '',
-    phone_number: '',
-    email: '',
+    church_name: "",
+    church_address: "",
+    phone_number: "",
+    email: "",
     enable_donations: true,
     enable_membership: true,
     maintenance_mode: false,
@@ -43,18 +43,42 @@ export default function Settings() {
 
   const loadSettings = async () => {
     try {
-      const { data, error } = await supabase
-        .from('site_settings')
-        .select('*')
+      // Try to get settings, create default if none exist
+      let { data, error } = await supabase
+        .from("site_settings")
+        .select("*")
+        .limit(1)
         .single();
 
+      // If no settings exist, create default ones
+      if (error && error.code === "PGRST116") {
+        const { data: newData, error: insertError } = await supabase
+          .from("site_settings")
+          .insert({
+            id: 1,
+            church_name: "St. Gabriel Ethiopian Orthodox Church",
+            church_address: "",
+            phone_number: "",
+            email: "",
+            enable_donations: true,
+            enable_membership: true,
+            maintenance_mode: false,
+          })
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        data = newData;
+        error = null;
+      }
+
       if (error) throw error;
-      
+
       if (data) {
         setSettings(data);
       }
     } catch (error) {
-      console.error('Error loading settings:', error);
+      console.error("Error loading settings:", error);
       toast({
         title: "Error",
         description: "Failed to load settings",
@@ -70,13 +94,11 @@ export default function Settings() {
     setSaving(true);
 
     try {
-      const { error } = await supabase
-        .from('site_settings')
-        .upsert({
-          id: 1, // Use a constant ID since we only have one settings record
-          ...settings,
-          updated_at: new Date().toISOString(),
-        });
+      const { error } = await supabase.from("site_settings").upsert({
+        id: 1, // Use a constant ID since we only have one settings record
+        ...settings,
+        updated_at: new Date().toISOString(),
+      });
 
       if (error) throw error;
 
@@ -85,7 +107,7 @@ export default function Settings() {
         description: "Settings saved successfully",
       });
     } catch (error) {
-      console.error('Error saving settings:', error);
+      console.error("Error saving settings:", error);
       toast({
         title: "Error",
         description: "Failed to save settings",
@@ -97,7 +119,7 @@ export default function Settings() {
   };
 
   const handleChange = (field: keyof Settings, value: string | boolean) => {
-    setSettings(prev => ({ ...prev, [field]: value }));
+    setSettings((prev) => ({ ...prev, [field]: value }));
   };
 
   if (loading) {
@@ -117,7 +139,7 @@ export default function Settings() {
             <Input
               id="churchName"
               value={settings.church_name}
-              onChange={(e) => handleChange('church_name', e.target.value)}
+              onChange={(e) => handleChange("church_name", e.target.value)}
             />
           </div>
           <div className="space-y-2">
@@ -125,7 +147,7 @@ export default function Settings() {
             <Input
               id="address"
               value={settings.church_address}
-              onChange={(e) => handleChange('church_address', e.target.value)}
+              onChange={(e) => handleChange("church_address", e.target.value)}
             />
           </div>
           <div className="space-y-2">
@@ -133,7 +155,7 @@ export default function Settings() {
             <Input
               id="phone"
               value={settings.phone_number}
-              onChange={(e) => handleChange('phone_number', e.target.value)}
+              onChange={(e) => handleChange("phone_number", e.target.value)}
             />
           </div>
           <div className="space-y-2">
@@ -142,7 +164,7 @@ export default function Settings() {
               id="email"
               type="email"
               value={settings.email}
-              onChange={(e) => handleChange('email', e.target.value)}
+              onChange={(e) => handleChange("email", e.target.value)}
             />
           </div>
         </CardContent>
@@ -157,38 +179,50 @@ export default function Settings() {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Enable Donations</Label>
-              <p className="text-sm text-gray-500">Allow visitors to make donations</p>
+              <p className="text-sm text-gray-500">
+                Allow visitors to make donations
+              </p>
             </div>
             <Switch
               checked={settings.enable_donations}
-              onCheckedChange={(checked) => handleChange('enable_donations', checked)}
+              onCheckedChange={(checked) =>
+                handleChange("enable_donations", checked)
+              }
             />
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Enable Membership</Label>
-              <p className="text-sm text-gray-500">Allow visitors to register for membership</p>
+              <p className="text-sm text-gray-500">
+                Allow visitors to register for membership
+              </p>
             </div>
             <Switch
               checked={settings.enable_membership}
-              onCheckedChange={(checked) => handleChange('enable_membership', checked)}
+              onCheckedChange={(checked) =>
+                handleChange("enable_membership", checked)
+              }
             />
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Maintenance Mode</Label>
-              <p className="text-sm text-gray-500">Put the website in maintenance mode</p>
+              <p className="text-sm text-gray-500">
+                Put the website in maintenance mode
+              </p>
             </div>
             <Switch
               checked={settings.maintenance_mode}
-              onCheckedChange={(checked) => handleChange('maintenance_mode', checked)}
+              onCheckedChange={(checked) =>
+                handleChange("maintenance_mode", checked)
+              }
             />
           </div>
         </CardContent>
       </Card>
 
       <Button type="submit" disabled={saving}>
-        {saving ? 'Saving...' : 'Save Settings'}
+        {saving ? "Saving..." : "Save Settings"}
       </Button>
     </form>
   );

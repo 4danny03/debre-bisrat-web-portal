@@ -9,5 +9,6 @@ TempoDevtools.init();
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode className="size-0.5">
     <App />
+    <div className="w-[71px] h-[55px]"></div>
   </React.StrictMode>,
 );

@@ -70,6 +70,7 @@ interface Member {
   membership_type: "regular" | "student" | "senior" | "family";
   membership_status: "pending" | "active" | "inactive";
   join_date: string;
+  membership_date: string | null;
   last_renewal_date: string | null;
   next_renewal_date: string | null;
   created_at: string;
@@ -157,6 +158,7 @@ export default function AdminMembers() {
           membership_type: formData.get("membership_type") as string,
           membership_status: "active",
           join_date: new Date().toISOString(),
+          membership_date: new Date().toISOString(),
         },
       ]);
 
