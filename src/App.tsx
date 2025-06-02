@@ -2,7 +2,7 @@ import * as React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, HashRouter } from "react-router-dom";
 import routes from "tempo-routes";
 import Home from "./pages/Home";
 import About from "./pages/About";
@@ -28,58 +28,77 @@ import AdminTestimonials from "./pages/admin/Testimonials";
 import AdminPrayerRequests from "./pages/admin/PrayerRequests";
 import AdminDonations from "./pages/admin/Donations";
 import AdminUsers from "./pages/admin/Users";
+import AdminHealthCheck from "./pages/admin/HealthCheck";
 import { LanguageProvider } from "./contexts/LanguageContext";
+import { DataProvider } from "./contexts/DataContext";
+import ErrorBoundary from "./components/ErrorBoundary";
+import "@/utils/debugSync"; // Initialize debug utilities
 
 export default function App(): React.ReactElement {
-  return (
-    <LanguageProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            {/* Tempo routes */}
-            {import.meta.env.VITE_TEMPO === "true" &&
-              routes.map((route) => (
-                <Route
-                  key={route.path}
-                  path={route.path}
-                  element={route.element}
-                />
-              ))}
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/events" element={<Events />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/membership" element={<MembershipRegistration />} />
-            <Route path="/donation" element={<Donation />} />
-            <Route path="/donation-success" element={<DonationSuccess />} />
-            <Route path="/donation-demo" element={<DonationDemo />} />
-            <Route path="/gallery" element={<Gallery />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/sermons" element={<Sermons />} />
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route path="login" element={<AdminLogin />} />
-              <Route path="dashboard" element={<AdminDashboard />} />
-              <Route path="events" element={<AdminEvents />} />
-              <Route path="sermons" element={<AdminSermons />} />
-              <Route path="gallery" element={<AdminGallery />} />
-              <Route path="members" element={<AdminMembers />} />
-              <Route path="testimonials" element={<AdminTestimonials />} />
-              <Route path="prayer-requests" element={<AdminPrayerRequests />} />
-              <Route path="donations" element={<AdminDonations />} />
-              <Route path="users" element={<AdminUsers />} />
-              <Route path="settings" element={<AdminSettings />} />
-            </Route>
+  // Use HashRouter for GitHub Pages deployment
+  const isProduction = import.meta.env.MODE === "production";
+  const Router = isProduction ? HashRouter : BrowserRouter;
 
-            {/* Add this before the catchall route */}
-            {import.meta.env.VITE_TEMPO === "true" && (
-              <Route path="/tempobook/*" />
-            )}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </LanguageProvider>
+  return (
+    <ErrorBoundary>
+      <DataProvider>
+        <LanguageProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <Router>
+              <Routes>
+                {/* Tempo routes */}
+                {import.meta.env.VITE_TEMPO === "true" &&
+                  routes.map((route) => (
+                    <Route
+                      key={route.path}
+                      path={route.path}
+                      element={route.element}
+                    />
+                  ))}
+                <Route path="/" element={<Home />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/events" element={<Events />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route
+                  path="/membership"
+                  element={<MembershipRegistration />}
+                />
+                <Route path="/donation" element={<Donation />} />
+                <Route path="/donation-success" element={<DonationSuccess />} />
+                <Route path="/donation-demo" element={<DonationDemo />} />
+                <Route path="/gallery" element={<Gallery />} />
+                <Route path="/services" element={<Services />} />
+                <Route path="/sermons" element={<Sermons />} />
+                <Route path="/admin" element={<AdminLayout />}>
+                  <Route path="login" element={<AdminLogin />} />
+                  <Route path="dashboard" element={<AdminDashboard />} />
+                  <Route path="events" element={<AdminEvents />} />
+                  <Route path="sermons" element={<AdminSermons />} />
+                  <Route path="gallery" element={<AdminGallery />} />
+                  <Route path="members" element={<AdminMembers />} />
+                  <Route path="testimonials" element={<AdminTestimonials />} />
+                  <Route
+                    path="prayer-requests"
+                    element={<AdminPrayerRequests />}
+                  />
+                  <Route path="donations" element={<AdminDonations />} />
+                  <Route path="users" element={<AdminUsers />} />
+                  <Route path="settings" element={<AdminSettings />} />
+                  <Route path="health" element={<AdminHealthCheck />} />
+                </Route>
+
+                {/* Add this before the catchall route */}
+                {import.meta.env.VITE_TEMPO === "true" && (
+                  <Route path="/tempobook/*" />
+                )}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Router>
+          </TooltipProvider>
+        </LanguageProvider>
+      </DataProvider>
+    </ErrorBoundary>
   );
 }

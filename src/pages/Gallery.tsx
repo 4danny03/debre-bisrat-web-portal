@@ -1,8 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
-import { Image, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Image, X, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { api } from "@/integrations/supabase/api";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useDataRefresh } from "@/hooks/useDataRefresh";
 
 interface GalleryImageProps {
   src: string;
@@ -14,14 +18,14 @@ const GalleryImage: React.FC<GalleryImageProps> = ({ src, alt, onClick }) => {
   const [loaded, setLoaded] = useState(false);
 
   return (
-    <div 
+    <div
       className="relative aspect-square overflow-hidden rounded-md bg-muted cursor-pointer"
       onClick={onClick}
     >
       <img
         src={src}
         alt={alt}
-        className={`h-full w-full object-cover transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+        className={`h-full w-full object-cover transition-opacity duration-500 ${loaded ? "opacity-100" : "opacity-0"}`}
         onLoad={() => setLoaded(true)}
       />
       {!loaded && (
@@ -81,42 +85,111 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, onClose }) => {
   );
 };
 
+interface GalleryImageData {
+  id: string;
+  title: string;
+  description: string | null;
+  image_url: string;
+  created_at: string;
+}
+
 const Gallery: React.FC = () => {
   const { t, language } = useLanguage();
-  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
+    null,
+  );
+  const [galleryImages, setGalleryImages] = useState<GalleryImageData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const galleryImages = [
+  // Fallback images if no database images are available
+  const fallbackImages = [
     {
-      src: "/images/gallery/church-aerial.jpg",
-      title: language === 'en' ? "Church Building" : "ቤተክርስቲያን",
-      description: ""
+      id: "fallback-1",
+      title: language === "en" ? "Church Building" : "ቤተክርስቲያን",
+      description: "",
+      image_url: "/images/gallery/church-aerial.jpg",
+      created_at: new Date().toISOString(),
     },
     {
-      src: "/images/gallery/church-service.jpg",
-      title: language === 'en' ? "Church Service" : "የቤተክርስቲያን አገልግሎት",
-      description: ""
+      id: "fallback-2",
+      title: language === "en" ? "Church Service" : "የቤተክርስቲያን አገልግሎት",
+      description: "",
+      image_url: "/images/gallery/church-service.jpg",
+      created_at: new Date().toISOString(),
     },
     {
-      src: "/images/gallery/timket.jpg",
-      title: language === 'en' ? "Timket" : "ጥምቀት",
-      description: ""
+      id: "fallback-3",
+      title: language === "en" ? "Timket" : "ጥምቀት",
+      description: "",
+      image_url: "/images/gallery/timket.jpg",
+      created_at: new Date().toISOString(),
     },
     {
-      src: "/images/gallery/ceremony-1.jpg",
-      title: language === 'en' ? "Ceremony" : "ስርዓተ ክብር",
-      description: ""
+      id: "fallback-4",
+      title: language === "en" ? "Ceremony" : "ስርዓተ ክብር",
+      description: "",
+      image_url: "/images/gallery/ceremony-1.jpg",
+      created_at: new Date().toISOString(),
     },
     {
-      src: "/images/gallery/ceremony-2.jpg",
-      title: language === 'en' ? "Ceremony" : "ስርዓተ ክብር",
-      description: ""
+      id: "fallback-5",
+      title: language === "en" ? "Ceremony" : "ስርዓተ ክብር",
+      description: "",
+      image_url: "/images/gallery/ceremony-2.jpg",
+      created_at: new Date().toISOString(),
     },
     {
-      src: "/images/gallery/ceremony-3.jpg",
-      title: language === 'en' ? "Ceremony" : "ስርዓተ ክብር",
-      description: ""
-    }
+      id: "fallback-6",
+      title: language === "en" ? "Ceremony" : "ስርዓተ ክብር",
+      description: "",
+      image_url: "/images/gallery/ceremony-3.jpg",
+      created_at: new Date().toISOString(),
+    },
   ];
+
+  const fetchGalleryImages = async () => {
+    try {
+      setLoading(true);
+      const data = await api.gallery.getGalleryImages();
+
+      if (data && data.length > 0) {
+        setGalleryImages(data);
+      } else {
+        // Use fallback images if no database images
+        setGalleryImages(fallbackImages);
+      }
+    } catch (err) {
+      console.error("Error fetching gallery images:", err);
+      // Use fallback images on error
+      setGalleryImages(fallbackImages);
+      setError(
+        language === "en"
+          ? "Failed to load some gallery images. Showing available images."
+          : "አንዳንድ የጋለሪ ምስሎችን መጫን አልተቻለም። የሚገኙ ምስሎች ይታያሉ።",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchGalleryImages();
+  }, [language]);
+
+  // Use enhanced data refresh hook
+  const { manualRefresh, forceSyncData } = useDataRefresh(
+    fetchGalleryImages,
+    3 * 60 * 1000, // Refresh every 3 minutes
+    [language],
+    "gallery",
+  );
+
+  const handleManualRefresh = async () => {
+    console.log("Manual refresh triggered for gallery");
+    await manualRefresh();
+    await forceSyncData();
+  };
 
   const handleImageClick = (index: number) => {
     setSelectedImageIndex(index);
@@ -129,14 +202,21 @@ const Gallery: React.FC = () => {
 
   const handlePrevious = () => {
     if (selectedImageIndex === null) return;
-    setSelectedImageIndex((selectedImageIndex - 1 + galleryImages.length) % galleryImages.length);
+    setSelectedImageIndex(
+      (selectedImageIndex - 1 + galleryImages.length) % galleryImages.length,
+    );
   };
 
-  const selectedImage = selectedImageIndex !== null ? {
-    ...galleryImages[selectedImageIndex],
-    onNext: handleNext,
-    onPrevious: handlePrevious,
-  } : null;
+  const selectedImage =
+    selectedImageIndex !== null
+      ? {
+          src: galleryImages[selectedImageIndex].image_url,
+          title: galleryImages[selectedImageIndex].title,
+          description: galleryImages[selectedImageIndex].description || "",
+          onNext: handleNext,
+          onPrevious: handlePrevious,
+        }
+      : null;
 
   return (
     <Layout>
@@ -144,28 +224,72 @@ const Gallery: React.FC = () => {
         <div className="container mx-auto">
           <div className="text-center mb-12">
             <Image className="inline-block h-12 w-12 text-church-burgundy mb-3" />
-            <h1 className="text-4xl font-serif text-church-burgundy mb-4">{t("gallery_title")}</h1>
-            <p className="max-w-2xl mx-auto text-lg">{t("gallery_description")}</p>
+            <h1 className="text-4xl font-serif text-church-burgundy mb-4">
+              {t("gallery_title")}
+            </h1>
+            <p className="max-w-2xl mx-auto text-lg mb-4">
+              {t("gallery_description")}
+            </p>
+            <Button
+              onClick={handleManualRefresh}
+              variant="outline"
+              size="sm"
+              disabled={loading}
+              className="inline-flex items-center"
+            >
+              <RefreshCw
+                className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+              />
+              {language === "en" ? "Refresh Gallery" : "ጋለሪ አድስ"}
+            </Button>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {galleryImages.map((image, i) => (
-              <Card key={i} className="overflow-hidden">
-                <CardContent className="p-0">
-                  <div className="relative">
-                    <GalleryImage 
-                      src={image.src} 
-                      alt={image.title}
-                      onClick={() => handleImageClick(i)} 
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+
+          {error && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-800 text-sm">
+              {error}
+            </div>
+          )}
+
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <Card key={i} className="overflow-hidden">
+                  <CardContent className="p-0">
+                    <Skeleton className="aspect-square w-full" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {galleryImages.map((image, i) => (
+                <Card key={image.id} className="overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="relative">
+                      <GalleryImage
+                        src={image.image_url}
+                        alt={image.title}
+                        onClick={() => handleImageClick(i)}
+                      />
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
+                        <h3 className="text-white text-sm font-medium truncate">
+                          {image.title}
+                        </h3>
+                        {image.description && (
+                          <p className="text-white/80 text-xs truncate">
+                            {image.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </div>
-      
+
       <ImageModal
         image={selectedImage}
         onClose={() => setSelectedImageIndex(null)}

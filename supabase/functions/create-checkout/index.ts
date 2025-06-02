@@ -36,9 +36,9 @@ serve(async (req) => {
       );
     }
 
-    // Initialize Stripe with the test API key for demo purposes
-    // In production, you would use: Deno.env.get("STRIPE_SECRET_KEY")
-    const stripe = new Stripe(STRIPE_TEST_KEY, {
+    // Initialize Stripe with the API key from environment variables
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || STRIPE_TEST_KEY;
+    const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
     });
 

@@ -3,10 +3,11 @@ import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
 import { api } from "@/integrations/supabase/api";
 import { format } from "date-fns";
-import { Calendar, MapPin, Clock } from "lucide-react";
+import { Calendar, MapPin, Clock, RefreshCw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDataRefresh } from "@/hooks/useDataRefresh";
 
 interface Event {
   id: string;
@@ -20,6 +21,26 @@ interface Event {
   created_at: string;
 }
 
+// Religious event images mapping
+const religiousEventImages = [
+  "/images/religious/palm-sunday.jpg",
+  "/images/religious/crucifixion.jpg",
+  "/images/religious/procession.jpg",
+  "/images/gallery/timket.jpg",
+  "/images/gallery/church-service.jpg",
+];
+
+// Function to get a religious image based on event data
+const getReligiousImage = (event: Event): string => {
+  // If the event already has an image, use it
+  if (event.image_url) return event.image_url;
+
+  // Otherwise, assign a religious image based on the event id (for consistency)
+  const imageIndex =
+    parseInt(event.id.charAt(0), 16) % religiousEventImages.length;
+  return religiousEventImages[imageIndex];
+};
+
 export default function Events() {
   const { t } = useLanguage();
   const [events, setEvents] = useState<Event[]>([]);
@@ -29,6 +50,20 @@ export default function Events() {
     loadEvents();
   }, []);
 
+  // Use enhanced data refresh hook
+  const { manualRefresh, forceSyncData } = useDataRefresh(
+    loadEvents,
+    3 * 60 * 1000, // Refresh every 3 minutes
+    [],
+    "events",
+  );
+
+  const handleManualRefresh = async () => {
+    console.log("Manual refresh triggered for events");
+    await manualRefresh();
+    await forceSyncData();
+  };
+
   const loadEvents = async () => {
     try {
       setLoading(true);
@@ -36,6 +71,11 @@ export default function Events() {
       setEvents(data || []);
     } catch (error) {
       console.error("Error loading events:", error);
+      // Don't show error to user for background refreshes
+      if (events.length === 0) {
+        // Only show error if we have no events to display
+        console.error("Failed to load events on initial load");
+      }
     } finally {
       setLoading(false);
     }
@@ -48,11 +88,23 @@ export default function Events() {
           <h1 className="text-3xl md:text-4xl font-bold text-church-burgundy mb-4">
             {t("events") || "Church Events"}
           </h1>
-          <p className="text-gray-600 max-w-2xl mx-auto">
+          <p className="text-gray-600 max-w-2xl mx-auto mb-4">
             Join us for our upcoming events and celebrations. Our church hosts
             various activities throughout the year for all members of our
             community.
           </p>
+          <Button
+            onClick={handleManualRefresh}
+            variant="outline"
+            size="sm"
+            disabled={loading}
+            className="inline-flex items-center"
+          >
+            <RefreshCw
+              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+            />
+            Refresh Events
+          </Button>
         </div>
 
         {loading ? (
@@ -75,16 +127,12 @@ export default function Events() {
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {events.map((event) => (
               <Card key={event.id} className="overflow-hidden">
-                {event.image_url ? (
-                  <div
-                    className="h-48 bg-cover bg-center"
-                    style={{ backgroundImage: `url(${event.image_url})` }}
-                  />
-                ) : (
-                  <div className="h-48 bg-church-burgundy/10 flex items-center justify-center">
-                    <Calendar className="h-12 w-12 text-church-burgundy/30" />
-                  </div>
-                )}
+                <div
+                  className="h-56 bg-cover bg-center"
+                  style={{
+                    backgroundImage: `url(${getReligiousImage(event)})`,
+                  }}
+                />
                 <CardContent className="p-6">
                   <h3 className="text-xl font-bold text-church-burgundy mb-2">
                     {event.title}

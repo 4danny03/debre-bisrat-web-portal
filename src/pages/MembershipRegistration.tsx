@@ -349,12 +349,16 @@ const MembershipRegistration: FC = () => {
           <div className="space-y-6">
             <div className="flex items-center gap-2 mb-4">
               <User className="h-5 w-5 text-church-burgundy" />
-              <h3 className="text-lg font-semibold">Personal Information</h3>
+              <h3 className="text-lg font-semibold">
+                {getTranslation("personal")}
+              </h3>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="firstName">First Name *</Label>
+                <Label htmlFor="firstName">
+                  {getTranslation("firstName")} *
+                </Label>
                 <Input
                   id="firstName"
                   value={formData.firstName}
@@ -369,7 +373,7 @@ const MembershipRegistration: FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name *</Label>
+                <Label htmlFor="lastName">{getTranslation("lastName")} *</Label>
                 <Input
                   id="lastName"
                   value={formData.lastName}
@@ -386,7 +390,7 @@ const MembershipRegistration: FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address *</Label>
+                <Label htmlFor="email">{getTranslation("email")} *</Label>
                 <Input
                   id="email"
                   type="email"
@@ -400,7 +404,7 @@ const MembershipRegistration: FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number *</Label>
+                <Label htmlFor="phone">{getTranslation("phone")} *</Label>
                 <Input
                   id="phone"
                   type="tel"
@@ -416,7 +420,9 @@ const MembershipRegistration: FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="dateOfBirth">Date of Birth *</Label>
+                <Label htmlFor="dateOfBirth">
+                  {getTranslation("dateOfBirth")} *
+                </Label>
                 <Input
                   id="dateOfBirth"
                   type="date"
@@ -434,7 +440,7 @@ const MembershipRegistration: FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>Gender *</Label>
+                <Label>{getTranslation("gender")} *</Label>
                 <RadioGroup
                   value={formData.gender}
                   onValueChange={(value) => handleInputChange("gender", value)}
@@ -442,11 +448,11 @@ const MembershipRegistration: FC = () => {
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="male" id="male" />
-                    <Label htmlFor="male">Male</Label>
+                    <Label htmlFor="male">{getTranslation("male")}</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="female" id="female" />
-                    <Label htmlFor="female">Female</Label>
+                    <Label htmlFor="female">{getTranslation("female")}</Label>
                   </div>
                 </RadioGroup>
                 {formErrors.gender && (
@@ -462,7 +468,9 @@ const MembershipRegistration: FC = () => {
           <div className="space-y-6">
             <div className="flex items-center gap-2 mb-4">
               <MapPin className="h-5 w-5 text-church-burgundy" />
-              <h3 className="text-lg font-semibold">Address Information</h3>
+              <h3 className="text-lg font-semibold">
+                {getTranslation("address")}
+              </h3>
             </div>
 
             <div className="space-y-2">
@@ -1105,17 +1113,189 @@ const MembershipRegistration: FC = () => {
     }
   };
 
+  // Amharic translations for membership registration
+  const translations = {
+    en: {
+      title: "Membership Registration",
+      description: "Join our church community by registering as a member",
+      personal: "Personal Information",
+      firstName: "First Name",
+      lastName: "Last Name",
+      email: "Email Address",
+      phone: "Phone Number",
+      dateOfBirth: "Date of Birth",
+      gender: "Gender",
+      male: "Male",
+      female: "Female",
+      address: "Address Information",
+      streetAddress: "Street Address",
+      city: "City",
+      state: "State",
+      zipCode: "ZIP Code",
+      country: "Country",
+      membershipInfo: "Membership & Family Information",
+      membershipType: "Membership Type",
+      regularMember: "Regular Member ($100/year)",
+      studentMember: "Student Member ($50/year)",
+      seniorMember: "Senior Member ($75/year)",
+      familyMember: "Family Member ($200/year)",
+      previousMember: "I was previously a member of another Orthodox church",
+      previousChurch: "Previous Church Name",
+      baptized: "I have been baptized",
+      baptismDate: "Baptism Date",
+      maritalStatus: "Marital Status",
+      single: "Single",
+      married: "Married",
+      divorced: "Divorced",
+      widowed: "Widowed",
+      spouseName: "Spouse's Name",
+      children: "Children",
+      addChild: "Add Child",
+      childName: "Child's name",
+      age: "Age",
+      remove: "Remove",
+      ministryInterests: "Ministry Interests & Emergency Contact",
+      selectMinistries: "Ministry Interests (Select all that apply)",
+      volunteerInterests: "Volunteer Interests (Select all that apply)",
+      skills: "Special Skills or Talents",
+      skillsPlaceholder:
+        "Please describe any special skills, talents, or professional expertise you'd like to share...",
+      emergencyContact: "Emergency Contact Information",
+      emergencyName: "Emergency Contact Name",
+      emergencyPhone: "Emergency Contact Phone",
+      emergencyRelation: "Relationship to Emergency Contact",
+      emergencyRelationPlaceholder: "e.g., Spouse, Parent, Sibling, Friend",
+      finalDetails: "Final Details & Review",
+      preferredLanguage: "Preferred Language",
+      english: "English",
+      amharic: "Amharic",
+      contactMethod: "Preferred Contact Method",
+      emailUpdates:
+        "I would like to receive email updates about church events and news",
+      smsUpdates:
+        "I would like to receive SMS updates for urgent announcements",
+      howDidYouHear: "How did you hear about our church?",
+      additionalNotes: "Additional Notes or Comments",
+      notesPlaceholder: "Please share anything else you'd like us to know...",
+      agreeToTerms:
+        "I agree to the church's terms and conditions, and I understand that membership requires an annual fee. I commit to participating in church activities and supporting the church community.",
+      agreeToPhotos:
+        "I consent to having my photo taken during church events and activities for use in church publications, website, and social media.",
+      membershipFee: "Membership Fee",
+      annualFee: "Annual membership fee: ",
+      paymentRedirect:
+        "After submitting this form, you will be redirected to a secure payment page to complete your membership registration.",
+      previous: "Previous",
+      next: "Next",
+      processing: "Processing...",
+      completeRegistration: "Complete Registration & Pay $100",
+      personal_step: "Personal",
+      address_step: "Address",
+      membership_step: "Membership",
+      ministry_step: "Ministry",
+      review_step: "Review",
+    },
+    am: {
+      title: "የአባልነት ምዝገባ",
+      description: "እንደ አባል በመመዝገብ የቤተክርስቲያን ማህበረሰባችንን ይቀላቀሉ",
+      personal: "የግል መረጃ",
+      firstName: "መጠሪያ ስም",
+      lastName: "የአባት ስም",
+      email: "የኢሜይል አድራሻ",
+      phone: "ስልክ ቁጥር",
+      dateOfBirth: "የትውልድ ቀን",
+      gender: "ፆታ",
+      male: "ወንድ",
+      female: "ሴት",
+      address: "የአድራሻ መረጃ",
+      streetAddress: "የመንገድ አድራሻ",
+      city: "ከተማ",
+      state: "ግዛት",
+      zipCode: "ዚፕ ኮድ",
+      country: "ሀገር",
+      membershipInfo: "የአባልነት እና የቤተሰብ መረጃ",
+      membershipType: "የአባልነት አይነት",
+      regularMember: "መደበኛ አባል ($100/አመት)",
+      studentMember: "የተማሪ አባል ($50/አመት)",
+      seniorMember: "የአዛውንት አባል ($75/አመት)",
+      familyMember: "የቤተሰብ አባል ($200/አመት)",
+      previousMember: "ከዚህ በፊት የሌላ ኦርቶዶክስ ቤተክርስቲያን አባል ነበርኩ",
+      previousChurch: "የቀድሞ ቤተክርስቲያን ስም",
+      baptized: "ተጠምቄአለሁ",
+      baptismDate: "የጥምቀት ቀን",
+      maritalStatus: "የጋብቻ ሁኔታ",
+      single: "ያላገባ",
+      married: "ያገባ",
+      divorced: "የተፋታ",
+      widowed: "የትዳር አጋሩ የሞተበት",
+      spouseName: "የትዳር አጋር ስም",
+      children: "ልጆች",
+      addChild: "ልጅ ጨምር",
+      childName: "የልጅ ስም",
+      age: "እድሜ",
+      remove: "አስወግድ",
+      ministryInterests: "የአገልግሎት ፍላጎቶች እና የአደጋ ጊዜ ተጠሪ",
+      selectMinistries: "የአገልግሎት ፍላጎቶች (የሚመለከትዎትን ሁሉ ይምረጡ)",
+      volunteerInterests: "የበጎ ፈቃድ ፍላጎቶች (የሚመለከትዎትን ሁሉ ይምረጡ)",
+      skills: "ልዩ ችሎታዎች ወይም ተሰጥኦዎች",
+      skillsPlaceholder:
+        "እባክዎን ማካፈል የሚፈልጓቸውን ልዩ ችሎታዎች፣ ተሰጥኦዎች ወይም ሙያዊ ብቃቶች ይግለጹ...",
+      emergencyContact: "የአደጋ ጊዜ ተጠሪ መረጃ",
+      emergencyName: "የአደጋ ጊዜ ተጠሪ ስም",
+      emergencyPhone: "የአደጋ ጊዜ ተጠሪ ስልክ",
+      emergencyRelation: "ከአደጋ ጊዜ ተጠሪ ጋር ያለዎት ግንኙነት",
+      emergencyRelationPlaceholder: "ለምሳሌ፣ ባል/ሚስት፣ ወላጅ፣ ወንድም/እህት፣ ጓደኛ",
+      finalDetails: "የመጨረሻ ዝርዝሮች እና ግምገማ",
+      preferredLanguage: "የመረጡት ቋንቋ",
+      english: "እንግሊዝኛ",
+      amharic: "አማርኛ",
+      contactMethod: "የመረጡት የመገናኛ ዘዴ",
+      emailUpdates: "ስለ ቤተክርስቲያን ዝግጅቶች እና ዜናዎች በኢሜይል መረጃዎችን መቀበል እፈልጋለሁ",
+      smsUpdates: "ለአስቸኳይ ማስታወቂያዎች በኤስኤምኤስ መረጃዎችን መቀበል እፈልጋለሁ",
+      howDidYouHear: "ስለ ቤተክርስቲያናችን እንዴት ሰሙ?",
+      additionalNotes: "ተጨማሪ ማስታወሻዎች ወይም አስተያየቶች",
+      notesPlaceholder: "እባክዎን እኛ እንድናውቅ የሚፈልጉትን ማንኛውንም ነገር ያካፍሉ...",
+      agreeToTerms:
+        "የቤተክርስቲያኑን ውሎች እና ሁኔታዎች እስማማለሁ፣ እና አባልነት አመታዊ ክፍያ እንደሚጠይቅ ተረድቻለሁ። በቤተክርስቲያን እንቅስቃሴዎች ለመሳተፍ እና የቤተክርስቲያን ማህበረሰብን ለመደገፍ እቃጠራለሁ።",
+      agreeToPhotos:
+        "በቤተክርስቲያን ዝግጅቶች እና እንቅስቃሴዎች ወቅት ፎቶዬ እንዲነሳ እና በቤተክርስቲያን ህትመቶች፣ ድህረ ገጽ እና ማህበራዊ ሚዲያ ላይ እንዲውል ፈቃዴን እሰጣለሁ።",
+      membershipFee: "የአባልነት ክፍያ",
+      annualFee: "አመታዊ የአባልነት ክፍያ: ",
+      paymentRedirect:
+        "ይህንን ቅጽ ካስገቡ በኋላ፣ የአባልነት ምዝገባዎን ለማጠናቀቅ ወደ ደህንነቱ የተጠበቀ የክፍያ ገጽ ይዞረዛሉ።",
+      previous: "ቀዳሚ",
+      next: "ቀጣይ",
+      processing: "በሂደት ላይ...",
+      completeRegistration: "ምዝገባን አጠናቅቅ እና $100 ክፈል",
+      personal_step: "የግል",
+      address_step: "አድራሻ",
+      membership_step: "አባልነት",
+      ministry_step: "አገልግሎት",
+      review_step: "ግምገማ",
+    },
+  };
+
+  // Get translations based on current language
+  const getTranslation = (key: string): string => {
+    if (
+      language === "am" &&
+      translations.am[key as keyof typeof translations.am]
+    ) {
+      return translations.am[key as keyof typeof translations.am];
+    }
+    return translations.en[key as keyof typeof translations.en];
+  };
+
   return (
     <Layout>
       <div className="container mx-auto p-4 max-w-4xl">
         <Card className="bg-white shadow-lg">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl text-church-burgundy">
-              {t("membership.title") || "Membership Registration"}
+              {t("membership.title") || getTranslation("title")}
             </CardTitle>
             <CardDescription className="text-lg">
-              {t("membership.description") ||
-                "Join our church community by registering as a member"}
+              {t("membership.description") || getTranslation("description")}
             </CardDescription>
           </CardHeader>
 
@@ -1125,23 +1305,33 @@ const MembershipRegistration: FC = () => {
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-2">
                   {getStepIcon(1)}
-                  <span className="text-sm font-medium">Personal</span>
+                  <span className="text-sm font-medium">
+                    {getTranslation("personal_step")}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   {getStepIcon(2)}
-                  <span className="text-sm font-medium">Address</span>
+                  <span className="text-sm font-medium">
+                    {getTranslation("address_step")}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   {getStepIcon(3)}
-                  <span className="text-sm font-medium">Membership</span>
+                  <span className="text-sm font-medium">
+                    {getTranslation("membership_step")}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   {getStepIcon(4)}
-                  <span className="text-sm font-medium">Ministry</span>
+                  <span className="text-sm font-medium">
+                    {getTranslation("ministry_step")}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   {getStepIcon(5)}
-                  <span className="text-sm font-medium">Review</span>
+                  <span className="text-sm font-medium">
+                    {getTranslation("review_step")}
+                  </span>
                 </div>
               </div>
               <Progress value={progressPercentage} className="h-2" />
@@ -1161,7 +1351,7 @@ const MembershipRegistration: FC = () => {
                 onClick={handlePrevious}
                 disabled={currentStep === 1}
               >
-                Previous
+                {getTranslation("previous")}
               </Button>
 
               {currentStep < totalSteps ? (
@@ -1170,7 +1360,7 @@ const MembershipRegistration: FC = () => {
                   onClick={handleNext}
                   className="bg-church-burgundy hover:bg-church-burgundy/90"
                 >
-                  Next
+                  {getTranslation("next")}
                 </Button>
               ) : (
                 <Button
@@ -1182,12 +1372,12 @@ const MembershipRegistration: FC = () => {
                   {isSubmitting ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Processing...
+                      {getTranslation("processing")}
                     </>
                   ) : (
                     <>
                       <CreditCard className="h-4 w-4 mr-2" />
-                      Complete Registration & Pay $100
+                      {getTranslation("completeRegistration")}
                     </>
                   )}
                 </Button>

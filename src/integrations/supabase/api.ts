@@ -1,4 +1,5 @@
 import { supabase } from "./client";
+import { dataSyncService } from "@/services/DataSyncService";
 
 export const api = {
   sermons: {
@@ -40,6 +41,10 @@ export const api = {
         .single();
 
       if (error) throw error;
+
+      // Notify data sync service
+      dataSyncService.notifyAdminAction("create", "sermons", data);
+
       return data;
     },
     updateSermon: async (id: string, updates: any) => {
@@ -51,12 +56,20 @@ export const api = {
         .single();
 
       if (error) throw error;
+
+      // Notify data sync service
+      dataSyncService.notifyAdminAction("update", "sermons", data);
+
       return data;
     },
     deleteSermon: async (id: string) => {
       const { error } = await supabase.from("sermons").delete().eq("id", id);
 
       if (error) throw error;
+
+      // Notify data sync service
+      dataSyncService.notifyAdminAction("delete", "sermons", { id });
+
       return true;
     },
   },
@@ -100,6 +113,10 @@ export const api = {
         .single();
 
       if (error) throw error;
+
+      // Notify data sync service
+      dataSyncService.notifyAdminAction("create", "events", data);
+
       return data;
     },
     updateEvent: async (id: string, updates: any) => {
@@ -111,12 +128,20 @@ export const api = {
         .single();
 
       if (error) throw error;
+
+      // Notify data sync service
+      dataSyncService.notifyAdminAction("update", "events", data);
+
       return data;
     },
     deleteEvent: async (id: string) => {
       const { error } = await supabase.from("events").delete().eq("id", id);
 
       if (error) throw error;
+
+      // Notify data sync service
+      dataSyncService.notifyAdminAction("delete", "events", { id });
+
       return true;
     },
   },
@@ -196,6 +221,10 @@ export const api = {
         .single();
 
       if (error) throw error;
+
+      // Notify data sync service
+      dataSyncService.notifyAdminAction("create", "gallery", data);
+
       return data;
     },
     updateImage: async (id: string, updates: any) => {
@@ -213,6 +242,10 @@ export const api = {
       const { error } = await supabase.from("gallery").delete().eq("id", id);
 
       if (error) throw error;
+
+      // Notify data sync service
+      dataSyncService.notifyAdminAction("delete", "gallery", { id });
+
       return true;
     },
   },
@@ -397,5 +430,141 @@ export const api = {
       if (error) throw error;
       return true;
     },
+    inviteAdmin: async (email: string, role: string = "admin") => {
+      try {
+        // Create a new user profile directly
+        const { data, error } = await supabase.from("profiles").insert([
+          {
+            email,
+            role,
+          },
+        ]);
+
+        if (error) throw error;
+
+        return { success: true, message: "User added successfully", data };
+      } catch (error) {
+        console.error("Error inviting admin:", error);
+        throw error;
+      }
+    },
+    getAdminCount: async () => {
+      try {
+        const { count, error } = await supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true })
+          .eq("role", "admin");
+
+        if (error) throw error;
+        return count || 0;
+      } catch (error) {
+        console.error("Error getting admin count:", error);
+        return 0;
+      }
+    },
+
+    // Direct user management without registration codes
+    addUser: async (email: string, role: string) => {
+      const { data, error } = await supabase.from("profiles").insert([
+        {
+          email,
+          role,
+        },
+      ]);
+
+      if (error) throw error;
+      return data;
+    },
+
+    updateUserRole: async (id: string, role: string) => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .update({ role })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+
+    promoteToAdmin: async (userId: string) => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .update({ role: "admin" })
+        .eq("id", userId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+
+    demoteFromAdmin: async (userId: string) => {
+      // Check if this is the last admin
+      const { count: adminCount } = await supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+        .eq("role", "admin");
+
+      if (adminCount && adminCount <= 1) {
+        throw new Error("Cannot demote the last admin user");
+      }
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .update({ role: "user" })
+        .eq("id", userId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+  },
+  storage: {
+    uploadImage: async (file: File, folder: string = "general") => {
+      // Create a unique file path
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      const filePath = `${folder}/${fileName}`;
+
+      // Upload the file to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from("images")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (error) throw error;
+
+      // Get the public URL
+      const { data: publicUrlData } = supabase.storage
+        .from("images")
+        .getPublicUrl(filePath);
+
+      return publicUrlData.publicUrl;
+    },
+    deleteImage: async (url: string) => {
+      // Extract the path from the URL
+      const urlObj = new URL(url);
+      const pathParts = urlObj.pathname.split("/");
+      const bucketIndex = pathParts.findIndex((part) => part === "images");
+      if (bucketIndex === -1) throw new Error("Invalid image URL");
+
+      const filePath = pathParts.slice(bucketIndex + 1).join("/");
+
+      // Delete the file from Supabase Storage
+      const { error } = await supabase.storage
+        .from("images")
+        .remove([filePath]);
+
+      if (error) throw error;
+      return true;
+    },
+  },
+  admin: {
+    // Simplified admin management - no registration codes needed
   },
 };
