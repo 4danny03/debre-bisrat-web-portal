@@ -2,8 +2,7 @@ import * as React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { BrowserRouter, Routes, Route, HashRouter } from "react-router-dom";
-import routes from "tempo-routes";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import About from "./pages/About";
 import Events from "./pages/Events";
@@ -31,26 +30,13 @@ import AdminUsers from "./pages/admin/Users";
 import { LanguageProvider } from "./contexts/LanguageContext";
 
 export default function App(): React.ReactElement {
-  // Use HashRouter for GitHub Pages deployment
-  const isProduction = import.meta.env.MODE === "production";
-  const Router = isProduction ? HashRouter : BrowserRouter;
-
   return (
     <LanguageProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <Router>
+        <BrowserRouter>
           <Routes>
-            {/* Tempo routes */}
-            {import.meta.env.VITE_TEMPO === "true" &&
-              routes.map((route) => (
-                <Route
-                  key={route.path}
-                  path={route.path}
-                  element={route.element}
-                />
-              ))}
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
             <Route path="/events" element={<Events />} />
@@ -62,27 +48,25 @@ export default function App(): React.ReactElement {
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/services" element={<Services />} />
             <Route path="/sermons" element={<Sermons />} />
+            
+            {/* Admin routes */}
             <Route path="/admin" element={<AdminLayout />}>
               <Route path="login" element={<AdminLogin />} />
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="events" element={<AdminEvents />} />
-              <Route path="sermons" element={<AdminSermons />} />
               <Route path="gallery" element={<AdminGallery />} />
+              <Route path="settings" element={<AdminSettings />} />
+              <Route path="sermons" element={<AdminSermons />} />
               <Route path="members" element={<AdminMembers />} />
               <Route path="testimonials" element={<AdminTestimonials />} />
               <Route path="prayer-requests" element={<AdminPrayerRequests />} />
               <Route path="donations" element={<AdminDonations />} />
               <Route path="users" element={<AdminUsers />} />
-              <Route path="settings" element={<AdminSettings />} />
             </Route>
-
-            {/* Add this before the catchall route */}
-            {import.meta.env.VITE_TEMPO === "true" && (
-              <Route path="/tempobook/*" />
-            )}
+            
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </Router>
+        </BrowserRouter>
       </TooltipProvider>
     </LanguageProvider>
   );

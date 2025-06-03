@@ -4,19 +4,18 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 40 33% 98%;
-    --foreground: 222.2 84% 4.9%;
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 0 75% 27%;
-    --primary-foreground: 210 40% 98%;
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+}
 
     --secondary: 43 77% 52%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -54,6 +53,46 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-serif text-church-burgundy;
   }
+}
+
+/* Global styles */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom utility classes */
+.eth-container {
+  @apply container mx-auto px-4;
+}
+
+.church-title {
+  @apply text-3xl font-serif text-church-burgundy;
+}
+
+.church-gradient {
+  background: linear-gradient(180deg, rgba(125,34,36,0.05) 0%, rgba(125,34,36,0) 100%);
+}
+
+/* Button styles */
+.btn-primary {
+  @apply bg-church-burgundy text-white hover:bg-church-burgundy/90 transition-colors;
+}
+
+.btn-secondary {
+  @apply bg-church-gold text-church-burgundy hover:bg-church-gold/90 transition-colors;
+}
+
+/* Card styles */
+.church-card {
+  @apply bg-white rounded-lg shadow-lg overflow-hidden border border-church-burgundy/10;
 }
 
 /* Image Slider Styles */
