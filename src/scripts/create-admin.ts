@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../integrations/supabase/types';
 
@@ -11,7 +12,7 @@ async function createAdminUser() {
   try {
     // 1. Create the user
     console.log('Creating user account...');
-    const { data: { user }, error: authError } = await supabase.auth.signUp({
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email: 'khaliddawit7546@gmail.com',
       password: '12345678'
     });

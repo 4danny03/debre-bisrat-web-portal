@@ -116,21 +116,18 @@ const FileUpload: React.FC<FileUploadProps> = ({
       const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
       const filePath = `events/${fileName}`;
 
-      // Upload the file to Supabase Storage
+      // Upload the file to Supabase Storage - removed onUploadProgress
       const { data, error } = await supabase.storage
         .from("images")
         .upload(filePath, file, {
           cacheControl: "3600",
           upsert: false,
-          onUploadProgress: (progress) => {
-            const percent = Math.round(
-              (progress.loaded / progress.total) * 100,
-            );
-            setProgress(percent);
-          },
         });
 
       if (error) throw error;
+
+      // Simulate progress for user feedback
+      setProgress(100);
 
       // Get the public URL
       const { data: publicUrlData } = supabase.storage
@@ -148,12 +145,11 @@ const FileUpload: React.FC<FileUploadProps> = ({
       console.error("Error uploading file:", error);
       toast({
         title: "Upload failed",
-        description: error.message || "An error occurred during upload",
+        description: error instanceof Error ? error.message : "An error occurred during upload",
         variant: "destructive",
       });
     } finally {
       setUploading(false);
-      setProgress(100);
     }
   };
 
