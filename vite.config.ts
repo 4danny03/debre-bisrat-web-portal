@@ -23,5 +23,12 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: "dist",
     sourcemap: false
+  },
+  // Explicitly exclude Supabase functions from the build
+  define: {
+    global: 'globalThis',
+  },
+  optimizeDeps: {
+    exclude: ['supabase/functions']
   }
 }));
