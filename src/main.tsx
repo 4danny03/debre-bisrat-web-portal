@@ -1,3 +1,4 @@
+
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
@@ -15,9 +16,5 @@ if (!rootElement) {
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <App />
-    DEB-1
   </React.StrictMode>
-    <div className="w-[71px] h-[55px]"></div>
-  </React.StrictMode>,
-main
 );

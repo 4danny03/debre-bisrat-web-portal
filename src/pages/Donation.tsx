@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -34,8 +35,10 @@ import {
   HandHeart,
   CheckCircle,
   Lock,
+  Smartphone,
 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Donation() {
   const { t, language } = useLanguage();
@@ -54,10 +57,10 @@ export default function Donation() {
 
   // Purpose descriptions for impact section
   const purposeImpacts = {
-    general_fund: t("general_fund_impact"),
-    building_fund: t("building_fund_impact"),
-    youth_programs: t("youth_programs_impact"),
-    charity: t("charity_impact"),
+    general_fund: t("general_fund_impact") || "Supports the church's daily operations and ministries.",
+    building_fund: t("building_fund_impact") || "Helps maintain and improve our church facilities.",
+    youth_programs: t("youth_programs_impact") || "Supports youth activities and education programs.",
+    charity: t("charity_impact") || "Aids community outreach and charitable initiatives.",
   };
 
   // Purpose icons
@@ -93,29 +96,30 @@ export default function Donation() {
           ? (formData.get("email") as string)
           : (formData.get("phone") as string);
 
-      const response = await fetch("/api/create-checkout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: {
           amount,
           donationType,
           purpose,
           email: contactMethod === "email" ? contactInfo : "",
           phone: contactMethod === "phone" ? contactInfo : "",
+          name: formData.get("name") as string || "",
+          address: formData.get("address") as string || "",
           isAnonymous,
           includeBulletin,
           memorial: memorial.trim(),
-        }),
+        }
       });
 
-      if (!response.ok) {
-        throw new Error("Payment initiation failed");
+      if (error) {
+        throw new Error(error.message || "Payment initiation failed");
       }
 
-      const data = await response.json();
-      window.location.href = data.url;
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("No checkout URL received");
+      }
     } catch (error) {
       console.error("Error:", error);
       toast({
@@ -140,13 +144,13 @@ export default function Donation() {
               <Heart className="w-8 h-8 text-church-gold" />
             </div>
             <h1 className="text-4xl md:text-5xl font-serif text-church-burgundy mb-4">
-              {t("donation_title")}
+              {t("donation_title") || "Make a Donation"}
             </h1>
             <p className="text-xl text-church-burgundy/80 mb-2">
-              {t("donation_subtitle")}
+              {t("donation_subtitle") || "Support Our Ministry"}
             </p>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              {t("donation_description")}
+              {t("donation_description") || "Your generous donation helps us continue our mission and serve the community."}
             </p>
           </div>
 
@@ -157,10 +161,10 @@ export default function Donation() {
                 <CardHeader className="bg-gradient-to-r from-church-burgundy to-church-burgundy/90 text-white">
                   <CardTitle className="text-church-gold flex items-center">
                     <CreditCard className="w-5 h-5 mr-2" />
-                    {t("donation_title")}
+                    {t("donation_title") || "Make a Donation"}
                   </CardTitle>
                   <CardDescription className="text-white/90">
-                    {t("donation_description")}
+                    {t("donation_description") || "Support our ministry with your generous contribution"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-6">
@@ -168,7 +172,7 @@ export default function Donation() {
                     {/* Suggested Amounts */}
                     <div className="space-y-3">
                       <Label className="text-lg font-semibold">
-                        {t("suggested_amounts")}
+                        {t("suggested_amounts") || "Suggested Amounts"}
                       </Label>
                       <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
                         {suggestedAmounts.map((suggestedAmount) => (
@@ -196,7 +200,7 @@ export default function Donation() {
                     {/* Custom Amount */}
                     <div className="space-y-2">
                       <Label htmlFor="amount" className="text-lg font-semibold">
-                        {t("custom_amount")}
+                        {t("custom_amount") || "Custom Amount"}
                       </Label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-semibold">
@@ -402,12 +406,12 @@ export default function Donation() {
                       {loading ? (
                         <div className="flex items-center">
                           <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                          {t("processing")}
+                          {t("processing") || "Processing..."}
                         </div>
                       ) : (
                         <div className="flex items-center">
                           <Lock className="w-5 h-5 mr-2" />
-                          {t("proceed_to_payment")}
+                          {t("proceed_to_payment") || "Proceed to Payment"}
                         </div>
                       )}
                     </Button>
@@ -423,7 +427,7 @@ export default function Donation() {
                 <CardHeader className="bg-church-gold text-church-burgundy">
                   <CardTitle className="flex items-center">
                     <PurposeIcon className="w-5 h-5 mr-2" />
-                    {t("donation_impact")}
+                    {t("donation_impact") || "Your Impact"}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
@@ -438,7 +442,7 @@ export default function Donation() {
                 <CardHeader>
                   <CardTitle className="flex items-center text-church-burgundy">
                     <Shield className="w-5 h-5 mr-2" />
-                    {t("secure_payment")}
+                    {t("secure_payment") || "Secure Payment"}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 space-y-4">
@@ -446,10 +450,10 @@ export default function Donation() {
                     <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
                     <div>
                       <p className="text-sm font-medium">
-                        {t("secure_payment")}
+                        {t("secure_payment") || "Secure Payment"}
                       </p>
                       <p className="text-xs text-gray-600">
-                        {t("secure_payment_note")}
+                        {t("secure_payment_note") || "Your payment is processed securely through Stripe"}
                       </p>
                     </div>
                   </div>
@@ -457,10 +461,10 @@ export default function Donation() {
                     <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
                     <div>
                       <p className="text-sm font-medium">
-                        {t("tax_deductible")}
+                        {t("tax_deductible") || "Tax Deductible"}
                       </p>
                       <p className="text-xs text-gray-600">
-                        {t("tax_deductible_note")}
+                        {t("tax_deductible_note") || "Your donation may be tax deductible"}
                       </p>
                     </div>
                   </div>
@@ -473,19 +477,29 @@ export default function Donation() {
                   <p className="text-sm font-medium text-center mb-3">
                     Accepted Payment Methods
                   </p>
-                  <div className="flex justify-center space-x-2">
-                    <Badge variant="outline" className="px-2 py-1">
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <Badge variant="outline" className="px-2 py-1 justify-center">
                       Visa
                     </Badge>
-                    <Badge variant="outline" className="px-2 py-1">
+                    <Badge variant="outline" className="px-2 py-1 justify-center">
                       Mastercard
                     </Badge>
-                    <Badge variant="outline" className="px-2 py-1">
+                    <Badge variant="outline" className="px-2 py-1 justify-center">
                       Amex
                     </Badge>
-                    <Badge variant="outline" className="px-2 py-1">
+                    <Badge variant="outline" className="px-2 py-1 justify-center">
                       Discover
                     </Badge>
+                  </div>
+                  <div className="flex justify-center space-x-4 pt-2 border-t">
+                    <div className="flex items-center space-x-1">
+                      <Smartphone className="w-4 h-4" />
+                      <span className="text-xs">Apple Pay</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <Smartphone className="w-4 h-4" />
+                      <span className="text-xs">Google Pay</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

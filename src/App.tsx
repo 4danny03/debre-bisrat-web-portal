@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -35,105 +36,48 @@ import "@/utils/debugSync"; // Initialize debug utilities
 
 export default function App(): React.ReactElement {
   return (
-DEB-1
-    <LanguageProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/events" element={<Events />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/membership" element={<MembershipRegistration />} />
-            <Route path="/donation" element={<Donation />} />
-            <Route path="/donation-success" element={<DonationSuccess />} />
-            <Route path="/donation-demo" element={<DonationDemo />} />
-            <Route path="/gallery" element={<Gallery />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/sermons" element={<Sermons />} />
-            
-            {/* Admin routes */}
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route path="login" element={<AdminLogin />} />
-              <Route path="dashboard" element={<AdminDashboard />} />
-              <Route path="events" element={<AdminEvents />} />
-              <Route path="gallery" element={<AdminGallery />} />
-              <Route path="settings" element={<AdminSettings />} />
-              <Route path="sermons" element={<AdminSermons />} />
-              <Route path="members" element={<AdminMembers />} />
-              <Route path="testimonials" element={<AdminTestimonials />} />
-              <Route path="prayer-requests" element={<AdminPrayerRequests />} />
-              <Route path="donations" element={<AdminDonations />} />
-              <Route path="users" element={<AdminUsers />} />
-            </Route>
-            
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </LanguageProvider>
     <ErrorBoundary>
       <DataProvider>
         <LanguageProvider>
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <Router>
+            <BrowserRouter>
               <Routes>
-                {/* Tempo routes */}
-                {import.meta.env.VITE_TEMPO === "true" &&
-                  routes.map((route) => (
-                    <Route
-                      key={route.path}
-                      path={route.path}
-                      element={route.element}
-                    />
-                  ))}
                 <Route path="/" element={<Home />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/events" element={<Events />} />
                 <Route path="/contact" element={<Contact />} />
-                <Route
-                  path="/membership"
-                  element={<MembershipRegistration />}
-                />
+                <Route path="/membership" element={<MembershipRegistration />} />
                 <Route path="/donation" element={<Donation />} />
                 <Route path="/donation-success" element={<DonationSuccess />} />
                 <Route path="/donation-demo" element={<DonationDemo />} />
                 <Route path="/gallery" element={<Gallery />} />
                 <Route path="/services" element={<Services />} />
                 <Route path="/sermons" element={<Sermons />} />
+                
+                {/* Admin routes */}
                 <Route path="/admin" element={<AdminLayout />}>
                   <Route path="login" element={<AdminLogin />} />
                   <Route path="dashboard" element={<AdminDashboard />} />
                   <Route path="events" element={<AdminEvents />} />
-                  <Route path="sermons" element={<AdminSermons />} />
                   <Route path="gallery" element={<AdminGallery />} />
+                  <Route path="settings" element={<AdminSettings />} />
+                  <Route path="sermons" element={<AdminSermons />} />
                   <Route path="members" element={<AdminMembers />} />
                   <Route path="testimonials" element={<AdminTestimonials />} />
-                  <Route
-                    path="prayer-requests"
-                    element={<AdminPrayerRequests />}
-                  />
+                  <Route path="prayer-requests" element={<AdminPrayerRequests />} />
                   <Route path="donations" element={<AdminDonations />} />
                   <Route path="users" element={<AdminUsers />} />
-                  <Route path="settings" element={<AdminSettings />} />
                   <Route path="health" element={<AdminHealthCheck />} />
                 </Route>
-
-                {/* Add this before the catchall route */}
-                {import.meta.env.VITE_TEMPO === "true" && (
-                  <Route path="/tempobook/*" />
-                )}
+                
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </Router>
+            </BrowserRouter>
           </TooltipProvider>
         </LanguageProvider>
       </DataProvider>
     </ErrorBoundary>
-    main
   );
 }
