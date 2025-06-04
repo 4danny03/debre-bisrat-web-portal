@@ -1,6 +1,7 @@
-import { serve } from "std/http/server.ts";
+
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,47 +9,46 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-// Demo Stripe test key - this is a public test key from Stripe docs, safe to include
-const STRIPE_TEST_KEY =
-  "sk_test_51OvQQnCXpYQQZZQQZZQQZZQQZZQQZZQQZZQQZZQQZZQQZZQQ";
+interface CheckoutRequest {
+  amount: string;
+  donationType: string;
+  purpose: string;
+  email: string;
+  name?: string;
+  address?: string;
+  memberId?: string;
+}
 
-serve(async (req) => {
-  // Handle CORS preflight requests
+serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Create a Supabase client
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? "",
     );
 
-    // Get request data
-    const { amount, donationType, purpose, email, name, address, memberId } =
-      await req.json();
+    const requestData: CheckoutRequest = await req.json();
+    const { amount, donationType, purpose, email, name, address, memberId } = requestData;
 
-    // Validate the input
     if (!amount || !donationType || !purpose || !email) {
       throw new Error(
         "Missing required fields: amount, donationType, purpose, email",
       );
     }
 
-    // Initialize Stripe with the API key from environment variables
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || STRIPE_TEST_KEY;
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || "";
     const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
     });
 
-    // Check if a Stripe customer exists for this email
     const customers = await stripe.customers.list({ email, limit: 1 });
     let customerId;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
 
-      // Update customer with latest info if provided
       if (name || address) {
         await stripe.customers.update(customerId, {
           name: name || undefined,
@@ -60,7 +60,6 @@ serve(async (req) => {
         });
       }
     } else {
-      // Create a new customer if one doesn't exist
       const customer = await stripe.customers.create({
         email,
         name: name || undefined,
@@ -73,7 +72,6 @@ serve(async (req) => {
       customerId = customer.id;
     }
 
-    // Set up the payment details
     const amountInCents = Math.round(parseFloat(amount) * 100);
     const productName =
       purpose === "general_fund"
@@ -86,10 +84,9 @@ serve(async (req) => {
               ? "Membership Fee"
               : "Charitable Donation";
 
-    // Configure payment type based on donationType (one-time vs recurring)
     const isRecurring = donationType !== "one_time";
 
-    const sessionConfig = {
+    const sessionConfig: Stripe.Checkout.SessionCreateParams = {
       customer: customerId,
       payment_method_types: ["card"],
       line_items: [
@@ -124,14 +121,12 @@ serve(async (req) => {
         email,
         donationType,
         memberId: memberId || "",
-        demo_mode: "true", // Flag to indicate this is a demo transaction
+        demo_mode: "true",
       },
     };
 
-    // Create a checkout session
     const session = await stripe.checkout.sessions.create(sessionConfig);
 
-    // Store donation record in database
     try {
       await supabaseClient.from("donations").insert([
         {
@@ -147,7 +142,6 @@ serve(async (req) => {
       ]);
     } catch (dbError) {
       console.error("Error storing donation record:", dbError);
-      // Continue with checkout even if database insert fails
     }
 
     return new Response(JSON.stringify({ url: session.url }), {
@@ -156,7 +150,8 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error("Error in create-checkout function:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

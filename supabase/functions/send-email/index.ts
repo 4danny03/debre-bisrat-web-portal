@@ -1,4 +1,5 @@
-import { serve } from "std/http/server.ts";
+
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,16 +7,21 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
-  // Handle CORS preflight requests
+interface EmailRequest {
+  to: string;
+  subject: string;
+  htmlContent: string;
+}
+
+serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders, status: 204 });
   }
 
   try {
-    const { to, subject, htmlContent } = await req.json();
+    const requestData: EmailRequest = await req.json();
+    const { to, subject, htmlContent } = requestData;
 
-    // Validate required fields
     if (!to || !subject || !htmlContent) {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
@@ -26,13 +32,10 @@ serve(async (req) => {
       );
     }
 
-    // In a real implementation, you would use a service like SendGrid, Mailgun, etc.
-    // For demo purposes, we'll just log the email details and return success
     console.log(`Email would be sent to: ${to}`);
     console.log(`Subject: ${subject}`);
     console.log(`Content: ${htmlContent}`);
 
-    // Return success response
     return new Response(
       JSON.stringify({ success: true, message: "Email sent successfully" }),
       {
@@ -42,7 +45,8 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error("Error sending email:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

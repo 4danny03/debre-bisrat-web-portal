@@ -7,26 +7,27 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
-  // Handle CORS preflight requests
+interface SessionRequest {
+  session_id: string;
+}
+
+serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Get the session ID from the request body
-    const { session_id } = await req.json();
+    const requestData: SessionRequest = await req.json();
+    const { session_id } = requestData;
     
     if (!session_id) {
       throw new Error("Missing session_id parameter");
     }
 
-    // Initialize Stripe
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",
     });
 
-    // Retrieve the session
     const session = await stripe.checkout.sessions.retrieve(session_id, {
       expand: ['payment_intent', 'subscription', 'customer']
     });
@@ -37,7 +38,8 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error("Error in get-session function:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
