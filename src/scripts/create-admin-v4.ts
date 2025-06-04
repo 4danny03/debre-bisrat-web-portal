@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../integrations/supabase/types';
 
@@ -25,27 +26,33 @@ async function createAdminUser() {
     console.log('Email:', email);
     console.log('User ID:', user?.id);
 
-    // Wait for a moment to ensure auth is propagated
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    if (user) {
+      // Wait for a moment to ensure auth is propagated
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
-    // Set admin role using RPC
-    const { data: rpcData, error: rpcError } = await supabase.rpc('create_admin_user', {
-      admin_email: email,
-      admin_password: password
-    });
+      // Create profile directly instead of using RPC
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert([
+          {
+            id: user.id,
+            role: 'admin'
+          }
+        ]);
 
-    if (rpcError) {
-      console.error('RPC Error:', rpcError);
-      return;
+      if (profileError) {
+        console.error('Profile Error:', profileError);
+        return;
+      }
+
+      console.log('=================================');
+      console.log('Admin user created successfully!');
+      console.log('=================================');
+      console.log('Email:', email);
+      console.log('Password:', password);
+      console.log('=================================');
+      console.log('You can now log in at /admin/login');
     }
-
-    console.log('=================================');
-    console.log('Admin user created successfully!');
-    console.log('=================================');
-    console.log('Email:', email);
-    console.log('Password:', password);
-    console.log('=================================');
-    console.log('You can now log in at /admin/login');
 
   } catch (error) {
     console.error('Unexpected error:', error);
