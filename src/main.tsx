@@ -2,13 +2,22 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-// Import the dev tools and initialize them
-import { TempoDevtools } from "tempo-devtools";
-TempoDevtools.init();
+import { validateEnv } from "./lib/env";
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode className="size-0.5">
+// Validate environment variables before starting the app
+validateEnv();
+
+const rootElement = document.getElementById("root");
+if (!rootElement) {
+  throw new Error("Failed to find the root element");
+}
+
+ReactDOM.createRoot(rootElement).render(
+  <React.StrictMode>
     <App />
+    DEB-1
+  </React.StrictMode>
     <div className="w-[71px] h-[55px]"></div>
   </React.StrictMode>,
+main
 );
