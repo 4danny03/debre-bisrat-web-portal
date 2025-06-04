@@ -5,7 +5,14 @@
 }
 
 .eth-flag-gradient {
-  background: linear-gradient(180deg, #009A49 33.33%, #FCD116 33.33%, #FCD116 66.66%, #EE1B24 66.66%);
+  background: linear-gradient(180deg, 
+    #009A49 0%,
+    #009A49 33.33%,
+    #FCD116 33.33%,
+    #FCD116 66.66%,
+    #EE1B24 66.66%,
+    #EE1B24 100%
+  );
 }
 
 .eth-flag-accent {

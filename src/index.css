@@ -4,6 +4,13 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --church-burgundy: 0 75% 27%;
+  --church-gold: 43 77% 52%;
+  --church-green: 142 74% 30%;
+  --church-cream: 40 33% 98%;
+}
+
 html, body {
   height: 100%;
   margin: 0;
@@ -17,223 +24,26 @@ html, body {
   background-color: white;
 }
 
-    --secondary: 43 77% 52%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-church-cream text-church-dark font-sans;
-  }
-
-  .amharic {
-    @apply font-amharic;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-serif text-church-burgundy;
-  }
-}
-
-/* Global styles */
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
-
-#root {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Custom utility classes */
-.eth-container {
-  @apply container mx-auto px-4;
+.container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  max-width: 80rem;
 }
 
 .church-title {
-  @apply text-3xl font-serif text-church-burgundy;
-}
-
-.church-gradient {
-  background: linear-gradient(180deg, rgba(125,34,36,0.05) 0%, rgba(125,34,36,0) 100%);
-}
-
-/* Button styles */
-.btn-primary {
-  @apply bg-church-burgundy text-white hover:bg-church-burgundy/90 transition-colors;
-}
-
-.btn-secondary {
-  @apply bg-church-gold text-church-burgundy hover:bg-church-gold/90 transition-colors;
-}
-
-/* Card styles */
-.church-card {
-  @apply bg-white rounded-lg shadow-lg overflow-hidden border border-church-burgundy/10;
-}
-
-/* Image Slider Styles */
-.slider {
-  @apply relative overflow-hidden;
-  height: 60vh;
-}
-
-.slide {
-  @apply absolute w-full h-full opacity-0 transition-opacity duration-700 ease-in-out;
-}
-
-.slide.active {
-  @apply opacity-100;
-}
-
-.slider-content {
-  @apply absolute inset-0 flex items-center justify-center;
-  background: rgba(0, 0, 0, 0.3);
-}
-
-.slider-text {
-  @apply text-white text-center max-w-4xl mx-auto px-6 py-8 bg-black/30 rounded-lg;
-}
-
-.slider-nav {
-  @apply absolute bottom-5 left-0 right-0 flex justify-center gap-2 z-10;
-}
-
-.slider-nav button {
-  @apply w-3 h-3 rounded-full bg-white/50 hover:bg-white transition-all;
-}
-
-.slider-nav button.active {
-  @apply bg-church-gold;
-}
-
-/* Navigation Styles */
-.nav-link {
-  @apply relative px-3 py-2 hover:text-church-burgundy transition-colors;
-}
-
-.nav-link::after {
-  @apply content-[''] absolute left-0 right-0 bottom-0 h-0.5 bg-church-gold scale-x-0 origin-bottom-right transition-transform duration-300;
-}
-
-.nav-link:hover::after,
-.nav-link.active::after {
-  @apply scale-x-100 origin-bottom-left;
-}
-
-/* Ethiopian Orthodox Cultural Patterns */
-.pattern-bg {
-  background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%238B0000' fill-opacity='0.05' fill-rule='evenodd'%3E%3Cpath d='M20 18v-4h-4v4H2v4h14v14h4V22h14v-4H20z'/%3E%3C/g%3E%3C/svg%3E");
-}
-
-.cross-pattern {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40' fill='none'%3E%3Cpath d='M20 5V35M5 20H35M12 12L28 28M28 12L12 28' stroke='%238B0000' stroke-opacity='0.07' stroke-width='2'/%3E%3C/svg%3E");
-}
-
-.lalibela-pattern {
-  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%238B0000' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-}
-
-/* Ethiopian Heritage Elements */
-.eth-border {
-  @apply border-2 border-church-gold p-4 rounded-lg;
-  background-image: linear-gradient(to right, transparent, transparent),
-                    linear-gradient(to right, #D4AF37, #D4AF37);
-  background-size: 100% 2px;
-  background-position: 0 0, 0 100%;
-  background-repeat: no-repeat;
+  font-family: serif;
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  color: hsl(var(--church-burgundy));
 }
 
 .eth-card {
-  @apply bg-white rounded-lg shadow-md overflow-hidden border-t-4 border-church-gold;
-}
-
-.eth-title {
-  @apply font-serif text-church-burgundy relative pb-2 inline-block;
-}
-
-.eth-title::after {
-  @apply content-[''] absolute bottom-0 left-0 w-full h-0.5 bg-church-gold rounded;
-}
-
-/* Ethiopian Flag-inspired elements */
-.eth-flag-border {
-  @apply p-4 border-l-4 border-church-green;
-  background: linear-gradient(to right, rgba(0, 100, 0, 0.1) 0%, rgba(255, 220, 0, 0.1) 33%, rgba(170, 0, 0, 0.1) 66%);
-}
-
-.eth-flag-accent {
-  background: linear-gradient(to right, #006400 33%, #FFDC00 33%, #FFDC00 66%, #AA0000 66%);
-  height: 4px;
-  width: 100%;
-}
-
-/* NEW: Flag-inspired nostalgic elements */
-.nostalgic-paper {
-  background-color: #FEF7CD;
-  background-image: 
-    linear-gradient(rgba(255, 220, 0, 0.05) 2px, transparent 2px),
-    linear-gradient(90deg, rgba(255, 220, 0, 0.05) 2px, transparent 2px);
-  background-size: 20px 20px;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
-}
-
-.eth-flag-ribbon {
-  position: relative;
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-}
-
-.eth-flag-ribbon::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  border-width: 0 16px 16px 0;
-  border-style: solid;
-  border-color: #AA0000 #FFF8E1;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
-}
-
-.eth-vintage-photo {
-  filter: sepia(30%) contrast(90%) brightness(95%);
-  border: 8px solid white;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05);
-}
-
-.eth-flag-gradient {
-  background: linear-gradient(to bottom, 
-    rgba(0, 100, 0, 0.05) 0%, 
-    rgba(255, 220, 0, 0.05) 33%, 
-    rgba(170, 0, 0, 0.05) 66%,
-    transparent 100%);
-}
-
-/* Ethiopian Cross Design */
-.eth-cross {
-  @apply relative inline-block w-6 h-6 mx-2 bg-church-gold;
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12,2V22M2,12H22M7,7L17,17M17,7L7,17' stroke='black' stroke-width='4'/%3E%3C/svg%3E");
-  mask-size: contain;
+  border-top: 4px solid hsl(var(--church-gold));
 }
