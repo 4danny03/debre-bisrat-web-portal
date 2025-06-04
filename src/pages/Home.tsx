@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import { Link } from "react-router-dom";
@@ -30,12 +31,7 @@ const Home: React.FC = () => {
   const fallbackEvents = [
     {
       id: "fallback-1",
-      title:
-        language === "en"
-          ? "St. Gabriel Monthly Commemoration"
-          : "የቅዱስ ገብርኤል ወርሃዊ ተዝካር",
-DEB-1
-      image: "/images/church-interior.jpg",
+      title: language === "en" ? "St. Gabriel Monthly Commemoration" : "የቅዱስ ገብርኤል ወርሃዊ ተዝካር",
       description: null,
       event_date: "2025-05-19",
       event_time: "10:00",
@@ -43,16 +39,10 @@ DEB-1
       image_url: "/images/religious/church-service.jpg",
       is_featured: false,
       created_at: new Date().toISOString(),
- main
     },
     {
       id: "fallback-2",
-      title:
-        language === "en"
-          ? "Sunday School for Children"
-          : "የሰንበት ትምህርት ቤት ለልጆች",
-DEB-1
-      image: "/images/church-front.jpg",
+      title: language === "en" ? "Sunday School for Children" : "የሰንበት ትምህርት ቤት ለልጆች",
       description: null,
       event_date: "2025-05-25",
       event_time: "09:00",
@@ -60,16 +50,10 @@ DEB-1
       image_url: "/images/gallery/church-service.jpg",
       is_featured: false,
       created_at: new Date().toISOString(),
-main
     },
     {
       id: "fallback-3",
-      title:
-        language === "en"
-          ? "Church Foundation Anniversary"
-          : "የቤተክርስቲያን መሰረት የተጣለበት ቀን",
-DEB-1
-      image: "/images/timket-celebration.jpg",
+      title: language === "en" ? "Church Foundation Anniversary" : "የቤተክርስቲያን መሰረት የተጣለበት ቀን",
       description: null,
       event_date: "2025-06-19",
       event_time: "11:00",
@@ -116,31 +100,24 @@ DEB-1
   const sliderContent = [
     {
       image: "/images/gallery/church-front.jpg",
-      title:
-        language === "en"
-          ? "Welcome to Our Church"
-          : "ወደ ቤተክርስቲያናችን እንኳን ደህና መጡ",
-      content:
-        language === "en"
-          ? "Debre Bisrat Dagimawi Kulibi St.Gabriel Ethiopian Orthodox Tewahedo Church"
-          : "ደብረ ብሥራት ዳግማዊ ቁልቢ ቅዱስ ገብርኤል ቤተክርስቲያን",
+      title: language === "en" ? "Welcome to Our Church" : "ወደ ቤተክርስቲያናችን እንኳን ደህና መጡ",
+      content: language === "en" 
+        ? "Debre Bisrat Dagimawi Kulibi St.Gabriel Ethiopian Orthodox Tewahedo Church"
+        : "ደብረ ብሥራት ዳግማዊ ቁልቢ ቅዱስ ገብርኤል ቤተክርስቲያን",
     },
     {
       image: "/images/religious/palm-sunday.jpg",
       title: language === "en" ? "Palm Sunday" : "ሆሳዕና",
-      content:
-        language === "en"
-          ? "Commemorating Jesus's triumphal entry into Jerusalem"
-          : "የኢየሱስ ክርስቶስ ወደ ኢየሩሳሌም መግባትን የሚያስታውስ",
+      content: language === "en"
+        ? "Commemorating Jesus's triumphal entry into Jerusalem"
+        : "የኢየሱስ ክርስቶስ ወደ ኢየሩሳሌም መግባትን የሚያስታውስ",
     },
     {
       image: "/images/gallery/church-service.jpg",
       title: language === "en" ? "Holy Sacrifice" : "ቅዱስ መስዋዕት",
-      content:
-        language === "en"
-          ? "Remembering the sacrifice of our Lord Jesus Christ"
-          : "የጌታችን የኢየሱስ ክርስቶስን መስዋዕትነት የምናስታውስበት",
-main
+      content: language === "en"
+        ? "Remembering the sacrifice of our Lord Jesus Christ"
+        : "የጌታችን የኢየሱስ ክርስቶስን መስዋዕትነት የምናስታውስበት",
     },
   ];
 
@@ -149,31 +126,9 @@ main
       <div className="container mx-auto px-4 py-8">
         {/* Mid-page Image Slider Section */}
         <section className="mb-12">
-          <ImageSlider
-            slides={[
-              {
-                image: "/images/church-front.jpg",
-                title:
-                  language === "en"
-                    ? "Welcome to Our Church"
-                    : "ወደ ቤተክርስቲያናችን እንኳን ደህና መጡ",
-                content:
-                  language === "en"
-                  ? "Debre Bisrat Dagimawi Kulibi St.Gabriel Ethiopian Orthodox Tewahedo Church"
-                  : "ደብረ ብሥራት ዳግማዊ ቁልቢ ቅዱስ ገብርኤል ቤተክርስቲያን",
-              },
-              {
-                image: "/images/church-interior.jpg",
-                title: language === "en" ? "Join Our Services" : "ወደ አምልኮታችን ይቀላቀሉ",
-                content:
-                  language === "en"
-                  ? "Experience the divine liturgy and spiritual services"
-                  : "የቅዱስ ቁርባንና መንፈሳዊ አገልግሎቶችን ያግኙ",
-              },
-            ]}
-          />
+          <ImageSlider slides={sliderContent} />
         </section>
-DEB-1
+
         {/* Two Column Section for Events and Donation */}
         <section className="py-12 px-6">
           <div className="container mx-auto">
@@ -182,92 +137,60 @@ DEB-1
               <div className="eth-card eth-flag-ribbon nostalgic-paper">
                 <div className="bg-church-burgundy text-white p-4 flex items-center">
                   <Calendar size={24} className="text-church-gold mr-2" />
-                  <h2 className="text-2xl font-serif">
-                    {t("upcoming_events")}
-                  </h2>
+                  <h2 className="text-2xl font-serif">{t("upcoming_events")}</h2>
                 </div>
                 <div className="p-6">
-                  <ul className="space-y-4">
-                    {upcomingEvents.map((event, index) => (
-                      <li
-                        key={index}
-      {/* Two Column Section for Events and Donation */}
-      <section className="py-12 px-6">
-        <div className="container mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Upcoming Events Column */}
-            <div className="eth-card eth-flag-ribbon nostalgic-paper">
-              <div className="bg-church-burgundy text-white p-4 flex items-center">
-                <Calendar size={24} className="text-church-gold mr-2" />
-                <h2 className="text-2xl font-serif">{t("upcoming_events")}</h2>
-              </div>
-              <div className="p-6">
-                {loadingEvents ? (
-                  <div className="space-y-4">
-                    {[...Array(3)].map((_, index) => (
-                      <div
-                        key={index}
-                        className="border-b border-church-gold/30 pb-3 last:border-0 flex items-start animate-pulse"
-                      >
-                        <div className="flex-1">
-                          <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
-                          <div className="h-5 bg-gray-200 rounded w-48"></div>
-                        </div>
-                        <div className="w-20 h-20 bg-gray-200 rounded-md ml-3 flex-shrink-0"></div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <ul className="space-y-4">
-                    {upcomingEvents.map((event) => (
-                      <li
-                        key={event.id}
-                        main
-                        className="border-b border-church-gold/30 pb-3 last:border-0 flex items-start"
-                      >
-                        <div className="flex-1">
-                          <p className="text-sm text-church-burgundy font-semibold">
-                            DEB-1
-                            {event.date}
-                          </p>
-                          <p className="text-lg">{event.title}</p>
-                        </div>
-                        {event.image && (
-                          <div className="w-20 h-20 rounded-md overflow-hidden ml-3 flex-shrink-0">
-                            <img
-                              src={event.image}
-                            {format(new Date(event.event_date), "MMMM d, yyyy")}
-                            {event.event_time && (
-                              <span className="ml-2 text-xs">
-                                at {event.event_time}
-                              </span>
-                            )}
-                          </p>
-                          <p className="text-lg">{event.title}</p>
-                          {event.location && (
-                            <p className="text-sm text-gray-600 mt-1">
-                              {event.location}
-                            </p>
-                          )}
-                        </div>
-                        {(event.image_url ||
-                          "/images/gallery/church-service.jpg") && (
-                          <div className="w-20 h-20 rounded-md overflow-hidden ml-3 flex-shrink-0">
-                            <img
-                              src={
-                                event.image_url ||
-                                "/images/gallery/church-service.jpg"
-                              }
-                              main
-                              alt={event.title}
-                              className="w-full h-full object-cover"
-                            />
+                  {loadingEvents ? (
+                    <div className="space-y-4">
+                      {[...Array(3)].map((_, index) => (
+                        <div
+                          key={index}
+                          className="border-b border-church-gold/30 pb-3 last:border-0 flex items-start animate-pulse"
+                        >
+                          <div className="flex-1">
+                            <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+                            <div className="h-5 bg-gray-200 rounded w-48"></div>
                           </div>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                              DEB-1
+                          <div className="w-20 h-20 bg-gray-200 rounded-md ml-3 flex-shrink-0"></div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <ul className="space-y-4">
+                      {upcomingEvents.map((event) => (
+                        <li
+                          key={event.id}
+                          className="border-b border-church-gold/30 pb-3 last:border-0 flex items-start"
+                        >
+                          <div className="flex-1">
+                            <p className="text-sm text-church-burgundy font-semibold">
+                              {format(new Date(event.event_date), "MMMM d, yyyy")}
+                              {event.event_time && (
+                                <span className="ml-2 text-xs">
+                                  at {event.event_time}
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-lg">{event.title}</p>
+                            {event.location && (
+                              <p className="text-sm text-gray-600 mt-1">
+                                {event.location}
+                              </p>
+                            )}
+                          </div>
+                          {(event.image_url || "/images/gallery/church-service.jpg") && (
+                            <div className="w-20 h-20 rounded-md overflow-hidden ml-3 flex-shrink-0">
+                              <img
+                                src={event.image_url || "/images/gallery/church-service.jpg"}
+                                alt={event.title}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                   <div className="mt-6">
                     <Link to="/events">
                       <Button className="bg-church-burgundy hover:bg-church-burgundy/90 text-white font-semibold">
@@ -275,14 +198,6 @@ DEB-1
                       </Button>
                     </Link>
                   </div>
-                )}
-                <div className="mt-6">
-                  <Link to="/events">
-                    <Button className="bg-church-burgundy hover:bg-church-burgundy/90 text-white font-semibold">
-                      {t("view all")} →
-                    </Button>
-                  </Link>
-                              main
                 </div>
               </div>
 
@@ -307,11 +222,6 @@ DEB-1
                         {t("donate_now")}
                       </Button>
                     </Link>
-
-                    <Link
-                      to="/donation"
-                      className="text-church-burgundy hover:text-church-gold transition-colors text-center"
-                    ></Link>
                   </div>
                 </div>
               </div>
@@ -326,7 +236,7 @@ DEB-1
               <h2 className="text-3xl font-serif mb-8 text-center eth-title">
                 <span className="inline-flex items-center">
                   <Church size={22} className="text-church-burgundy mr-2" />
-                  {t("")}
+                  {t("wisdom")}
                 </span>
               </h2>
 
