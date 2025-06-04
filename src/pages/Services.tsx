@@ -268,7 +268,7 @@ const Services: React.FC = () => {
       title: language === "en" ? "Marriage Ceremony" : "ጋብቻ መፈፀም",
       description:
         language === "en"
-          ? "Traditional Orthodox Christian marriage ceremony following church customs and traditions."
+          ? "Traditional Orthodox Christian church marriage ceremony following church customs and traditions."
           : "የቤተክርስቲያን ልማዶችን እና ወጎችን የሚከተል ባህላዊ የኦርቶዶክስ ክርስቲያን የጋብቻ ሥርዓት።",
       time: language === "en" ? "By appointment" : "በቀጠሮ",
       requiresAppointment: true,
@@ -367,7 +367,7 @@ const Services: React.FC = () => {
       <div className="py-12 px-6">
         <div className="container mx-auto">
           <div className="text-center mb-12">
-            <Settings className="inline-block h-12 w-12 text-church-burgundy mb-3" />
+            <Settings className="inline-block h-10 w-10 text-church-burgundy mb-3" />
             <h1 className="text-4xl font-serif text-church-burgundy mb-4">
               {t("services_title") || "Church Services"}
             </h1>

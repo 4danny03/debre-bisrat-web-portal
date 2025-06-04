@@ -47,7 +47,35 @@ export default function AdminLayout() {
         .eq("id", session.user.id)
         .single();
 
-      if (error || !profile || profile.role !== "admin") {
+      if (error) {
+        console.error("Error fetching profile:", error);
+        // If profile doesn't exist, create one for first user as admin
+        const { count: adminCount } = await supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true });
+
+        if (adminCount === 0) {
+          // First user becomes admin
+          const { error: createError } = await supabase
+            .from("profiles")
+            .insert({
+              id: session.user.id,
+              email: session.user.email,
+              role: "admin",
+            });
+
+          if (createError) {
+            console.error("Error creating admin profile:", createError);
+            await supabase.auth.signOut();
+            navigate("/admin/login");
+            return;
+          }
+        } else {
+          await supabase.auth.signOut();
+          navigate("/admin/login");
+          return;
+        }
+      } else if (!profile || profile.role !== "admin") {
         await supabase.auth.signOut();
         navigate("/admin/login");
         return;
@@ -126,6 +154,12 @@ export default function AdminLayout() {
       icon: Settings,
       label: "Settings",
       description: "System configuration",
+    },
+    {
+      to: "/admin/health",
+      icon: Activity,
+      label: "Health Check",
+      description: "System status",
     },
   ];
 

@@ -48,6 +48,10 @@ import {
   ShieldAlert,
   UserX,
   Search,
+  Crown,
+  Shield,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import {
   Card,
@@ -158,6 +162,19 @@ export default function Users() {
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
+      // Check if trying to demote the last admin
+      if (newRole === "user" && adminCount <= 1) {
+        const user = users.find((u) => u.id === userId);
+        if (user?.role === "admin") {
+          toast({
+            title: "Cannot Demote",
+            description: "Cannot demote the last admin user",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
       const { error } = await supabase
         .from("profiles")
         .update({ role: newRole })
@@ -176,6 +193,66 @@ export default function Users() {
       toast({
         title: "Error",
         description: "Failed to update user role",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handlePromoteToAdmin = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ role: "admin" })
+        .eq("id", userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "User promoted to admin successfully",
+      });
+
+      await fetchUsers();
+    } catch (error) {
+      console.error("Error promoting user:", error);
+      toast({
+        title: "Error",
+        description: "Failed to promote user to admin",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDemoteFromAdmin = async (userId: string) => {
+    try {
+      // Check if this is the last admin
+      if (adminCount <= 1) {
+        toast({
+          title: "Cannot Demote",
+          description: "Cannot demote the last admin user",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({ role: "user" })
+        .eq("id", userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Admin demoted to user successfully",
+      });
+
+      await fetchUsers();
+    } catch (error) {
+      console.error("Error demoting admin:", error);
+      toast({
+        title: "Error",
+        description: "Failed to demote admin",
         variant: "destructive",
       });
     }
@@ -292,7 +369,7 @@ export default function Users() {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Admin Users</CardTitle>
@@ -302,8 +379,8 @@ export default function Users() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center">
-              <ShieldCheck className="h-5 w-5 text-green-600 mr-2" />
-              <div className="text-2xl font-bold text-green-600">
+              <Crown className="h-5 w-5 text-yellow-600 mr-2" />
+              <div className="text-2xl font-bold text-yellow-600">
                 {adminCount}
               </div>
             </div>
@@ -316,9 +393,23 @@ export default function Users() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center">
-              <ShieldAlert className="h-5 w-5 text-blue-600 mr-2" />
+              <Shield className="h-5 w-5 text-blue-600 mr-2" />
               <div className="text-2xl font-bold text-blue-600">
                 {userCount}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <CardDescription>All registered users</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center">
+              <ShieldCheck className="h-5 w-5 text-green-600 mr-2" />
+              <div className="text-2xl font-bold text-green-600">
+                {adminCount + userCount}
               </div>
             </div>
           </CardContent>
@@ -349,8 +440,9 @@ export default function Users() {
             <TableRow>
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
+              <TableHead>Admin Actions</TableHead>
               <TableHead>Created At</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
+              <TableHead className="w-[120px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -358,18 +450,98 @@ export default function Users() {
               <TableRow key={user.id}>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>
-                  <Select
-                    defaultValue={user.role}
-                    onValueChange={(value) => handleRoleChange(user.id, value)}
-                  >
-                    <SelectTrigger className="w-[100px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="user">User</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center space-x-2">
+                    {user.role === "admin" ? (
+                      <div className="flex items-center space-x-1 px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
+                        <Crown className="h-3 w-3" />
+                        <span>Admin</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                        <Shield className="h-3 w-3" />
+                        <span>User</span>
+                      </div>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center space-x-2">
+                    {user.role === "admin" ? (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-orange-600 hover:text-orange-700 border-orange-200 hover:border-orange-300"
+                            disabled={adminCount <= 1}
+                          >
+                            <ArrowDown className="h-3 w-3 mr-1" />
+                            Demote
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Demote Admin</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to demote {user.email} from
+                              admin to regular user?
+                              {adminCount <= 1 && (
+                                <p className="text-red-500 mt-2 font-bold">
+                                  Warning: Cannot demote the last admin user.
+                                </p>
+                              )}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDemoteFromAdmin(user.id)}
+                              className="bg-orange-600 hover:bg-orange-700"
+                              disabled={adminCount <= 1}
+                            >
+                              <ArrowDown className="h-4 w-4 mr-2" />
+                              Demote to User
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    ) : (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-green-600 hover:text-green-700 border-green-200 hover:border-green-300"
+                          >
+                            <ArrowUp className="h-3 w-3 mr-1" />
+                            Promote
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              Promote to Admin
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to promote {user.email} to
+                              admin? This will give them full administrative
+                              privileges.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handlePromoteToAdmin(user.id)}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <ArrowUp className="h-4 w-4 mr-2" />
+                              Promote to Admin
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell>
                   {new Date(user.created_at).toLocaleDateString()}

@@ -3,10 +3,11 @@ import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
 import { api } from "@/integrations/supabase/api";
 import { format } from "date-fns";
-import { Calendar, MapPin, Clock } from "lucide-react";
+import { Calendar, MapPin, Clock, RefreshCw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDataRefresh } from "@/hooks/useDataRefresh";
 
 interface Event {
   id: string;
@@ -49,6 +50,20 @@ export default function Events() {
     loadEvents();
   }, []);
 
+  // Use enhanced data refresh hook
+  const { manualRefresh, forceSyncData } = useDataRefresh(
+    loadEvents,
+    3 * 60 * 1000, // Refresh every 3 minutes
+    [],
+    "events",
+  );
+
+  const handleManualRefresh = async () => {
+    console.log("Manual refresh triggered for events");
+    await manualRefresh();
+    await forceSyncData();
+  };
+
   const loadEvents = async () => {
     try {
       setLoading(true);
@@ -56,6 +71,11 @@ export default function Events() {
       setEvents(data || []);
     } catch (error) {
       console.error("Error loading events:", error);
+      // Don't show error to user for background refreshes
+      if (events.length === 0) {
+        // Only show error if we have no events to display
+        console.error("Failed to load events on initial load");
+      }
     } finally {
       setLoading(false);
     }
@@ -68,11 +88,23 @@ export default function Events() {
           <h1 className="text-3xl md:text-4xl font-bold text-church-burgundy mb-4">
             {t("events") || "Church Events"}
           </h1>
-          <p className="text-gray-600 max-w-2xl mx-auto">
+          <p className="text-gray-600 max-w-2xl mx-auto mb-4">
             Join us for our upcoming events and celebrations. Our church hosts
             various activities throughout the year for all members of our
             community.
           </p>
+          <Button
+            onClick={handleManualRefresh}
+            variant="outline"
+            size="sm"
+            disabled={loading}
+            className="inline-flex items-center"
+          >
+            <RefreshCw
+              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+            />
+            Refresh Events
+          </Button>
         </div>
 
         {loading ? (
