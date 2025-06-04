@@ -22,13 +22,24 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     outDir: "dist",
-    sourcemap: false
+    sourcemap: false,
+    rollupOptions: {
+      external: [
+        // Exclude all supabase functions from the build
+        /^supabase\/functions/,
+      ]
+    }
   },
-  // Explicitly exclude Supabase functions from the build
+  // Define globals for compatibility
   define: {
     global: 'globalThis',
   },
+  // Exclude supabase functions from optimization
   optimizeDeps: {
     exclude: ['supabase/functions']
+  },
+  // Exclude supabase functions from being processed
+  esbuild: {
+    exclude: ['supabase/functions/**/*']
   }
 }));
