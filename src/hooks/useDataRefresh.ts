@@ -18,47 +18,55 @@ export const useDataRefresh = (
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const isActiveRef = useRef(true);
   const lastRefreshRef = useRef<Date | null>(null);
+  const refreshFunctionRef = useRef(refreshFunction);
   const { connectionHealth, forceSync } = useDataContext();
 
-  // Enhanced refresh function with error handling and retry logic
-  const enhancedRefreshFunction = useCallback(async () => {
-    if (!isActiveRef.current) return;
-
-    const maxRetries = 3;
-    let retryCount = 0;
-
-    while (retryCount < maxRetries) {
-      try {
-        await refreshFunction();
-        lastRefreshRef.current = new Date();
-        console.log(`Data refresh successful for ${tableName || "component"}`);
-        break;
-      } catch (error) {
-        retryCount++;
-        console.error(
-          `Error during data refresh (attempt ${retryCount}/${maxRetries}):`,
-          error,
-        );
-
-        if (retryCount < maxRetries) {
-          // Wait before retrying (exponential backoff)
-          await new Promise((resolve) =>
-            setTimeout(resolve, 1000 * Math.pow(2, retryCount - 1)),
-          );
-        } else {
-          console.error(
-            `Max retry attempts reached for ${tableName || "component"} refresh`,
-          );
-        }
-      }
-    }
-  }, [refreshFunction, tableName]);
+  // Update the ref when refreshFunction changes
+  useEffect(() => {
+    refreshFunctionRef.current = refreshFunction;
+  }, [refreshFunction]);
 
   useEffect(() => {
     // Clear existing interval
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
+
+    // Enhanced refresh function with error handling and retry logic
+    const enhancedRefreshFunction = async () => {
+      if (!isActiveRef.current) return;
+
+      const maxRetries = 3;
+      let retryCount = 0;
+
+      while (retryCount < maxRetries) {
+        try {
+          await refreshFunctionRef.current();
+          lastRefreshRef.current = new Date();
+          console.log(
+            `Data refresh successful for ${tableName || "component"}`,
+          );
+          break;
+        } catch (error) {
+          retryCount++;
+          console.error(
+            `Error during data refresh (attempt ${retryCount}/${maxRetries}):`,
+            error,
+          );
+
+          if (retryCount < maxRetries) {
+            // Wait before retrying (exponential backoff)
+            await new Promise((resolve) =>
+              setTimeout(resolve, 1000 * Math.pow(2, retryCount - 1)),
+            );
+          } else {
+            console.error(
+              `Max retry attempts reached for ${tableName || "component"} refresh`,
+            );
+          }
+        }
+      }
+    };
 
     // Set up new interval with health check
     intervalRef.current = setInterval(async () => {
@@ -134,7 +142,7 @@ export const useDataRefresh = (
       window.removeEventListener("adminActionCompleted", handleAdminAction);
       window.removeEventListener("dataRefresh", handleDataChange);
     };
-  }, [...dependencies, connectionHealth, enhancedRefreshFunction]);
+  }, [tableName, connectionHealth, intervalMs]);
 
   // Pause/resume functions
   const pauseRefresh = useCallback(() => {
@@ -150,15 +158,21 @@ export const useDataRefresh = (
   // Manual refresh function
   const manualRefresh = useCallback(async () => {
     console.log(`Manual refresh triggered for ${tableName || "component"}`);
-    await enhancedRefreshFunction();
-  }, [enhancedRefreshFunction, tableName]);
+    if (refreshFunctionRef.current) {
+      await refreshFunctionRef.current();
+    }
+  }, [tableName]);
 
   // Force sync function
   const forceSyncData = useCallback(async () => {
     console.log(`Force sync triggered for ${tableName || "component"}`);
-    await forceSync();
-    await enhancedRefreshFunction();
-  }, [forceSync, enhancedRefreshFunction, tableName]);
+    if (forceSync) {
+      await forceSync();
+    }
+    if (refreshFunctionRef.current) {
+      await refreshFunctionRef.current();
+    }
+  }, [forceSync, tableName]);
 
   return {
     pauseRefresh,

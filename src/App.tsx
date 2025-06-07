@@ -1,9 +1,20 @@
-
 import * as React from "react";
+import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useRoutes } from "react-router-dom";
+
+// Simple component to handle tempo routes without causing recursion
+function TempoRoutesHandler() {
+  // Only render tempo routes if in tempo environment
+  if (!import.meta.env.VITE_TEMPO || import.meta.env.VITE_TEMPO !== "true") {
+    return null;
+  }
+
+  // Return a simple route that will be handled by the main Routes component
+  return null;
+}
 import Home from "./pages/Home";
 import About from "./pages/About";
 import Events from "./pages/Events";
@@ -48,14 +59,17 @@ export default function App(): React.ReactElement {
                 <Route path="/about" element={<About />} />
                 <Route path="/events" element={<Events />} />
                 <Route path="/contact" element={<Contact />} />
-                <Route path="/membership" element={<MembershipRegistration />} />
+                <Route
+                  path="/membership"
+                  element={<MembershipRegistration />}
+                />
                 <Route path="/donation" element={<Donation />} />
                 <Route path="/donation-success" element={<DonationSuccess />} />
                 <Route path="/donation-demo" element={<DonationDemo />} />
                 <Route path="/gallery" element={<Gallery />} />
                 <Route path="/services" element={<Services />} />
                 <Route path="/sermons" element={<Sermons />} />
-                
+
                 {/* Admin routes */}
                 <Route path="/admin" element={<AdminLayout />}>
                   <Route path="login" element={<AdminLogin />} />
@@ -66,12 +80,18 @@ export default function App(): React.ReactElement {
                   <Route path="sermons" element={<AdminSermons />} />
                   <Route path="members" element={<AdminMembers />} />
                   <Route path="testimonials" element={<AdminTestimonials />} />
-                  <Route path="prayer-requests" element={<AdminPrayerRequests />} />
+                  <Route
+                    path="prayer-requests"
+                    element={<AdminPrayerRequests />}
+                  />
                   <Route path="donations" element={<AdminDonations />} />
                   <Route path="users" element={<AdminUsers />} />
                   <Route path="health" element={<AdminHealthCheck />} />
                 </Route>
-                
+
+                {/* Add this before the catchall route */}
+                {import.meta.env.VITE_TEMPO && <Route path="/tempobook/*" />}
+
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

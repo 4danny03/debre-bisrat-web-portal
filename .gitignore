@@ -4,6 +4,7 @@ node_modules/
 # Tempo files
 **/tempobook/dynamic/
 **/tempobook/storyboards/
+.tempo
 
 # Environment files
 .env
