@@ -1,98 +1,151 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { useLanguage } from '../contexts/LanguageContext';
-import { MapPin, Phone, Mail } from 'lucide-react';
+import React from "react";
+import { Link } from "react-router-dom";
+import { useLanguage } from "../contexts/LanguageContext";
+import { MapPin, Phone, Mail } from "lucide-react";
 
 const Footer: React.FC = () => {
   const { t, language } = useLanguage();
-  
+
   return (
-    <footer className="bg-church-burgundy text-white py-8">
+    <footer className="bg-gradient-to-r from-church-burgundy via-church-burgundy to-church-burgundy/95 text-white py-12 mt-16">
       <div className="container mx-auto px-4">
-        <div className="flex flex-col md:flex-row justify-between">
-          <div className="mb-6 md:mb-0">
-            <h2 className="text-xl font-serif text-church-gold mb-3">
-              {language === 'en' 
-                ? "Debre Bisrat Dagimawi Kulibi St.Gabriel church" 
-                : "ደብረ ብሥራት ዳግማዊ ኩሊቢ ቅዱስ ገብርኤል ቤተክርስቲያን"}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+          <div className="space-y-4">
+            <h2
+              className="text-2xl font-bold text-church-gold mb-4"
+              style={{
+                textShadow:
+                  "2px 2px 4px rgba(0,0,0,0.8), 1px 1px 2px rgba(0,0,0,0.6)",
+              }}
+            >
+              {language === "en"
+                ? "Debre Bisrat Dagimawi Kulibi St.Gabriel church"
+                : "ደብረ ብሥራት ዳግማዊ ቁልቢ ቅዱስ ገብርኤል ቤተክርስቲያን"}
             </h2>
-            <div className="space-y-2">
-              <div className="flex items-center">
-                <MapPin size={18} className="text-church-gold mr-2" />
-                <address className="not-italic">
+            <div className="space-y-3">
+              <div className="flex items-start group">
+                <MapPin
+                  size={20}
+                  className="text-church-gold mr-3 mt-1 group-hover:scale-110 transition-transform"
+                />
+                <address className="not-italic leading-relaxed">
                   16020 Batson Rd, Spencerville, MD 20868
                 </address>
               </div>
-              <div className="flex items-center">
-                <Phone size={18} className="text-church-gold mr-2" />
-                <p>(240)-381-8146</p>
+              <div className="flex items-center group">
+                <Phone
+                  size={20}
+                  className="text-church-gold mr-3 group-hover:scale-110 transition-transform"
+                />
+                <p className="font-medium">(240)-381-8146</p>
               </div>
-              <div className="flex items-center">
-                <Mail size={18} className="text-church-gold mr-2" />
-                <p>info@stgabrielmd.org</p>
+              <div className="flex items-center group">
+                <Mail
+                  size={20}
+                  className="text-church-gold mr-3 group-hover:scale-110 transition-transform"
+                />
+                <p className="font-medium">info@stgabrielmd.org</p>
               </div>
             </div>
           </div>
 
-          <div className="mb-6 md:mb-0">
-            <h3 className="text-church-gold text-lg mb-3">
-              {language === 'en' ? "Quick Links" : "ፈጣን አገናኞች"}
+          <div>
+            <h3 className="text-church-gold text-xl font-semibold mb-4">
+              {language === "en" ? "Quick Links" : "ፈጣን አገናኞች"}
             </h3>
-            <ul className="space-y-2">
-              <li><Link to="/" className="hover:text-church-gold transition-colors">{t("home")}</Link></li>
-              <li><Link to="/about" className="hover:text-church-gold transition-colors">{t("about")}</Link></li>
-              <li><Link to="/services" className="hover:text-church-gold transition-colors">{t("services")}</Link></li>
-              <li><Link to="/donation" className="hover:text-church-gold transition-colors">{t("donation")}</Link></li>
+            <ul className="space-y-3">
+              <li>
+                <Link
+                  to="/"
+                  className="hover:text-church-gold transition-all hover:translate-x-1 block py-1"
+                >
+                  {t("home")}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/about"
+                  className="hover:text-church-gold transition-all hover:translate-x-1 block py-1"
+                >
+                  {t("about")}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/services"
+                  className="hover:text-church-gold transition-all hover:translate-x-1 block py-1"
+                >
+                  {t("services")}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/donation"
+                  className="hover:text-church-gold transition-all hover:translate-x-1 block py-1"
+                >
+                  {t("donation")}
+                </Link>
+              </li>
             </ul>
           </div>
 
           <div>
-            <h3 className="text-church-gold text-lg mb-3">
-              {language === 'en' ? "Connect With Us" : "ከእኛ ጋር ይገናኙ"}
+            <h3 className="text-church-gold text-xl font-semibold mb-4">
+              {language === "en" ? "Connect With Us" : "ከእኛ ጋር ይገናኙ"}
             </h3>
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               <li>
-                <a 
-                  href="https://www.facebook.com/EthiopianOrthodoxSt.GabrielChurchSilverspringMD" 
-                  target="_blank" 
+                <a
+                  href="https://www.facebook.com/EthiopianOrthodoxSt.GabrielChurchSilverspringMD"
+                  target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-church-gold transition-colors"
+                  className="hover:text-church-gold transition-all hover:translate-x-1 block py-1 font-medium"
                 >
-                  Facebook
+                  📘 Facebook
                 </a>
               </li>
               <li>
-                <a 
-                  href="https://stgabrielmd.org" 
-                  target="_blank" 
+                <a
+                  href="https://stgabrielmd.org"
+                  target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-church-gold transition-colors"
+                  className="hover:text-church-gold transition-all hover:translate-x-1 block py-1 font-medium"
                 >
-                  {language === 'en' ? "Official Website" : "ይፋዊ ድረ-ገጽ"}
+                  🌐 {language === "en" ? "Official Website" : "ይፋዊ ድረ-ገጽ"}
                 </a>
               </li>
               <li>
-                <Link to="/contact" className="hover:text-church-gold transition-colors">
-                  {t("contact")}
+                <Link
+                  to="/contact"
+                  className="hover:text-church-gold transition-all hover:translate-x-1 block py-1 font-medium"
+                >
+                  📞 {t("contact")}
                 </Link>
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-white/20 text-center text-sm">
-          <p>{t("copyright")}</p>
-          <p className="mt-2">
-            {language === 'en' 
-              ? "Visit us at our church location for worship services and community events." 
-              : "ለአምልኮ አገልግሎቶች እና የማህበረሰብ ዝግጅቶች በቤተክርስቲያናችን ይጎብኙን።"}
-          </p>
-          <Link 
-            to="/admin/login" 
-            className="mt-4 inline-block text-church-gold/60 hover:text-church-gold text-xs transition-colors"
-          >
-            {language === 'en' ? "Administration" : "አስተዳደር"}
-          </Link>
+        <div className="mt-12 pt-8 border-t border-white/20">
+          <div className="text-center space-y-4">
+            <div className="flex justify-center space-x-4 mb-4">
+              <div className="w-8 h-2 bg-green-500 rounded"></div>
+              <div className="w-8 h-2 bg-yellow-400 rounded"></div>
+              <div className="w-8 h-2 bg-red-500 rounded"></div>
+            </div>
+            <p className="text-sm font-medium">{t("copyright")}</p>
+            <p className="text-sm opacity-90 max-w-2xl mx-auto leading-relaxed">
+              {language === "en"
+                ? "Visit us at our church location for worship services and community events. All are welcome to join our spiritual family."
+                : "ለአምልኮ አገልግሎቶች እና የማህበረሰብ ዝግጅቶች በቤተክርስቲያናችን ይጎብኙን። ሁሉም ወደ መንፈሳዊ ቤተሰባችን እንዲቀላቀሉ እንኳን ደህና መጡ።"}
+            </p>
+            <Link
+              to="/admin/login"
+              className="inline-block text-church-gold/70 hover:text-church-gold text-xs transition-all hover:scale-105 mt-4 px-3 py-1 rounded border border-church-gold/30 hover:border-church-gold/60"
+            >
+              {language === "en" ? "🔐 Administration" : "🔐 አስተዳደር"}
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

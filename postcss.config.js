@@ -1,9 +1,11 @@
+import postcssNested from "postcss-nested";
+
 /** @type {import('postcss').Config} */
-module.exports = {
+export default {
   plugins: {
-    'postcss-import': {},
-    'tailwindcss/nesting': 'postcss-nesting',
-    'tailwindcss': {},
-    'autoprefixer': {},
-  }
-}
+    "postcss-import": {},
+    "tailwindcss/nesting": postcssNested,
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
