@@ -45,15 +45,8 @@ export default defineConfig(({ mode }) => ({
   // Exclude supabase functions from being processed by esbuild
   esbuild: {
     exclude: [
-      "supabase/functions/**/*",
-      "**/supabase/functions/**/*"
-    ],
-  },
-  // Exclude supabase functions from TypeScript checking
-  typescript: {
-    exclude: [
-      "supabase/functions/**/*",
-      "**/supabase/functions/**/*"
+      "**/supabase/functions/**",
+      "supabase/functions/**"
     ],
   },
 }));
