@@ -130,8 +130,12 @@ export type Database = {
           email: string | null
           full_name: string
           id: string
+          join_date: string | null
+          last_renewal_date: string | null
           membership_date: string | null
           membership_status: string | null
+          membership_type: string | null
+          next_renewal_date: string | null
           phone: string | null
           updated_at: string
         }
@@ -141,8 +145,12 @@ export type Database = {
           email?: string | null
           full_name: string
           id?: string
+          join_date?: string | null
+          last_renewal_date?: string | null
           membership_date?: string | null
           membership_status?: string | null
+          membership_type?: string | null
+          next_renewal_date?: string | null
           phone?: string | null
           updated_at?: string
         }
@@ -152,8 +160,12 @@ export type Database = {
           email?: string | null
           full_name?: string
           id?: string
+          join_date?: string | null
+          last_renewal_date?: string | null
           membership_date?: string | null
           membership_status?: string | null
+          membership_type?: string | null
+          next_renewal_date?: string | null
           phone?: string | null
           updated_at?: string
         }
@@ -251,6 +263,45 @@ export type Database = {
           scripture_reference?: string | null
           sermon_date?: string
           title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      site_settings: {
+        Row: {
+          church_address: string | null
+          church_name: string | null
+          created_at: string
+          email: string | null
+          enable_donations: boolean | null
+          enable_membership: boolean | null
+          id: number
+          maintenance_mode: boolean | null
+          phone_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          church_address?: string | null
+          church_name?: string | null
+          created_at?: string
+          email?: string | null
+          enable_donations?: boolean | null
+          enable_membership?: boolean | null
+          id?: number
+          maintenance_mode?: boolean | null
+          phone_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          church_address?: string | null
+          church_name?: string | null
+          created_at?: string
+          email?: string | null
+          enable_donations?: boolean | null
+          enable_membership?: boolean | null
+          id?: number
+          maintenance_mode?: boolean | null
+          phone_number?: string | null
           updated_at?: string
         }
         Relationships: []

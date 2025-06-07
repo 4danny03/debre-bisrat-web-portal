@@ -1,207 +1,145 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from "react";
-import { api } from "@/integrations/supabase/api";
-import { supabase } from "@/integrations/supabase/client";
-import { dataSyncService } from "@/services/DataSyncService";
-import { gitSyncService } from "@/services/GitSyncService";
+
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { DataSyncService } from '@/services/DataSyncService';
 
 interface DataContextType {
-  refreshAllData: () => Promise<void>;
-  isRefreshing: boolean;
-  lastRefresh: Date | null;
-  connectionHealth: boolean;
-  syncStatus: Record<string, string>;
-  gitStatus: {
-    hasChanges: boolean;
-    changedFiles: string[];
-    branch: string;
-    lastCommit: string;
-  };
-  forceSync: () => Promise<void>;
-  autoCommitAndPush: (message?: string) => Promise<boolean>;
+  events: any[];
+  gallery: any[];
+  sermons: any[];
+  testimonials: any[];
+  prayerRequests: any[];
+  donations: any[];
+  members: any[];
+  loading: boolean;
+  error: string | null;
+  refreshData: () => Promise<void>;
+  forceRefresh: () => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-export const useDataContext = () => {
-  const context = useContext(DataContext);
-  if (!context) {
-    throw new Error("useDataContext must be used within a DataProvider");
-  }
-  return context;
-};
-
-interface DataProviderProps {
-  children: ReactNode;
-}
-
-export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
+export function DataProvider({ children }: { children: React.ReactNode }) {
+  const [events, setEvents] = useState<any[]>([]);
+  const [gallery, setGallery] = useState<any[]>([]);
+  const [sermons, setSermons] = useState<any[]>([]);
+  const [testimonials, setTestimonials] = useState<any[]>([]);
+  const [prayerRequests, setPrayerRequests] = useState<any[]>([]);
+  const [donations, setDonations] = useState<any[]>([]);
+  const [members, setMembers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
-  const [connectionHealth, setConnectionHealth] = useState(true);
-  const [syncStatus, setSyncStatus] = useState<Record<string, string>>({});
-  const [gitStatus, setGitStatus] = useState({
-    hasChanges: false,
-    changedFiles: [],
-    branch: "main",
-    lastCommit: "unknown",
-  });
 
-  const refreshAllData = async () => {
-    if (isRefreshing) return; // Prevent multiple simultaneous refreshes
+  const refreshAllData = useCallback(async () => {
+    // Prevent multiple simultaneous refreshes
+    if (isRefreshing) {
+      console.log('Refresh already in progress, skipping...');
+      return;
+    }
 
     setIsRefreshing(true);
+    setLoading(true);
+    setError(null);
+
     try {
-      // Trigger a custom event that components can listen to
-      window.dispatchEvent(new CustomEvent("dataRefresh"));
-      dataSyncService.forceRefresh();
-      setLastRefresh(new Date());
+      console.log('Starting data refresh...');
+      
+      const [
+        eventsData,
+        galleryData,
+        sermonsData,
+        testimonialsData,
+        prayerRequestsData,
+        donationsData,
+        membersData
+      ] = await Promise.allSettled([
+        supabase.from('events').select('*').order('date', { ascending: false }),
+        supabase.from('gallery').select('*').order('created_at', { ascending: false }),
+        supabase.from('sermons').select('*').order('date', { ascending: false }),
+        supabase.from('testimonials').select('*').order('created_at', { ascending: false }),
+        supabase.from('prayer_requests').select('*').order('created_at', { ascending: false }),
+        supabase.from('donations').select('*').order('created_at', { ascending: false }),
+        supabase.from('members').select('*').order('created_at', { ascending: false })
+      ]);
 
-      // Check connection health
-      const health = await dataSyncService.checkHealth();
-      setConnectionHealth(health);
-
-      // Update sync status
-      const status = dataSyncService.getSubscriptionStatus();
-      setSyncStatus(status);
-
-      console.log("Data refresh completed successfully");
-    } catch (error) {
-      console.error("Error refreshing data:", error);
-      setConnectionHealth(false);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
-  const forceSync = async () => {
-    console.log("Force syncing all data...");
-    await refreshAllData();
-
-    // Additional force sync logic
-    dataSyncService.forceRefresh();
-
-    // Emit force refresh events
-    window.dispatchEvent(new CustomEvent("forceRefresh"));
-    window.dispatchEvent(new CustomEvent("eventsChanged"));
-    window.dispatchEvent(new CustomEvent("galleryChanged"));
-    window.dispatchEvent(new CustomEvent("sermonsChanged"));
-    window.dispatchEvent(new CustomEvent("testimonialsChanged"));
-    window.dispatchEvent(new CustomEvent("membersChanged"));
-    window.dispatchEvent(new CustomEvent("donationsChanged"));
-  };
-
-  const autoCommitAndPush = async (message?: string): Promise<boolean> => {
-    try {
-      const commitMessage =
-        message || `Auto-sync: Admin changes ${new Date().toISOString()}`;
-      const success = await gitSyncService.autoSync(commitMessage);
-
-      if (success) {
-        console.log("Successfully committed and pushed changes");
-        // Update git status after successful sync
-        const newGitStatus = await gitSyncService.getGitStatus();
-        setGitStatus(newGitStatus);
+      // Update state with successful results
+      if (eventsData.status === 'fulfilled' && eventsData.value.data) {
+        setEvents(eventsData.value.data);
+      }
+      if (galleryData.status === 'fulfilled' && galleryData.value.data) {
+        setGallery(galleryData.value.data);
+      }
+      if (sermonsData.status === 'fulfilled' && sermonsData.value.data) {
+        setSermons(sermonsData.value.data);
+      }
+      if (testimonialsData.status === 'fulfilled' && testimonialsData.value.data) {
+        setTestimonials(testimonialsData.value.data);
+      }
+      if (prayerRequestsData.status === 'fulfilled' && prayerRequestsData.value.data) {
+        setPrayerRequests(prayerRequestsData.value.data);
+      }
+      if (donationsData.status === 'fulfilled' && donationsData.value.data) {
+        setDonations(donationsData.value.data);
+      }
+      if (membersData.status === 'fulfilled' && membersData.value.data) {
+        setMembers(membersData.value.data);
       }
 
-      return success;
-    } catch (error) {
-      console.error("Failed to auto-commit and push:", error);
-      return false;
+      console.log('Data refresh completed successfully');
+    } catch (err) {
+      console.error('Error refreshing data:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred while refreshing data');
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
     }
-  };
+  }, [isRefreshing]);
 
-  // Set up enhanced real-time subscriptions and monitoring
+  const handleForceRefresh = useCallback(() => {
+    console.log('Force refresh requested');
+    if (!isRefreshing) {
+      refreshAllData();
+    }
+  }, [refreshAllData, isRefreshing]);
+
   useEffect(() => {
-    console.log("Setting up enhanced data synchronization...");
-
-    // Set up periodic health checks
-    const healthCheckInterval = setInterval(async () => {
-      const health = await dataSyncService.checkHealth();
-      setConnectionHealth(health);
-
-      const status = dataSyncService.getSubscriptionStatus();
-      setSyncStatus(status);
-
-      // Update git status
-      const newGitStatus = await gitSyncService.getGitStatus();
-      setGitStatus(newGitStatus);
-    }, 30000); // Check every 30 seconds
-
-    // Set up data sync event listeners
-    const handleDataChange = () => {
-      console.log("Data change detected, refreshing...");
-      refreshAllData();
-    };
-
-    const handleAdminAction = () => {
-      console.log("Admin action detected, forcing refresh...");
-      forceSync();
-    };
-
-    const handleForceRefresh = () => {
-      console.log("Force refresh requested");
-      refreshAllData();
-    };
-
-    // Add event listeners
-    dataSyncService.addEventListener("dataChanged", handleDataChange);
-    dataSyncService.addEventListener("adminActionCompleted", handleAdminAction);
-    dataSyncService.addEventListener("forceRefresh", handleForceRefresh);
-
-    // Browser event listeners for backward compatibility
-    window.addEventListener("dataChanged", handleDataChange);
-    window.addEventListener("adminActionCompleted", handleAdminAction);
-    window.addEventListener("forceRefresh", handleForceRefresh);
-
-    // Setup auto-git sync (every 30 minutes)
-    const cleanupAutoSync = gitSyncService.setupAutoSync(30);
-
-    // Initial health check
+    // Initial data load
     refreshAllData();
 
-    // Cleanup function
+    // Subscribe to DataSyncService events
+    const unsubscribe = DataSyncService.subscribe('forceRefresh', handleForceRefresh);
+
     return () => {
-      clearInterval(healthCheckInterval);
-
-      // Remove event listeners
-      dataSyncService.removeEventListener("dataChanged", handleDataChange);
-      dataSyncService.removeEventListener(
-        "adminActionCompleted",
-        handleAdminAction,
-      );
-      dataSyncService.removeEventListener("forceRefresh", handleForceRefresh);
-
-      window.removeEventListener("dataChanged", handleDataChange);
-      window.removeEventListener("adminActionCompleted", handleAdminAction);
-      window.removeEventListener("forceRefresh", handleForceRefresh);
-
-      // Cleanup auto-sync
-      cleanupAutoSync();
-
-      console.log("Data context cleanup completed");
+      unsubscribe();
     };
-  }, []);
+  }, [refreshAllData, handleForceRefresh]);
+
+  const value: DataContextType = {
+    events,
+    gallery,
+    sermons,
+    testimonials,
+    prayerRequests,
+    donations,
+    members,
+    loading,
+    error,
+    refreshData: refreshAllData,
+    forceRefresh: handleForceRefresh,
+  };
 
   return (
-    <DataContext.Provider
-      value={{
-        refreshAllData,
-        isRefreshing,
-        lastRefresh,
-        connectionHealth,
-        syncStatus,
-        gitStatus,
-        forceSync,
-        autoCommitAndPush,
-      }}
-    >
+    <DataContext.Provider value={value}>
       {children}
     </DataContext.Provider>
   );
-};
+}
+
+export function useData() {
+  const context = useContext(DataContext);
+  if (context === undefined) {
+    throw new Error('useData must be used within a DataProvider');
+  }
+  return context;
+}
