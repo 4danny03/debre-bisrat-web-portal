@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useDataContext } from "@/contexts/DataContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -75,7 +76,6 @@ export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
 
   return (
     <div className={`space-y-4 ${className}`}>
-      {/* Connection Health */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium flex items-center">
@@ -103,7 +103,6 @@ export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
         </CardContent>
       </Card>
 
-      {/* Real-time Sync Status */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium flex items-center">
@@ -126,7 +125,6 @@ export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
         </CardContent>
       </Card>
 
-      {/* Git Status */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium flex items-center">
@@ -170,7 +168,6 @@ export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
         </CardContent>
       </Card>
 
-      {/* Action Buttons */}
       <div className="space-y-2">
         <Button
           onClick={handleForceSync}

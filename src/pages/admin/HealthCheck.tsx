@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,8 @@ interface HealthStatus {
     site_settings: boolean;
   };
 }
+
+type TableName = 'events' | 'members' | 'gallery' | 'sermons' | 'testimonials' | 'prayer_requests' | 'donations' | 'profiles' | 'site_settings';
 
 export default function HealthCheck() {
   const [status, setStatus] = useState<HealthStatus>({
@@ -66,19 +69,16 @@ export default function HealthCheck() {
     };
 
     try {
-      // Check database connection
       const { error: dbError } = await supabase
         .from("profiles")
         .select("count", { count: "exact", head: true });
       newStatus.database = dbError ? "error" : "healthy";
 
-      // Check auth
       const {
         data: { session },
       } = await supabase.auth.getSession();
       newStatus.auth = session ? "healthy" : "error";
 
-      // Check storage
       try {
         const { data: buckets, error: storageError } =
           await supabase.storage.listBuckets();
@@ -88,16 +88,15 @@ export default function HealthCheck() {
         newStatus.storage = "error";
       }
 
-      // Check each table
-      const tables = Object.keys(newStatus.tables);
+      const tables: TableName[] = Object.keys(newStatus.tables) as TableName[];
       for (const table of tables) {
         try {
           const { error } = await supabase
             .from(table)
             .select("count", { count: "exact", head: true });
-          newStatus.tables[table as keyof typeof newStatus.tables] = !error;
+          newStatus.tables[table] = !error;
         } catch {
-          newStatus.tables[table as keyof typeof newStatus.tables] = false;
+          newStatus.tables[table] = false;
         }
       }
     } catch (error) {
@@ -154,7 +153,6 @@ export default function HealthCheck() {
         </Button>
       </div>
 
-      {/* Core Services */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
@@ -199,7 +197,6 @@ export default function HealthCheck() {
         </Card>
       </div>
 
-      {/* Database Tables */}
       <Card>
         <CardHeader>
           <CardTitle>Database Tables Status</CardTitle>
@@ -225,7 +222,6 @@ export default function HealthCheck() {
         </CardContent>
       </Card>
 
-      {/* System Information */}
       <Card>
         <CardHeader>
           <CardTitle>System Information</CardTitle>
@@ -239,7 +235,7 @@ export default function HealthCheck() {
             <div className="flex justify-between">
               <span>Supabase URL:</span>
               <span className="font-mono text-xs">
-                {import.meta.env.VITE_SUPABASE_URL}
+                {import.meta.env.VITE_SUPABASE_URL || 'Not configured'}
               </span>
             </div>
             <div className="flex justify-between">

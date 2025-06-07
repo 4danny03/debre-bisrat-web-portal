@@ -10,7 +10,6 @@ class DataSyncServiceClass {
     
     this.listeners.get(event)!.add(callback);
 
-    // Return unsubscribe function
     return () => {
       const eventListeners = this.listeners.get(event);
       if (eventListeners) {
@@ -20,6 +19,16 @@ class DataSyncServiceClass {
         }
       }
     };
+  }
+
+  unsubscribe(event: string, callback: Function): void {
+    const eventListeners = this.listeners.get(event);
+    if (eventListeners) {
+      eventListeners.delete(callback);
+      if (eventListeners.size === 0) {
+        this.listeners.delete(event);
+      }
+    }
   }
 
   emitEvent(event: string, data?: any): void {
@@ -51,7 +60,6 @@ class DataSyncServiceClass {
     this.emitEvent('forceRefresh');
   }
 
-  // Clear all listeners (useful for cleanup)
   clearAll(): void {
     this.listeners.clear();
     this.isProcessing = false;

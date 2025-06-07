@@ -1,282 +1,127 @@
-/**
- * Debug utilities for data synchronization
- * Helps identify and troubleshoot sync issues between admin and public pages
- */
 
-import { dataSyncService } from "@/services/DataSyncService";
-import { gitSyncService } from "@/services/GitSyncService";
 import { supabase } from "@/integrations/supabase/client";
+import { DataSyncService } from "@/services/DataSyncService";
 
-interface DebugInfo {
+export interface DebugInfo {
   timestamp: string;
-  connectionHealth: boolean;
-  subscriptionStatus: Record<string, string>;
-  gitStatus: any;
-  recentEvents: any[];
-  databaseCounts: Record<string, number>;
+  component: string;
+  action: string;
+  data?: any;
+  error?: string;
 }
 
-class DebugSyncService {
-  private static instance: DebugSyncService;
-  private debugLog: DebugInfo[] = [];
-  private maxLogEntries = 50;
+class DebugSyncClass {
+  private logs: DebugInfo[] = [];
+  private maxLogs = 100;
 
-  private constructor() {}
-
-  static getInstance(): DebugSyncService {
-    if (!DebugSyncService.instance) {
-      DebugSyncService.instance = new DebugSyncService();
-    }
-    return DebugSyncService.instance;
-  }
-
-  /**
-   * Capture current system state for debugging
-   */
-  async captureDebugInfo(): Promise<DebugInfo> {
-    const timestamp = new Date().toISOString();
-
-    try {
-      // Get connection health
-      const connectionHealth = await dataSyncService.checkHealth();
-
-      // Get subscription status
-      const subscriptionStatus = dataSyncService.getSubscriptionStatus();
-
-      // Get git status
-      const gitStatus = await gitSyncService.getGitStatus();
-
-      // Get recent events from database
-      const { data: recentEvents } = await supabase
-        .from("events")
-        .select("id, title, created_at")
-        .order("created_at", { ascending: false })
-        .limit(5);
-
-      // Get database counts
-      const tables = [
-        "events",
-        "gallery",
-        "sermons",
-        "testimonials",
-        "members",
-      ];
-      const databaseCounts: Record<string, number> = {};
-
-      for (const table of tables) {
-        const { count } = await supabase
-          .from(table)
-          .select("*", { count: "exact", head: true });
-        databaseCounts[table] = count || 0;
-      }
-
-      const debugInfo: DebugInfo = {
-        timestamp,
-        connectionHealth,
-        subscriptionStatus,
-        gitStatus,
-        recentEvents: recentEvents || [],
-        databaseCounts,
-      };
-
-      // Add to debug log
-      this.debugLog.unshift(debugInfo);
-      if (this.debugLog.length > this.maxLogEntries) {
-        this.debugLog = this.debugLog.slice(0, this.maxLogEntries);
-      }
-
-      return debugInfo;
-    } catch (error) {
-      console.error("Failed to capture debug info:", error);
-      const errorInfo: DebugInfo = {
-        timestamp,
-        connectionHealth: false,
-        subscriptionStatus: {},
-        gitStatus: { error: error.message },
-        recentEvents: [],
-        databaseCounts: {},
-      };
-
-      this.debugLog.unshift(errorInfo);
-      return errorInfo;
-    }
-  }
-
-  /**
-   * Get debug log history
-   */
-  getDebugLog(): DebugInfo[] {
-    return [...this.debugLog];
-  }
-
-  /**
-   * Clear debug log
-   */
-  clearDebugLog(): void {
-    this.debugLog = [];
-  }
-
-  /**
-   * Export debug info as JSON
-   */
-  exportDebugInfo(): string {
-    return JSON.stringify(
-      {
-        exportTime: new Date().toISOString(),
-        debugLog: this.debugLog,
-        systemInfo: {
-          userAgent: navigator.userAgent,
-          url: window.location.href,
-          timestamp: new Date().toISOString(),
-        },
-      },
-      null,
-      2,
-    );
-  }
-
-  /**
-   * Test data synchronization
-   */
-  async testDataSync(): Promise<{
-    success: boolean;
-    results: Record<string, any>;
-    errors: string[];
-  }> {
-    const results: Record<string, any> = {};
-    const errors: string[] = [];
-
-    try {
-      console.log("Starting data sync test...");
-
-      // Test 1: Database connection
-      try {
-        const { data, error } = await supabase
-          .from("events")
-          .select("id")
-          .limit(1);
-        results.databaseConnection = {
-          success: !error,
-          data: data?.length || 0,
-        };
-        if (error) errors.push(`Database connection failed: ${error.message}`);
-      } catch (error) {
-        results.databaseConnection = { success: false, error: error.message };
-        errors.push(`Database connection test failed: ${error.message}`);
-      }
-
-      // Test 2: Real-time subscriptions
-      const subscriptionStatus = dataSyncService.getSubscriptionStatus();
-      results.subscriptions = subscriptionStatus;
-
-      const failedSubscriptions = Object.entries(subscriptionStatus)
-        .filter(([_, status]) => status !== "SUBSCRIBED")
-        .map(([table, status]) => `${table}: ${status}`);
-
-      if (failedSubscriptions.length > 0) {
-        errors.push(`Failed subscriptions: ${failedSubscriptions.join(", ")}`);
-      }
-
-      // Test 3: Git status
-      try {
-        const gitStatus = await gitSyncService.getGitStatus();
-        results.gitStatus = gitStatus;
-      } catch (error) {
-        results.gitStatus = { error: error.message };
-        errors.push(`Git status check failed: ${error.message}`);
-      }
-
-      // Test 4: Force refresh
-      try {
-        dataSyncService.forceRefresh();
-        results.forceRefresh = { success: true };
-      } catch (error) {
-        results.forceRefresh = { success: false, error: error.message };
-        errors.push(`Force refresh failed: ${error.message}`);
-      }
-
-      console.log("Data sync test completed", { results, errors });
-
-      return {
-        success: errors.length === 0,
-        results,
-        errors,
-      };
-    } catch (error) {
-      console.error("Data sync test failed:", error);
-      return {
-        success: false,
-        results: {},
-        errors: [`Test execution failed: ${error.message}`],
-      };
-    }
-  }
-
-  /**
-   * Monitor data changes for a specific duration
-   */
-  async monitorChanges(durationMs: number = 30000): Promise<{
-    changes: any[];
-    duration: number;
-  }> {
-    const changes: any[] = [];
-    const startTime = Date.now();
-
-    const handleChange = (event: CustomEvent) => {
-      changes.push({
-        timestamp: new Date().toISOString(),
-        type: event.type,
-        detail: event.detail,
-      });
+  log(component: string, action: string, data?: any, error?: string): void {
+    const logEntry: DebugInfo = {
+      timestamp: new Date().toISOString(),
+      component,
+      action,
+      data,
+      error,
     };
 
-    // Listen for various change events
-    const events = [
-      "eventsChanged",
-      "galleryChanged",
-      "sermonsChanged",
-      "testimonialsChanged",
-      "membersChanged",
-      "dataChanged",
-      "adminActionCompleted",
-      "forceRefresh",
-    ];
+    this.logs.unshift(logEntry);
+    
+    if (this.logs.length > this.maxLogs) {
+      this.logs = this.logs.slice(0, this.maxLogs);
+    }
 
-    events.forEach((eventType) => {
-      window.addEventListener(eventType, handleChange);
-    });
+    console.log(`[DebugSync] ${component}: ${action}`, data);
+    
+    if (error) {
+      console.error(`[DebugSync] ${component} Error:`, error);
+    }
+  }
 
-    // Wait for the specified duration
-    await new Promise((resolve) => setTimeout(resolve, durationMs));
+  getLogs(): DebugInfo[] {
+    return [...this.logs];
+  }
 
-    // Remove event listeners
-    events.forEach((eventType) => {
-      window.removeEventListener(eventType, handleChange);
-    });
+  clearLogs(): void {
+    this.logs = [];
+    console.log('[DebugSync] Logs cleared');
+  }
 
-    const duration = Date.now() - startTime;
+  async testConnection(): Promise<boolean> {
+    try {
+      this.log('DebugSync', 'Testing database connection');
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('count', { count: 'exact', head: true });
 
-    console.log(
-      `Monitoring completed. Captured ${changes.length} changes in ${duration}ms`,
-    );
+      if (error) {
+        this.log('DebugSync', 'Connection test failed', null, error.message);
+        return false;
+      }
 
-    return { changes, duration };
+      this.log('DebugSync', 'Connection test successful', { count: data });
+      return true;
+    } catch (err) {
+      this.log('DebugSync', 'Connection test error', null, String(err));
+      return false;
+    }
+  }
+
+  async testTableAccess(): Promise<{ [key: string]: boolean }> {
+    const tables = [
+      'events',
+      'gallery', 
+      'sermons',
+      'testimonials',
+      'prayer_requests',
+      'donations',
+      'members',
+      'profiles'
+    ] as const;
+
+    const results: { [key: string]: boolean } = {};
+
+    for (const table of tables) {
+      try {
+        this.log('DebugSync', `Testing table access: ${table}`);
+        
+        const { error } = await supabase
+          .from(table)
+          .select('count', { count: 'exact', head: true });
+
+        results[table] = !error;
+        
+        if (error) {
+          this.log('DebugSync', `Table access failed: ${table}`, null, error.message);
+        } else {
+          this.log('DebugSync', `Table access successful: ${table}`);
+        }
+      } catch (err) {
+        results[table] = false;
+        this.log('DebugSync', `Table access error: ${table}`, null, String(err));
+      }
+    }
+
+    return results;
+  }
+
+  triggerForceRefresh(): void {
+    this.log('DebugSync', 'Triggering force refresh');
+    DataSyncService.forceRefresh();
+  }
+
+  getSystemInfo(): any {
+    return {
+      userAgent: navigator.userAgent,
+      timestamp: new Date().toISOString(),
+      url: window.location.href,
+      environment: import.meta.env.MODE,
+    };
   }
 }
 
-export const debugSyncService = DebugSyncService.getInstance();
-export default DebugSyncService;
+export const debugSync = new DebugSyncClass();
 
-// Global debug functions for console access
-if (typeof window !== "undefined") {
-  (window as any).debugSync = {
-    capture: () => debugSyncService.captureDebugInfo(),
-    log: () => debugSyncService.getDebugLog(),
-    export: () => debugSyncService.exportDebugInfo(),
-    test: () => debugSyncService.testDataSync(),
-    monitor: (duration?: number) => debugSyncService.monitorChanges(duration),
-    clear: () => debugSyncService.clearDebugLog(),
-  };
-
-  console.log("Debug sync utilities available at window.debugSync");
+// Make it available globally for debugging
+if (typeof window !== 'undefined') {
+  (window as any).debugSync = debugSync;
 }

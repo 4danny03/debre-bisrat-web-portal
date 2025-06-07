@@ -1,17 +1,11 @@
+
 import { useEffect, useRef, useCallback } from "react";
-import { dataSyncService } from "@/services/DataSyncService";
+import { DataSyncService } from "@/services/DataSyncService";
 import { useDataContext } from "@/contexts/DataContext";
 
-/**
- * Enhanced custom hook to handle automatic data refresh with real-time sync
- * @param refreshFunction - Function to call for refreshing data
- * @param intervalMs - Refresh interval in milliseconds (default: 5 minutes)
- * @param dependencies - Dependencies array to restart the interval
- * @param tableName - Optional table name for specific subscriptions
- */
 export const useDataRefresh = (
   refreshFunction: () => void | Promise<void>,
-  intervalMs: number = 5 * 60 * 1000, // 5 minutes default
+  intervalMs: number = 5 * 60 * 1000,
   dependencies: any[] = [],
   tableName?: string,
 ) => {
@@ -21,18 +15,15 @@ export const useDataRefresh = (
   const refreshFunctionRef = useRef(refreshFunction);
   const { connectionHealth, forceSync } = useDataContext();
 
-  // Update the ref when refreshFunction changes
   useEffect(() => {
     refreshFunctionRef.current = refreshFunction;
   }, [refreshFunction]);
 
   useEffect(() => {
-    // Clear existing interval
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
 
-    // Enhanced refresh function with error handling and retry logic
     const enhancedRefreshFunction = async () => {
       if (!isActiveRef.current) return;
 
@@ -55,7 +46,6 @@ export const useDataRefresh = (
           );
 
           if (retryCount < maxRetries) {
-            // Wait before retrying (exponential backoff)
             await new Promise((resolve) =>
               setTimeout(resolve, 1000 * Math.pow(2, retryCount - 1)),
             );
@@ -68,7 +58,6 @@ export const useDataRefresh = (
       }
     };
 
-    // Set up new interval with health check
     intervalRef.current = setInterval(async () => {
       if (isActiveRef.current && connectionHealth) {
         await enhancedRefreshFunction();
@@ -77,7 +66,6 @@ export const useDataRefresh = (
       }
     }, intervalMs);
 
-    // Set up real-time event listeners
     const handleDataChange = () => {
       console.log(
         `Real-time data change detected for ${tableName || "component"}`,
@@ -97,45 +85,35 @@ export const useDataRefresh = (
       enhancedRefreshFunction();
     };
 
-    // Add event listeners
     if (tableName) {
-      dataSyncService.addEventListener(`${tableName}Changed`, handleDataChange);
+      DataSyncService.subscribe(`${tableName}Changed`, handleDataChange);
       window.addEventListener(`${tableName}Changed`, handleDataChange);
     }
 
-    dataSyncService.addEventListener("dataChanged", handleDataChange);
-    dataSyncService.addEventListener("forceRefresh", handleForceRefresh);
-    dataSyncService.addEventListener("adminActionCompleted", handleAdminAction);
+    DataSyncService.subscribe("dataChanged", handleDataChange);
+    DataSyncService.subscribe("forceRefresh", handleForceRefresh);
+    DataSyncService.subscribe("adminActionCompleted", handleAdminAction);
 
     window.addEventListener("dataChanged", handleDataChange);
     window.addEventListener("forceRefresh", handleForceRefresh);
     window.addEventListener("adminActionCompleted", handleAdminAction);
     window.addEventListener("dataRefresh", handleDataChange);
 
-    // Initial refresh
     enhancedRefreshFunction();
 
-    // Cleanup function
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
 
-      // Remove event listeners
       if (tableName) {
-        dataSyncService.removeEventListener(
-          `${tableName}Changed`,
-          handleDataChange,
-        );
+        DataSyncService.unsubscribe(`${tableName}Changed`, handleDataChange);
         window.removeEventListener(`${tableName}Changed`, handleDataChange);
       }
 
-      dataSyncService.removeEventListener("dataChanged", handleDataChange);
-      dataSyncService.removeEventListener("forceRefresh", handleForceRefresh);
-      dataSyncService.removeEventListener(
-        "adminActionCompleted",
-        handleAdminAction,
-      );
+      DataSyncService.unsubscribe("dataChanged", handleDataChange);
+      DataSyncService.unsubscribe("forceRefresh", handleForceRefresh);
+      DataSyncService.unsubscribe("adminActionCompleted", handleAdminAction);
 
       window.removeEventListener("dataChanged", handleDataChange);
       window.removeEventListener("forceRefresh", handleForceRefresh);
@@ -144,7 +122,6 @@ export const useDataRefresh = (
     };
   }, [tableName, connectionHealth, intervalMs]);
 
-  // Pause/resume functions
   const pauseRefresh = useCallback(() => {
     isActiveRef.current = false;
     console.log(`Paused refresh for ${tableName || "component"}`);
@@ -155,7 +132,6 @@ export const useDataRefresh = (
     console.log(`Resumed refresh for ${tableName || "component"}`);
   }, [tableName]);
 
-  // Manual refresh function
   const manualRefresh = useCallback(async () => {
     console.log(`Manual refresh triggered for ${tableName || "component"}`);
     if (refreshFunctionRef.current) {
@@ -163,7 +139,6 @@ export const useDataRefresh = (
     }
   }, [tableName]);
 
-  // Force sync function
   const forceSyncData = useCallback(async () => {
     console.log(`Force sync triggered for ${tableName || "component"}`);
     if (forceSync) {

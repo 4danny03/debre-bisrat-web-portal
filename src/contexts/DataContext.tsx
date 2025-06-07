@@ -15,6 +15,17 @@ interface DataContextType {
   error: string | null;
   refreshData: () => Promise<void>;
   forceRefresh: () => void;
+  connectionHealth: boolean;
+  syncStatus: { [key: string]: string };
+  gitStatus: {
+    branch: string;
+    hasChanges: boolean;
+    changedFiles: string[];
+  };
+  lastRefresh: Date | null;
+  isRefreshing: boolean;
+  forceSync: () => Promise<void>;
+  autoCommitAndPush: (message: string) => Promise<boolean>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -30,9 +41,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [connectionHealth, setConnectionHealth] = useState(true);
+  const [syncStatus, setSyncStatus] = useState<{ [key: string]: string }>({});
+  const [gitStatus, setGitStatus] = useState({
+    branch: 'main',
+    hasChanges: false,
+    changedFiles: []
+  });
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
   const refreshAllData = useCallback(async () => {
-    // Prevent multiple simultaneous refreshes
     if (isRefreshing) {
       console.log('Refresh already in progress, skipping...');
       return;
@@ -54,16 +72,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         donationsData,
         membersData
       ] = await Promise.allSettled([
-        supabase.from('events').select('*').order('date', { ascending: false }),
+        supabase.from('events').select('*').order('event_date', { ascending: false }),
         supabase.from('gallery').select('*').order('created_at', { ascending: false }),
-        supabase.from('sermons').select('*').order('date', { ascending: false }),
+        supabase.from('sermons').select('*').order('sermon_date', { ascending: false }),
         supabase.from('testimonials').select('*').order('created_at', { ascending: false }),
         supabase.from('prayer_requests').select('*').order('created_at', { ascending: false }),
         supabase.from('donations').select('*').order('created_at', { ascending: false }),
         supabase.from('members').select('*').order('created_at', { ascending: false })
       ]);
 
-      // Update state with successful results
       if (eventsData.status === 'fulfilled' && eventsData.value.data) {
         setEvents(eventsData.value.data);
       }
@@ -86,6 +103,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         setMembers(membersData.value.data);
       }
 
+      setLastRefresh(new Date());
       console.log('Data refresh completed successfully');
     } catch (err) {
       console.error('Error refreshing data:', err);
@@ -103,11 +121,21 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   }, [refreshAllData, isRefreshing]);
 
+  const forceSync = useCallback(async () => {
+    console.log('Force sync requested');
+    await refreshAllData();
+    DataSyncService.forceRefresh();
+  }, [refreshAllData]);
+
+  const autoCommitAndPush = useCallback(async (message: string): Promise<boolean> => {
+    console.log('Auto commit and push requested:', message);
+    // Mock implementation for now
+    return true;
+  }, []);
+
   useEffect(() => {
-    // Initial data load
     refreshAllData();
 
-    // Subscribe to DataSyncService events
     const unsubscribe = DataSyncService.subscribe('forceRefresh', handleForceRefresh);
 
     return () => {
@@ -127,6 +155,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     error,
     refreshData: refreshAllData,
     forceRefresh: handleForceRefresh,
+    connectionHealth,
+    syncStatus,
+    gitStatus,
+    lastRefresh,
+    isRefreshing,
+    forceSync,
+    autoCommitAndPush,
   };
 
   return (
@@ -140,6 +175,15 @@ export function useData() {
   const context = useContext(DataContext);
   if (context === undefined) {
     throw new Error('useData must be used within a DataProvider');
+  }
+  return context;
+}
+
+// Add the missing export
+export function useDataContext() {
+  const context = useContext(DataContext);
+  if (context === undefined) {
+    throw new Error('useDataContext must be used within a DataProvider');
   }
   return context;
 }
