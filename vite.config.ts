@@ -1,3 +1,4 @@
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -41,8 +42,18 @@ export default defineConfig(({ mode }) => ({
   optimizeDeps: {
     exclude: ["supabase/functions"],
   },
-  // Exclude supabase functions from being processed
+  // Exclude supabase functions from being processed by esbuild
   esbuild: {
-    exclude: ["supabase/functions/**/*"],
+    exclude: [
+      "supabase/functions/**/*",
+      "**/supabase/functions/**/*"
+    ],
+  },
+  // Exclude supabase functions from TypeScript checking
+  typescript: {
+    exclude: [
+      "supabase/functions/**/*",
+      "**/supabase/functions/**/*"
+    ],
   },
 }));
