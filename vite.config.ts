@@ -30,8 +30,8 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       external: [
         // Exclude all supabase functions from the build
-        /^supabase\/functions/,
-        /^\.\/supabase\/functions/,
+        /^supabase/,
+        /^\.\/supabase/,
       ],
     },
   },
@@ -41,16 +41,14 @@ export default defineConfig(({ mode }) => ({
   },
   // Exclude supabase functions from optimization
   optimizeDeps: {
-    exclude: ["supabase/functions", "./supabase/functions"],
+    exclude: ["supabase", "./supabase"],
   },
   // Exclude supabase functions from being processed by esbuild and TypeScript
   esbuild: {
     exclude: [
-      "**/supabase/**",
-      "supabase/**",
-      "./supabase/**",
-      "**/supabase/functions/**",
-      "supabase/functions/**"
+      "**/supabase/**/*",
+      "supabase/**/*",
+      "./supabase/**/*",
     ],
     // Ignore TypeScript errors in supabase functions
     ignoreAnnotations: true,
