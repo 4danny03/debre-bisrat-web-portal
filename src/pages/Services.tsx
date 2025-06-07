@@ -1,9 +1,7 @@
 
-import React from "react";
 import React, { useState } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Settings,
   Calendar,
@@ -19,7 +17,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import {
   Accordion,
@@ -27,10 +24,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Clock, MapPin, Calendar, Users, Heart, Book, Music, Coffee } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -64,6 +58,7 @@ const ServiceItem: React.FC<ServiceItemProps> = ({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { language } = useLanguage();
   const { toast } = useToast();
+  
   const handleAppointmentSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -89,8 +84,6 @@ const ServiceItem: React.FC<ServiceItemProps> = ({
     setIsDialogOpen(false);
   };
 
-export default function Services() {
-  const { t } = useLanguage();
   return (
     <div className="border-l-2 border-church-gold pl-4 mb-6">
       {imageUrl && (
@@ -106,13 +99,12 @@ export default function Services() {
       <p className="text-sm text-gray-500 mb-2">{time}</p>
       <p className="text-gray-700">{description}</p>
 
-  const services = [
       {requiresAppointment && (
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button
               variant="outline"
-              size="xs"
+              size="sm"
               className="mt-2 bg-church-burgundy text-white hover:bg-church-burgundy/90 text-xs py-1 px-2"
             >
               <CalendarCheck className="mr-1 h-3 w-3" />
@@ -230,7 +222,7 @@ export default function Services() {
 };
 
 // Religious service images mapping
-const religiousServiceImages = {
+const religiousServiceImages: Record<string, string> = {
   "Christian Initiation": "/images/religious/palm-sunday.jpg",
   "ክርስትና ማስነሳት": "/images/religious/palm-sunday.jpg",
   "Qendil Prayer": "/images/gallery/church/sanctuary.jpg",
@@ -250,7 +242,7 @@ const religiousServiceImages = {
   "Qeder Baptism": "/images/gallery/nd14_timket_09-3x1500-1.jpg",
   "የቄደር ጥምቀት": "/images/gallery/nd14_timket_09-3x1500-1.jpg",
   "Divine Liturgy (Kidase)": "/images/gallery/church-service.jpg",
-  ቅዳሴ: "/images/gallery/church-service.jpg",
+  "ቅዳሴ": "/images/gallery/church-service.jpg",
 };
 
 // Function to get a religious image based on service title
@@ -263,16 +255,7 @@ const Services: React.FC = () => {
 
   // Service data based on the provided church services
   const regularServices = [
-{
-      id: 1,
-      title: "Sunday Morning Worship",
-      time: "10:00 AM",
-      duration: "1.5 hours",
-      location: "Main Sanctuary",
-      description: "Join us for our main weekly worship service with inspiring music, prayer, and biblical teaching.",
-      type: "worship",
-      language: "English & Amharic",
-      features: ["Live Music", "Children's Program", "Translation Available"]
+    {
       title: language === "en" ? "Holy Water Baptism" : "ጸበል መጠመቅ",
       description:
         language === "en"
@@ -280,17 +263,8 @@ const Services: React.FC = () => {
           : "ለመንፈሳዊ ንጽህና እና ፈውስ በቅዱስ ውሃ ውስጥ መባረክ እና መጠመቅ።",
       time: language === "en" ? "Sundays after Divine Liturgy" : "እሁድ ከቅዳሴ በኋላ",
       requiresAppointment: false,
-},
-{
-      id: 2,
-      title: "Evening Prayer Service",
-      time: "6:00 PM",
-      duration: "1 hour",
-      location: "Prayer Hall",
-      description: "A peaceful evening service focused on prayer, meditation, and spiritual reflection.",
-      type: "prayer",
-      language: "Amharic",
-      features: ["Traditional Prayers", "Quiet Reflection", "Candle Lighting"]
+    },
+    {
       title: language === "en" ? "Marriage Ceremony" : "ጋብቻ መፈፀም",
       description:
         language === "en"
@@ -298,17 +272,8 @@ const Services: React.FC = () => {
           : "የቤተክርስቲያን ልማዶችን እና ወጎችን የሚከተል ባህላዊ የኦርቶዶክስ ክርስቲያን የጋብቻ ሥርዓት።",
       time: language === "en" ? "By appointment" : "በቀጠሮ",
       requiresAppointment: true,
-},
-{
-      id: 3,
-      title: "Youth Fellowship",
-      time: "7:00 PM",
-      duration: "2 hours",
-      location: "Youth Center",
-      description: "Dynamic gathering for young people with contemporary worship, discussion, and community building.",
-      type: "fellowship",
-      language: "English",
-      features: ["Contemporary Music", "Group Discussions", "Social Activities"]
+    },
+    {
       title: language === "en" ? "Funeral Prayer" : "ጸሎተ ፍትሐት",
       description:
         language === "en"
@@ -316,18 +281,8 @@ const Services: React.FC = () => {
           : "ለሟቾች የሚደረግ የጸሎት አገልግሎት፣ ለቤተሰቦች መጽናናትን የሚሰጥ እና ነፍስን ለእግዚአብሔር ምሕረት የሚያስረክብ።",
       time: language === "en" ? "By appointment" : "በቀጠሮ",
       requiresAppointment: true,
-},
-{
-      id: 4,
-      title: "Bible Study",
-      time: "7:30 PM",
-      duration: "1.5 hours",
-      location: "Study Room",
-      description: "Weekly Bible study sessions exploring scripture with deep discussion and practical application.",
-      type: "study",
-      language: "English & Amharic",
-      features: ["Group Study", "Interactive Discussion", "Take-home Materials"]
-    }
+    },
+    {
       title:
         language === "en"
           ? "Marriage and Communion Education"
@@ -351,16 +306,8 @@ const Services: React.FC = () => {
       time: language === "en" ? "By appointment" : "በቀጠሮ",
       requiresAppointment: true,
     },
-];
+  ];
 
-  const weeklySchedule = [
-    { day: "Sunday", services: ["Sunday Morning Worship", "Evening Prayer Service"] },
-    { day: "Monday", services: [] },
-    { day: "Tuesday", services: ["Bible Study"] },
-    { day: "Wednesday", services: ["Evening Prayer Service"] },
-    { day: "Thursday", services: [] },
-    { day: "Friday", services: ["Youth Fellowship"] },
-    { day: "Saturday", services: [] }
   const specialServices = [
     {
       title: language === "en" ? "Qendil Prayer" : "ጸሎተ ቀንዲል",
@@ -413,41 +360,10 @@ const Services: React.FC = () => {
           : "እሁድ፣ 7:00 ጠዋት - 12:00 ከሰዓት",
       requiresAppointment: false,
     },
-];
+  ];
 
-  const getServiceIcon = (type: string) => {
-    switch (type) {
-      case "worship": return <Music className="h-5 w-5" />;
-      case "prayer": return <Heart className="h-5 w-5" />;
-      case "fellowship": return <Users className="h-5 w-5" />;
-      case "study": return <Book className="h-5 w-5" />;
-      default: return <Calendar className="h-5 w-5" />;
-    }
-  };
-
-  const getServiceColor = (type: string) => {
-    switch (type) {
-      case "worship": return "bg-blue-100 text-blue-800";
-      case "prayer": return "bg-purple-100 text-purple-800";
-      case "fellowship": return "bg-green-100 text-green-800";
-      case "study": return "bg-orange-100 text-orange-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
-
-return (
-<Layout>
-      <div className="container mx-auto px-4 py-12">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-3xl md:text-4xl font-bold text-church-burgundy mb-4">
-            {t("services") || "Church Services"}
-          </h1>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Join us throughout the week for worship, prayer, fellowship, and learning. 
-            All are welcome to participate in our spiritual community.
-          </p>
-        </div>
+  return (
+    <Layout>
       <div className="py-12 px-6">
         <div className="container mx-auto">
           <div className="text-center mb-12">
@@ -461,68 +377,18 @@ return (
             </p>
           </div>
 
-        {/* Services Grid */}
-        <div className="grid gap-8 md:grid-cols-2 mb-12">
-          {services.map((service) => (
-            <Card key={service.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-2">
-                    {getServiceIcon(service.type)}
-                    <CardTitle className="text-xl text-church-burgundy">{service.title}</CardTitle>
-                  </div>
-                  <Badge className={getServiceColor(service.type)}>
-                    {service.type}
-                  </Badge>
-                </div>
-                <CardDescription className="text-base">
-                  {service.description}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
             <Card>
               <CardHeader className="bg-church-burgundy text-white">
                 <CardTitle className="text-church-gold">
-                  {t("regular_services")}
+                  {t("regular_services") || "Regular Services"}
                 </CardTitle>
                 <CardDescription className="text-white/80">
                   {language === "en"
                     ? "Our weekly and monthly recurring services"
                     : "የእኛ ሳምንታዊ እና ወርሃዊ ተከታታይ አገልግሎቶች"}
-</CardDescription>
-</CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-4 w-4 text-gray-500" />
-                    <span>{service.time}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4 text-gray-500" />
-                    <span>{service.duration}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <MapPin className="h-4 w-4 text-gray-500" />
-                    <span>{service.location}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Users className="h-4 w-4 text-gray-500" />
-                    <span>{service.language}</span>
-                  </div>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium text-sm text-gray-700 mb-2">Features:</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {service.features.map((feature, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        {feature}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-                
-                <Button size="sm" className="w-full bg-church-burgundy hover:bg-church-burgundy/90">
-                  Learn More
-                </Button>
+                </CardDescription>
+              </CardHeader>
               <CardContent className="pt-6">
                 {regularServices.map((service, index) => (
                   <ServiceItem
@@ -534,72 +400,13 @@ return (
                     requiresAppointment={service.requiresAppointment}
                   />
                 ))}
-</CardContent>
-</Card>
-          ))}
-        </div>
+              </CardContent>
+            </Card>
 
-        {/* Weekly Schedule */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="text-2xl text-church-burgundy flex items-center">
-              <Calendar className="h-6 w-6 mr-2" />
-              Weekly Schedule
-            </CardTitle>
-            <CardDescription>
-              Our regular weekly services and gatherings
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-7">
-              {weeklySchedule.map((day, index) => (
-                <div key={index} className="text-center">
-                  <h3 className="font-semibold text-church-burgundy mb-2">{day.day}</h3>
-                  <div className="space-y-1">
-                    {day.services.length > 0 ? (
-                      day.services.map((service, serviceIndex) => {
-                        const serviceData = services.find(s => s.title === service);
-                        return (
-                          <div key={serviceIndex} className="bg-gray-50 p-2 rounded text-xs">
-                            <div className="font-medium">{service}</div>
-                            {serviceData && (
-                              <div className="text-gray-500">{serviceData.time}</div>
-                            )}
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div className="text-gray-400 text-xs py-2">No services</div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Call to Action */}
-        <div className="text-center bg-church-cream p-8 rounded-lg">
-          <h2 className="text-2xl font-bold text-church-burgundy mb-4">
-            Join Us for Worship
-          </h2>
-          <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-            Whether you're new to faith or have been walking with God for years, 
-            there's a place for you in our community. Come as you are and experience 
-            the love and fellowship of our church family.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-church-burgundy hover:bg-church-burgundy/90">
-              <Coffee className="h-4 w-4 mr-2" />
-              Plan Your Visit
-            </Button>
-            <Button size="lg" variant="outline" className="border-church-burgundy text-church-burgundy">
-              Contact Us
-            </Button>
             <Card>
               <CardHeader className="bg-church-burgundy text-white">
                 <CardTitle className="text-church-gold">
-                  {t("special_services")}
+                  {t("special_services") || "Special Services"}
                 </CardTitle>
                 <CardDescription className="text-white/80">
                   {language === "en"
@@ -620,11 +427,11 @@ return (
                 ))}
               </CardContent>
             </Card>
-</div>
+          </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>{t("children_services")}</CardTitle>
+              <CardTitle>{t("children_services") || "Children & Educational Services"}</CardTitle>
             </CardHeader>
             <CardContent>
               <Accordion type="single" collapsible>
@@ -685,17 +492,16 @@ return (
                   <AccordionContent>
                     {language === "en"
                       ? "Adult religious education classes are held on Sundays after the Divine Liturgy from 1:00 PM to 2:30 PM. These classes cover Orthodox theology, church history, patristic teachings, and spiritual practices for daily life."
-                      : "የአዋቂዎች ሃይማኖታዊ ትምህርት ክፍሎች በየሰንበቱ ከቅዳሴ በኋላ ከ1፡00 ከሰዓት እስከ 2፡30 ከሰዓት ይካሄዳሉ። እነዚህ ክፍሎች የኦርቶዶክስ ሥነ መለኮት፣ የቤተክርስቲያን ታሪክ፣ የአባቶች ትምህርቶች እና ለዕለት ተዕለት ሕይወት መንፈሳዊ ልምምዶችን ያካትታሉ።"}
+                      : "የአዋቂዎች ሃይማኖታዊ ትምህርት ክፍሎች በየሰንበቱ ከቅዳሴ በኋላ ከ1፡00 ከሰዓት እስከ 2፡30 ከሰዓት ይካሄዳሉ። እነዚህ ክፍሎች የኦርቶዶክስ ሥነ መለኮት፣ የቤተክርስቲያን ታሪክ፣ የአባቶች ትምህርቶች እና ለዕለት ተዕለት ሕይወት መንፈሳዊ ልምምዶችን ያካትታሉ།"}
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
             </CardContent>
           </Card>
-</div>
-</div>
-</Layout>
-);
-}
+        </div>
+      </div>
+    </Layout>
+  );
 };
 
 export default Services;
