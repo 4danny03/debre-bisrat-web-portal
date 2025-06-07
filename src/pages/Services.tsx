@@ -112,6 +112,12 @@ const Services: React.FC = () => {
     },
   ];
 
+  const handleAppointmentRequest = (serviceId: string) => {
+    const subject = `Appointment Request for ${serviceId}`;
+    const body = `Hello,\n\nI would like to schedule an appointment for ${serviceId}.\n\nPlease let me know your available times.\n\nThank you.`;
+    window.location.href = `mailto:info@stgabrielchurch.org?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+
   return (
     <Layout>
       <div className="py-12 px-6">
@@ -164,14 +170,25 @@ const Services: React.FC = () => {
                         </div>
                       ))}
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full mt-4 text-church-burgundy border-church-burgundy hover:bg-church-burgundy hover:text-white"
-                    >
-                      {language === "en" ? "Learn More" : "የበለጠ ለመረዳት"}
-                      <ChevronRight className="h-4 w-4 ml-2" />
-                    </Button>
+                    <div className="flex gap-2 mt-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 text-church-burgundy border-church-burgundy hover:bg-church-burgundy hover:text-white"
+                      >
+                        {language === "en" ? "Learn More" : "የበለጠ ለመረዳት"}
+                        <ChevronRight className="h-4 w-4 ml-2" />
+                      </Button>
+                      {service.id === "special-ceremonies" && (
+                        <Button
+                          onClick={() => handleAppointmentRequest(service.id)}
+                          size="sm"
+                          className="bg-church-burgundy hover:bg-church-burgundy/90 text-white"
+                        >
+                          {language === "en" ? "Book Appointment" : "ቀጠሮ ይዘዙ"}
+                        </Button>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               );
