@@ -43,11 +43,13 @@ export default function Donation() {
         .select("enable_stripe, stripe_publishable_key")
         .single();
 
-      setStripeEnabled(data?.enable_stripe && data?.stripe_publishable_key);
+      setStripeEnabled(Boolean(data?.enable_stripe && data?.stripe_publishable_key));
     } catch (error) {
       console.error("Error checking Stripe settings:", error);
     }
   };
+
+  // ... keep existing code (handleAmountSelect, handleCustomAmountChange, getSelectedAmount functions)
 
   const handleAmountSelect = (value: string) => {
     setAmount(value);
@@ -144,6 +146,8 @@ export default function Donation() {
       setProcessing(false);
     }
   };
+
+  // ... keep existing code (JSX return statement)
 
   return (
     <div className="container mx-auto px-4 py-8">
