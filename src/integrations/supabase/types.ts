@@ -51,6 +51,84 @@ export type Database = {
         }
         Relationships: []
       }
+      email_campaigns: {
+        Row: {
+          content: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          name: string
+          recipient_count: number | null
+          scheduled_at: string | null
+          sent_at: string | null
+          sent_count: number | null
+          status: string | null
+          subject: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          name: string
+          recipient_count?: number | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          sent_count?: number | null
+          status?: string | null
+          subject: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          name?: string
+          recipient_count?: number | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          sent_count?: number | null
+          status?: string | null
+          subject?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      email_templates: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          subject: string
+          template_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          subject: string
+          template_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          subject?: string
+          template_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           created_at: string
@@ -171,6 +249,39 @@ export type Database = {
         }
         Relationships: []
       }
+      newsletter_subscribers: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          name: string | null
+          subscribed: boolean | null
+          subscription_date: string | null
+          unsubscribe_token: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          name?: string | null
+          subscribed?: boolean | null
+          subscription_date?: string | null
+          unsubscribe_token?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string | null
+          subscribed?: boolean | null
+          subscription_date?: string | null
+          unsubscribe_token?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       prayer_requests: {
         Row: {
           created_at: string
@@ -269,39 +380,57 @@ export type Database = {
       }
       site_settings: {
         Row: {
+          admin_email: string | null
           church_address: string | null
           church_name: string | null
           created_at: string
           email: string | null
           enable_donations: boolean | null
+          enable_email_notifications: boolean | null
           enable_membership: boolean | null
+          enable_newsletter: boolean | null
+          enable_stripe: boolean | null
+          from_email: string | null
           id: number
           maintenance_mode: boolean | null
           phone_number: string | null
+          stripe_publishable_key: string | null
           updated_at: string
         }
         Insert: {
+          admin_email?: string | null
           church_address?: string | null
           church_name?: string | null
           created_at?: string
           email?: string | null
           enable_donations?: boolean | null
+          enable_email_notifications?: boolean | null
           enable_membership?: boolean | null
+          enable_newsletter?: boolean | null
+          enable_stripe?: boolean | null
+          from_email?: string | null
           id?: number
           maintenance_mode?: boolean | null
           phone_number?: string | null
+          stripe_publishable_key?: string | null
           updated_at?: string
         }
         Update: {
+          admin_email?: string | null
           church_address?: string | null
           church_name?: string | null
           created_at?: string
           email?: string | null
           enable_donations?: boolean | null
+          enable_email_notifications?: boolean | null
           enable_membership?: boolean | null
+          enable_newsletter?: boolean | null
+          enable_stripe?: boolean | null
+          from_email?: string | null
           id?: number
           maintenance_mode?: boolean | null
           phone_number?: string | null
+          stripe_publishable_key?: string | null
           updated_at?: string
         }
         Relationships: []
