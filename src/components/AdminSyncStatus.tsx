@@ -1,5 +1,4 @@
 
-import React from "react";
 import { useDataContext } from "@/contexts/DataContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -75,7 +74,7 @@ export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
   };
 
   return (
-    <div className={`space-y-4 ${className}`}>
+    <div className={`space-y-4 ${className || ''}`}>
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium flex items-center">
@@ -118,7 +117,7 @@ export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
                 className="flex items-center justify-between text-sm"
               >
                 <span className="capitalize">{table}</span>
-                {getStatusBadge(status)}
+                {getStatusBadge(String(status))}
               </div>
             ))}
           </div>
@@ -156,7 +155,7 @@ export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
               <div className="mt-2">
                 <span className="text-xs text-gray-500">Changed files:</span>
                 <div className="max-h-20 overflow-y-auto">
-                  {gitStatus.changedFiles.map((file, index) => (
+                  {gitStatus.changedFiles.map((file: string, index: number) => (
                     <div key={index} className="text-xs text-gray-600 truncate">
                       {file}
                     </div>
