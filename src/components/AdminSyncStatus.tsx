@@ -2,7 +2,7 @@
 import { useDataContext } from "../contexts/DataContext";
 
 export default function AdminSyncStatus() {
-  const { connectionHealth, syncStatus, gitStatus, lastRefresh, isRefreshing, forceSync, autoCommitAndPush } = useDataContext();
+  const { connectionHealth, gitStatus, lastRefresh, isRefreshing, forceSync, autoCommitAndPush } = useDataContext();
 
   const handleForceSync = async () => {
     await forceSync();
