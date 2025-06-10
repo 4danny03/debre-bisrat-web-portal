@@ -1,5 +1,6 @@
+
 import { supabase } from "./client";
-import { dataSyncService } from "@/services/DataSyncService";
+import { DataSyncService } from "@/services/DataSyncService";
 
 export const api = {
   sermons: {
@@ -43,7 +44,7 @@ export const api = {
       if (error) throw error;
 
       // Notify data sync service
-      dataSyncService.notifyAdminAction("create", "sermons", data);
+      DataSyncService.emitEvent("sermonsChanged", data);
 
       return data;
     },
@@ -58,7 +59,7 @@ export const api = {
       if (error) throw error;
 
       // Notify data sync service
-      dataSyncService.notifyAdminAction("update", "sermons", data);
+      DataSyncService.emitEvent("sermonsChanged", data);
 
       return data;
     },
@@ -68,7 +69,7 @@ export const api = {
       if (error) throw error;
 
       // Notify data sync service
-      dataSyncService.notifyAdminAction("delete", "sermons", { id });
+      DataSyncService.emitEvent("sermonsChanged", { id });
 
       return true;
     },
@@ -115,7 +116,7 @@ export const api = {
       if (error) throw error;
 
       // Notify data sync service
-      dataSyncService.notifyAdminAction("create", "events", data);
+      DataSyncService.emitEvent("eventsChanged", data);
 
       return data;
     },
@@ -130,7 +131,7 @@ export const api = {
       if (error) throw error;
 
       // Notify data sync service
-      dataSyncService.notifyAdminAction("update", "events", data);
+      DataSyncService.emitEvent("eventsChanged", data);
 
       return data;
     },
@@ -140,7 +141,7 @@ export const api = {
       if (error) throw error;
 
       // Notify data sync service
-      dataSyncService.notifyAdminAction("delete", "events", { id });
+      DataSyncService.emitEvent("eventsChanged", { id });
 
       return true;
     },
@@ -223,7 +224,7 @@ export const api = {
       if (error) throw error;
 
       // Notify data sync service
-      dataSyncService.notifyAdminAction("create", "gallery", data);
+      DataSyncService.emitEvent("galleryChanged", data);
 
       return data;
     },
@@ -244,7 +245,7 @@ export const api = {
       if (error) throw error;
 
       // Notify data sync service
-      dataSyncService.notifyAdminAction("delete", "gallery", { id });
+      DataSyncService.emitEvent("galleryChanged", { id });
 
       return true;
     },

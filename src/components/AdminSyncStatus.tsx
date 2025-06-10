@@ -1,75 +1,17 @@
-import React from "react";
-import { useDataContext } from "@/contexts/DataContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  CheckCircle,
-  XCircle,
-  RefreshCw,
-  GitBranch,
-  Database,
-  Wifi,
-  WifiOff,
-} from "lucide-react";
-import { format } from "date-fns";
 
-interface AdminSyncStatusProps {
-  className?: string;
-}
+import { useDataContext } from "../contexts/DataContext";
 
-export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
-  const {
-    connectionHealth,
-    syncStatus,
-    gitStatus,
-    lastRefresh,
-    isRefreshing,
-    forceSync,
-    autoCommitAndPush,
-  } = useDataContext();
+export default function AdminSyncStatus() {
+  const { connectionHealth, gitStatus, lastRefresh, isRefreshing, forceSync, autoCommitAndPush } = useDataContext();
 
   const handleForceSync = async () => {
-    console.log("Force sync triggered from admin panel");
     await forceSync();
   };
 
   const handleAutoCommit = async () => {
-    const success = await autoCommitAndPush(
-      "Admin sync: Manual commit from dashboard",
-    );
+    const success = await autoCommitAndPush("Auto commit from admin panel");
     if (success) {
-      console.log("Successfully committed and pushed changes");
-    } else {
-      console.error("Failed to commit and push changes");
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "SUBSCRIBED":
-        return (
-          <Badge className="bg-green-100 text-green-800">
-            <CheckCircle className="w-3 h-3 mr-1" />
-            Connected
-          </Badge>
-        );
-      case "CHANNEL_ERROR":
-        return (
-          <Badge className="bg-red-100 text-red-800">
-            <XCircle className="w-3 h-3 mr-1" />
-            Error
-          </Badge>
-        );
-      case "CONNECTING":
-        return (
-          <Badge className="bg-yellow-100 text-yellow-800">
-            <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
-            Connecting
-          </Badge>
-        );
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
+      console.log("Auto commit successful");
     }
   };
 
@@ -112,9 +54,18 @@ export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
                 Last: {format(safeLastRefresh, "HH:mm:ss")}
               </span>
             )}
+    <div className="p-4 bg-white rounded-lg shadow">
+      <h2 className="text-lg font-semibold mb-4">Sync Status</h2>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <h3 className="font-medium">Connection Health</h3>
+          <div className={`inline-flex items-center px-2 py-1 rounded text-sm ${
+            connectionHealth ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }`}>
+            {connectionHealth ? 'Connected' : 'Disconnected'}
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
       {/* Real-time Sync Status */}
       <Card>
@@ -189,13 +140,27 @@ export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
                   </div>
                 </div>
               )}
+        <div className="space-y-2">
+          <h3 className="font-medium">Git Status</h3>
+          <div className="text-sm text-gray-600">
+            <p>Branch: {gitStatus.branch}</p>
+            <p>Changes: {gitStatus.hasChanges ? 'Yes' : 'No'}</p>
+            {gitStatus.changedFiles.length > 0 && (
+              <div className="mt-1">
+                <p className="font-medium">Changed files:</p>
+                <ul className="list-disc list-inside ml-2">
+                  {gitStatus.changedFiles.map((file: string, index: number) => (
+                    <li key={index} className="text-xs">{file}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Action Buttons */}
-      <div className="space-y-2">
-        <Button
+      <div className="mt-4 flex gap-2">
+        <button
           onClick={handleForceSync}
           disabled={safeIsRefreshing}
           className="w-full"
@@ -211,15 +176,27 @@ export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
 
         {safeGitStatus.hasChanges && (
           <Button
+          disabled={isRefreshing}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+        >
+          {isRefreshing ? 'Syncing...' : 'Force Sync'}
+        </button>
+        
+        {gitStatus.hasChanges && (
+          <button
             onClick={handleAutoCommit}
-            className="w-full"
-            variant="default"
+            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
           >
-            <GitBranch className="w-4 h-4 mr-2" />
-            Commit & Push Changes
-          </Button>
+            Auto Commit & Push
+          </button>
         )}
       </div>
+
+      {lastRefresh && (
+        <p className="text-xs text-gray-500 mt-2">
+          Last refresh: {lastRefresh.toLocaleString()}
+        </p>
+      )}
     </div>
   );
 }

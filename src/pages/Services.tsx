@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -16,7 +17,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import {
   Accordion,
@@ -24,7 +24,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -59,6 +58,7 @@ const ServiceItem: React.FC<ServiceItemProps> = ({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { language } = useLanguage();
   const { toast } = useToast();
+  
   const handleAppointmentSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -104,7 +104,7 @@ const ServiceItem: React.FC<ServiceItemProps> = ({
           <DialogTrigger asChild>
             <Button
               variant="outline"
-              size="xs"
+              size="sm"
               className="mt-2 bg-church-burgundy text-white hover:bg-church-burgundy/90 text-xs py-1 px-2"
             >
               <CalendarCheck className="mr-1 h-3 w-3" />
@@ -222,7 +222,7 @@ const ServiceItem: React.FC<ServiceItemProps> = ({
 };
 
 // Religious service images mapping
-const religiousServiceImages = {
+const religiousServiceImages: Record<string, string> = {
   "Christian Initiation": "/images/religious/palm-sunday.jpg",
   "ክርስትና ማስነሳት": "/images/religious/palm-sunday.jpg",
   "Qendil Prayer": "/images/gallery/church/sanctuary.jpg",
@@ -242,7 +242,7 @@ const religiousServiceImages = {
   "Qeder Baptism": "/images/gallery/nd14_timket_09-3x1500-1.jpg",
   "የቄደር ጥምቀት": "/images/gallery/nd14_timket_09-3x1500-1.jpg",
   "Divine Liturgy (Kidase)": "/images/gallery/church-service.jpg",
-  ቅዳሴ: "/images/gallery/church-service.jpg",
+  "ቅዳሴ": "/images/gallery/church-service.jpg",
 };
 
 // Function to get a religious image based on service title
@@ -381,7 +381,7 @@ const Services: React.FC = () => {
             <Card>
               <CardHeader className="bg-church-burgundy text-white">
                 <CardTitle className="text-church-gold">
-                  {t("regular_services")}
+                  {t("regular_services") || "Regular Services"}
                 </CardTitle>
                 <CardDescription className="text-white/80">
                   {language === "en"
@@ -406,7 +406,7 @@ const Services: React.FC = () => {
             <Card>
               <CardHeader className="bg-church-burgundy text-white">
                 <CardTitle className="text-church-gold">
-                  {t("special_services")}
+                  {t("special_services") || "Special Services"}
                 </CardTitle>
                 <CardDescription className="text-white/80">
                   {language === "en"
@@ -431,7 +431,7 @@ const Services: React.FC = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>{t("children_services")}</CardTitle>
+              <CardTitle>{t("children_services") || "Children & Educational Services"}</CardTitle>
             </CardHeader>
             <CardContent>
               <Accordion type="single" collapsible>
@@ -492,7 +492,7 @@ const Services: React.FC = () => {
                   <AccordionContent>
                     {language === "en"
                       ? "Adult religious education classes are held on Sundays after the Divine Liturgy from 1:00 PM to 2:30 PM. These classes cover Orthodox theology, church history, patristic teachings, and spiritual practices for daily life."
-                      : "የአዋቂዎች ሃይማኖታዊ ትምህርት ክፍሎች በየሰንበቱ ከቅዳሴ በኋላ ከ1፡00 ከሰዓት እስከ 2፡30 ከሰዓት ይካሄዳሉ። እነዚህ ክፍሎች የኦርቶዶክስ ሥነ መለኮት፣ የቤተክርስቲያን ታሪክ፣ የአባቶች ትምህርቶች እና ለዕለት ተዕለት ሕይወት መንፈሳዊ ልምምዶችን ያካትታሉ።"}
+                      : "የአዋቂዎች ሃይማኖታዊ ትምህርት ክፍሎች በየሰንበቱ ከቅዳሴ በኋላ ከ1፡00 ከሰዓት እስከ 2፡30 ከሰዓት ይካሄዳሉ። እነዚህ ክፍሎች የኦርቶዶክስ ሥነ መለኮት፣ የቤተክርስቲያን ታሪክ፣ የአባቶች ትምህርቶች እና ለዕለት ተዕለት ሕይወት መንፈሳዊ ልምምዶችን ያካትታሉ།"}
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
