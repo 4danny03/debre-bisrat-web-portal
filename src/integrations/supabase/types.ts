@@ -96,6 +96,87 @@ export type Database = {
         }
         Relationships: []
       }
+      email_settings: {
+        Row: {
+          auto_welcome_email: boolean | null
+          created_at: string | null
+          enable_newsletters: boolean | null
+          from_email: string | null
+          from_name: string | null
+          id: number
+          newsletter_frequency: string | null
+          smtp_host: string | null
+          smtp_password: string | null
+          smtp_port: number | null
+          smtp_username: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          auto_welcome_email?: boolean | null
+          created_at?: string | null
+          enable_newsletters?: boolean | null
+          from_email?: string | null
+          from_name?: string | null
+          id?: number
+          newsletter_frequency?: string | null
+          smtp_host?: string | null
+          smtp_password?: string | null
+          smtp_port?: number | null
+          smtp_username?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          auto_welcome_email?: boolean | null
+          created_at?: string | null
+          enable_newsletters?: boolean | null
+          from_email?: string | null
+          from_name?: string | null
+          id?: number
+          newsletter_frequency?: string | null
+          smtp_host?: string | null
+          smtp_password?: string | null
+          smtp_port?: number | null
+          smtp_username?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      email_subscribers: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          name: string | null
+          preferences: Json | null
+          status: string | null
+          subscribed_at: string | null
+          unsubscribed_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          name?: string | null
+          preferences?: Json | null
+          status?: string | null
+          subscribed_at?: string | null
+          unsubscribed_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string | null
+          preferences?: Json | null
+          status?: string | null
+          subscribed_at?: string | null
+          unsubscribed_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       email_templates: {
         Row: {
           content: string
@@ -432,6 +513,42 @@ export type Database = {
           phone_number?: string | null
           stripe_publishable_key?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      stripe_settings: {
+        Row: {
+          created_at: string | null
+          default_currency: string | null
+          enable_stripe: boolean | null
+          id: number
+          stripe_mode: string | null
+          stripe_publishable_key: string | null
+          stripe_secret_key: string | null
+          stripe_webhook_secret: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          default_currency?: string | null
+          enable_stripe?: boolean | null
+          id?: number
+          stripe_mode?: string | null
+          stripe_publishable_key?: string | null
+          stripe_secret_key?: string | null
+          stripe_webhook_secret?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          default_currency?: string | null
+          enable_stripe?: boolean | null
+          id?: number
+          stripe_mode?: string | null
+          stripe_publishable_key?: string | null
+          stripe_secret_key?: string | null
+          stripe_webhook_secret?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
