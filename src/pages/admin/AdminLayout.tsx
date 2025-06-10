@@ -17,6 +17,9 @@ import {
   LogOut,
   Users as UsersIcon,
   Home,
+  TrendingUp,
+  Upload,
+  Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -150,16 +153,40 @@ export default function AdminLayout() {
       description: "Track donations",
     },
     {
+      to: "/admin/users",
+      icon: UsersIcon,
+      label: "Users",
+      description: "Manage admin users",
+    },
+    {
+      to: "/admin/analytics",
+      icon: TrendingUp,
+      label: "Analytics",
+      description: "Data insights",
+    },
+    {
+      to: "/admin/bulk-operations",
+      icon: Upload,
+      label: "Bulk Operations",
+      description: "Import/Export data",
+    },
+    {
+      to: "/admin/content-scheduler",
+      icon: Clock,
+      label: "Content Scheduler",
+      description: "Schedule content",
+    },
+    {
+      to: "/admin/system-health",
+      icon: Activity,
+      label: "System Health",
+      description: "System status & monitoring",
+    },
+    {
       to: "/admin/settings",
       icon: Settings,
       label: "Settings",
       description: "System configuration",
-    },
-    {
-      to: "/admin/health",
-      icon: Activity,
-      label: "Health Check",
-      description: "System status",
     },
   ];
 

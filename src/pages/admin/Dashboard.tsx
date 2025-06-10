@@ -44,6 +44,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import AdminSyncStatus from "@/components/AdminSyncStatus";
+import AuditLog from "@/components/AuditLog";
+import ErrorDiagnostics from "@/components/ErrorDiagnostics";
 import { useDataContext } from "@/contexts/DataContext";
 import { dataSyncService } from "@/services/DataSyncService";
 
@@ -95,15 +97,9 @@ export default function Dashboard() {
 
   const loadDashboardData = async () => {
     try {
-      // Load statistics from all tables
-      const [
-        eventsRes,
-        membersRes,
-        donationsRes,
-        testimonialsRes,
-        prayerRequestsRes,
-        sermonsRes,
-      ] = await Promise.all([
+      setLoading(true);
+      // Load statistics from all tables with error handling for each
+      const results = await Promise.allSettled([
         supabase.from("events").select("*", { count: "exact", head: true }),
         supabase.from("members").select("*", { count: "exact", head: true }),
         supabase
@@ -119,27 +115,46 @@ export default function Dashboard() {
         supabase.from("sermons").select("*", { count: "exact", head: true }),
       ]);
 
+      // Extract results with fallbacks
+      const [
+        eventsRes,
+        membersRes,
+        donationsRes,
+        testimonialsRes,
+        prayerRequestsRes,
+        sermonsRes,
+      ] = results.map((result, index) => {
+        if (result.status === "rejected") {
+          console.error(
+            `Dashboard data load failed for query ${index}:`,
+            result.reason,
+          );
+          return { data: null, count: 0, error: result.reason };
+        }
+        return result.value;
+      });
+
       // Calculate recent donation amount (last 30 days)
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
       const recentDonations =
-        donationsRes.data?.filter(
-          (d) => new Date(d.created_at) >= thirtyDaysAgo,
+        donationsRes?.data?.filter(
+          (d) => d?.created_at && new Date(d.created_at) >= thirtyDaysAgo,
         ) || [];
 
       const recentDonationAmount = recentDonations.reduce(
-        (sum, d) => sum + d.amount,
+        (sum, d) => sum + (d?.amount || 0),
         0,
       );
 
       setStats({
-        totalEvents: eventsRes.count || 0,
-        totalMembers: membersRes.count || 0,
-        totalDonations: donationsRes.data?.length || 0,
-        totalTestimonials: testimonialsRes.count || 0,
-        totalPrayerRequests: prayerRequestsRes.count || 0,
-        totalSermons: sermonsRes.count || 0,
+        totalEvents: eventsRes?.count || 0,
+        totalMembers: membersRes?.count || 0,
+        totalDonations: donationsRes?.data?.length || 0,
+        totalTestimonials: testimonialsRes?.count || 0,
+        totalPrayerRequests: prayerRequestsRes?.count || 0,
+        totalSermons: sermonsRes?.count || 0,
         recentDonationAmount,
       });
 
@@ -161,39 +176,59 @@ export default function Dashboard() {
     try {
       const activities: RecentActivity[] = [];
 
-      // Get recent events
-      const { data: events } = await supabase
-        .from("events")
-        .select("id, title, description, created_at")
-        .order("created_at", { ascending: false })
-        .limit(3);
+      // Get recent events with error handling
+      try {
+        const { data: events, error: eventsError } = await supabase
+          .from("events")
+          .select("id, title, description, created_at")
+          .order("created_at", { ascending: false })
+          .limit(3);
 
-      events?.forEach((event) => {
-        activities.push({
-          id: event.id,
-          type: "event",
-          title: `New Event: ${event.title}`,
-          description: event.description || "No description",
-          created_at: event.created_at,
-        });
-      });
+        if (eventsError) {
+          console.error("Error loading recent events:", eventsError);
+        } else if (events && Array.isArray(events)) {
+          events.forEach((event) => {
+            if (event?.id && event?.title && event?.created_at) {
+              activities.push({
+                id: event.id,
+                type: "event",
+                title: `New Event: ${event.title}`,
+                description: event.description || "No description",
+                created_at: event.created_at,
+              });
+            }
+          });
+        }
+      } catch (error) {
+        console.error("Failed to load recent events:", error);
+      }
 
-      // Get recent members
-      const { data: members } = await supabase
-        .from("members")
-        .select("id, full_name, created_at")
-        .order("created_at", { ascending: false })
-        .limit(3);
+      // Get recent members with error handling
+      try {
+        const { data: members, error: membersError } = await supabase
+          .from("members")
+          .select("id, full_name, created_at")
+          .order("created_at", { ascending: false })
+          .limit(3);
 
-      members?.forEach((member) => {
-        activities.push({
-          id: member.id,
-          type: "member",
-          title: `New Member: ${member.full_name}`,
-          description: "Joined the church community",
-          created_at: member.created_at,
-        });
-      });
+        if (membersError) {
+          console.error("Error loading recent members:", membersError);
+        } else if (members && Array.isArray(members)) {
+          members.forEach((member) => {
+            if (member?.id && member?.full_name && member?.created_at) {
+              activities.push({
+                id: member.id,
+                type: "member",
+                title: `New Member: ${member.full_name}`,
+                description: "Joined the church community",
+                created_at: member.created_at,
+              });
+            }
+          });
+        }
+      } catch (error) {
+        console.error("Failed to load recent members:", error);
+      }
 
       // Sort by creation date and take the most recent 6
       activities.sort(
@@ -253,7 +288,9 @@ export default function Dashboard() {
       loadDashboardData();
 
       // Notify data sync service
-      dataSyncService.notifyAdminAction("create", "events");
+      dataSyncService.notifyAdminAction("create", "events", {
+        title: formData.get("title"),
+      });
       await forceSync();
     } catch (error) {
       console.error("Error creating event:", error);
@@ -298,7 +335,9 @@ export default function Dashboard() {
       loadDashboardData();
 
       // Notify data sync service
-      dataSyncService.notifyAdminAction("create", "members");
+      dataSyncService.notifyAdminAction("create", "members", {
+        full_name: formData.get("full_name"),
+      });
       await forceSync();
     } catch (error) {
       console.error("Error creating member:", error);
@@ -337,7 +376,9 @@ export default function Dashboard() {
       loadDashboardData();
 
       // Notify data sync service
-      dataSyncService.notifyAdminAction("create", "profiles");
+      dataSyncService.notifyAdminAction("create", "profiles", {
+        email: formData.get("email"),
+      });
       await forceSync();
     } catch (error) {
       console.error("Error creating admin:", error);
@@ -403,7 +444,9 @@ export default function Dashboard() {
       loadDashboardData();
 
       // Notify data sync service
-      dataSyncService.notifyAdminAction("create", "gallery");
+      dataSyncService.notifyAdminAction("create", "gallery", {
+        title: formData.get("title"),
+      });
       await forceSync();
     } catch (error) {
       console.error("Error uploading image:", error);
@@ -447,7 +490,9 @@ export default function Dashboard() {
       loadDashboardData();
 
       // Notify data sync service
-      dataSyncService.notifyAdminAction("create", "sermons");
+      dataSyncService.notifyAdminAction("create", "sermons", {
+        title: formData.get("title"),
+      });
       await forceSync();
     } catch (error) {
       console.error("Error creating sermon:", error);
@@ -471,11 +516,15 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-church-burgundy">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-church-burgundy">
           Admin Dashboard
         </h1>
-        <Button onClick={loadDashboardData} variant="outline">
+        <Button
+          onClick={loadDashboardData}
+          variant="outline"
+          className="w-full sm:w-auto"
+        >
           Refresh Data
         </Button>
       </div>
@@ -538,8 +587,8 @@ export default function Dashboard() {
       </div>
 
       {/* Recent Activity, Quick Actions, and Sync Status */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle>Recent Activity</CardTitle>
             <CardDescription>
@@ -547,21 +596,21 @@ export default function Dashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-96 overflow-y-auto">
               {recentActivity.length > 0 ? (
                 recentActivity.map((activity) => (
                   <div
                     key={activity.id}
-                    className="flex items-start space-x-3 p-3 rounded-lg bg-gray-50"
+                    className="flex items-start space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
                   >
                     <div className="flex-shrink-0 mt-1">
                       {getActivityIcon(activity.type)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-gray-900 line-clamp-1">
                         {activity.title}
                       </p>
-                      <p className="text-sm text-gray-500 truncate">
+                      <p className="text-sm text-gray-500 line-clamp-2">
                         {activity.description}
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
@@ -866,6 +915,22 @@ export default function Dashboard() {
               <Button
                 className="w-full justify-start"
                 variant="outline"
+                onClick={() => navigate("/admin/analytics")}
+              >
+                <TrendingUp className="h-4 w-4 mr-2" />
+                View Analytics
+              </Button>
+              <Button
+                className="w-full justify-start"
+                variant="outline"
+                onClick={() => navigate("/admin/bulk-operations")}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Bulk Operations
+              </Button>
+              <Button
+                className="w-full justify-start"
+                variant="outline"
                 onClick={() => navigate("/admin/testimonials")}
               >
                 <MessageSquare className="h-4 w-4 mr-2" />
@@ -884,15 +949,24 @@ export default function Dashboard() {
         </Card>
 
         {/* Sync Status Panel */}
-        <Card>
-          <CardHeader>
-            <CardTitle>System Status</CardTitle>
-            <CardDescription>Real-time sync and git status</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AdminSyncStatus />
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>System Status</CardTitle>
+              <CardDescription>Real-time sync and git status</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AdminSyncStatus />
+            </CardContent>
+          </Card>
+
+          <ErrorDiagnostics />
+        </div>
+      </div>
+
+      {/* Audit Log Section */}
+      <div className="mt-8">
+        <AuditLog />
       </div>
     </div>
   );

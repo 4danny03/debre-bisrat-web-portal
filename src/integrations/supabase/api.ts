@@ -567,4 +567,216 @@ export const api = {
   admin: {
     // Simplified admin management - no registration codes needed
   },
+
+  // Stripe Settings API
+  stripeSettings: {
+    getSettings: async () => {
+      const { data, error } = await supabase
+        .from("stripe_settings")
+        .select("*")
+        .limit(1)
+        .single();
+
+      if (error && error.code !== "PGRST116") throw error;
+      return data;
+    },
+    updateSettings: async (settings: any) => {
+      const { data, error } = await supabase
+        .from("stripe_settings")
+        .upsert({ id: 1, ...settings, updated_at: new Date().toISOString() })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+  },
+
+  // Email Settings API
+  emailSettings: {
+    getSettings: async () => {
+      const { data, error } = await supabase
+        .from("email_settings")
+        .select("*")
+        .limit(1)
+        .single();
+
+      if (error && error.code !== "PGRST116") throw error;
+      return data;
+    },
+    updateSettings: async (settings: any) => {
+      const { data, error } = await supabase
+        .from("email_settings")
+        .upsert({ id: 1, ...settings, updated_at: new Date().toISOString() })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+  },
+
+  // Email Subscribers API
+  emailSubscribers: {
+    getSubscribers: async () => {
+      const { data, error } = await supabase
+        .from("email_subscribers")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    addSubscriber: async (subscriber: any) => {
+      const { data, error } = await supabase
+        .from("email_subscribers")
+        .insert([subscriber])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    updateSubscriber: async (id: string, updates: any) => {
+      const { data, error } = await supabase
+        .from("email_subscribers")
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    deleteSubscriber: async (id: string) => {
+      const { error } = await supabase
+        .from("email_subscribers")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+      return true;
+    },
+    unsubscribe: async (email: string) => {
+      const { data, error } = await supabase
+        .from("email_subscribers")
+        .update({
+          status: "unsubscribed",
+          unsubscribed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("email", email)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+  },
+
+  // Email Templates API
+  emailTemplates: {
+    getTemplates: async () => {
+      const { data, error } = await supabase
+        .from("email_templates")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    getTemplateById: async (id: string) => {
+      const { data, error } = await supabase
+        .from("email_templates")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    createTemplate: async (template: any) => {
+      const { data, error } = await supabase
+        .from("email_templates")
+        .insert([template])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    updateTemplate: async (id: string, updates: any) => {
+      const { data, error } = await supabase
+        .from("email_templates")
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    deleteTemplate: async (id: string) => {
+      const { error } = await supabase
+        .from("email_templates")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+      return true;
+    },
+  },
+
+  // Email Campaigns API
+  emailCampaigns: {
+    getCampaigns: async () => {
+      const { data, error } = await supabase
+        .from("email_campaigns")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    getCampaignById: async (id: string) => {
+      const { data, error } = await supabase
+        .from("email_campaigns")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    createCampaign: async (campaign: any) => {
+      const { data, error } = await supabase
+        .from("email_campaigns")
+        .insert([campaign])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    updateCampaign: async (id: string, updates: any) => {
+      const { data, error } = await supabase
+        .from("email_campaigns")
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    deleteCampaign: async (id: string) => {
+      const { error } = await supabase
+        .from("email_campaigns")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+      return true;
+    },
+  },
 };

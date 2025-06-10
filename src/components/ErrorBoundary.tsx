@@ -1,5 +1,5 @@
 import React from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -8,15 +8,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { dataSyncService } from "@/services/DataSyncService";
 
 interface ErrorBoundaryState {
   hasError: boolean;
   error?: Error;
+  errorInfo?: React.ErrorInfo;
+  errorId?: string;
 }
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
   fallback?: React.ComponentType<{ error?: Error; resetError: () => void }>;
+  onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
 }
 
 class ErrorBoundary extends React.Component<
@@ -29,15 +33,73 @@ class ErrorBoundary extends React.Component<
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return { hasError: true, error };
+    return {
+      hasError: true,
+      error,
+      errorId: Date.now().toString(),
+    };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error("Error caught by boundary:", error, errorInfo);
+
+    // Store error info in state
+    this.setState({ errorInfo });
+
+    // Log to DataSyncService
+    dataSyncService.logError(
+      "React Error Boundary",
+      error,
+      `Component: ${errorInfo.componentStack?.split("\n")[1]?.trim()}`,
+    );
+
+    // Call custom error handler if provided
+    if (this.props.onError) {
+      this.props.onError(error, errorInfo);
+    }
+
+    // Log to external service in production
+    if (import.meta.env.PROD) {
+      this.logToExternalService(error, errorInfo);
+    }
   }
 
+  private logToExternalService = (error: Error, errorInfo: React.ErrorInfo) => {
+    // In production, integrate with error tracking service like Sentry
+    const errorData = {
+      message: error.message,
+      stack: error.stack,
+      componentStack: errorInfo.componentStack,
+      timestamp: new Date().toISOString(),
+      url: window.location.href,
+      userAgent: navigator.userAgent,
+      errorId: this.state.errorId,
+    };
+
+    // TODO: Send to error tracking service
+    console.error("Production error logged:", errorData);
+
+    // For now, store in localStorage as fallback
+    try {
+      const existingErrors = JSON.parse(
+        localStorage.getItem("app_errors") || "[]",
+      );
+      existingErrors.push(errorData);
+      // Keep only last 10 errors
+      const recentErrors = existingErrors.slice(-10);
+      localStorage.setItem("app_errors", JSON.stringify(recentErrors));
+    } catch (storageError) {
+      console.error("Failed to store error in localStorage:", storageError);
+    }
+  };
+
   resetError = () => {
-    this.setState({ hasError: false, error: undefined });
+    this.setState({
+      hasError: false,
+      error: undefined,
+      errorInfo: undefined,
+      errorId: undefined,
+    });
   };
 
   render() {
@@ -54,40 +116,87 @@ class ErrorBoundary extends React.Component<
 
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-          <Card className="w-full max-w-md">
+          <Card className="w-full max-w-2xl">
             <CardHeader className="text-center">
-              <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                <AlertTriangle className="w-6 h-6 text-red-600" />
+              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <AlertTriangle className="w-8 h-8 text-red-600" />
               </div>
-              <CardTitle className="text-red-900">
-                Something went wrong
+              <CardTitle className="text-red-900 text-xl">
+                Oops! Something went wrong
               </CardTitle>
-              <CardDescription>
-                An unexpected error occurred. Please try refreshing the page.
+              <CardDescription className="text-base">
+                We encountered an unexpected error. Our team has been notified.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
+              {/* Error Details */}
               {this.state.error && (
-                <div className="bg-red-50 border border-red-200 rounded-md p-3">
-                  <p className="text-sm text-red-800 font-mono">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-red-900 mb-2">
+                    Error Details:
+                  </h4>
+                  <p className="text-sm text-red-800 font-mono break-all">
                     {this.state.error.message}
                   </p>
+                  {this.state.errorId && (
+                    <p className="text-xs text-red-600 mt-2">
+                      Error ID: {this.state.errorId}
+                    </p>
+                  )}
                 </div>
               )}
-              <div className="flex space-x-2">
+
+              {/* Development Info */}
+              {!import.meta.env.PROD && this.state.errorInfo && (
+                <details className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <summary className="font-semibold text-gray-900 cursor-pointer">
+                    Technical Details (Development)
+                  </summary>
+                  <pre className="text-xs text-gray-700 mt-2 overflow-auto max-h-40">
+                    {this.state.error?.stack}
+                  </pre>
+                  <pre className="text-xs text-gray-600 mt-2 overflow-auto max-h-32">
+                    {this.state.errorInfo.componentStack}
+                  </pre>
+                </details>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button
                   onClick={this.resetError}
-                  variant="outline"
-                  className="flex-1"
+                  className="flex-1 bg-church-burgundy hover:bg-church-burgundy/90"
                 >
+                  <RefreshCw className="w-4 h-4 mr-2" />
                   Try Again
                 </Button>
                 <Button
                   onClick={() => window.location.reload()}
+                  variant="outline"
                   className="flex-1"
                 >
+                  <RefreshCw className="w-4 h-4 mr-2" />
                   Refresh Page
                 </Button>
+                <Button
+                  onClick={() => (window.location.href = "/")}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  <Home className="w-4 h-4 mr-2" />
+                  Go Home
+                </Button>
+              </div>
+
+              {/* Help Text */}
+              <div className="text-center text-sm text-gray-500">
+                <p>
+                  If this problem persists, please contact support with Error
+                  ID:{" "}
+                  <code className="bg-gray-100 px-1 rounded">
+                    {this.state.errorId}
+                  </code>
+                </p>
               </div>
             </CardContent>
           </Card>

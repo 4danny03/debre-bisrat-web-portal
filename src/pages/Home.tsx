@@ -241,13 +241,7 @@ const Home: React.FC = () => {
     fetchUpcomingEvents();
   }, [fetchUpcomingEvents]);
 
-  // Use enhanced data refresh hook for events
-  useDataRefresh(
-    fetchUpcomingEvents,
-    5 * 60 * 1000, // Refresh every 5 minutes
-    [language],
-    "events",
-  );
+  // Removed data refresh hook to prevent circular dependencies
 
   // Slides for the image slider
   const sliderContent = [

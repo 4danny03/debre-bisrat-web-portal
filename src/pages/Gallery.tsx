@@ -244,18 +244,11 @@ const Gallery: React.FC = () => {
     fetchGalleryImages();
   }, [language]);
 
-  // Use enhanced data refresh hook
-  const { manualRefresh, forceSyncData } = useDataRefresh(
-    fetchGalleryImages,
-    3 * 60 * 1000, // Refresh every 3 minutes
-    [language],
-    "gallery",
-  );
+  // Removed data refresh hook to prevent circular dependencies
 
   const handleManualRefresh = async () => {
     console.log("Manual refresh triggered for gallery");
-    await manualRefresh();
-    await forceSyncData();
+    await fetchGalleryImages();
   };
 
   const handleImageClick = (index: number) => {

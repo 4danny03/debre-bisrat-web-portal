@@ -39,7 +39,10 @@ import AdminTestimonials from "./pages/admin/Testimonials";
 import AdminPrayerRequests from "./pages/admin/PrayerRequests";
 import AdminDonations from "./pages/admin/Donations";
 import AdminUsers from "./pages/admin/Users";
-import AdminHealthCheck from "./pages/admin/HealthCheck";
+import AdminSystemHealth from "./pages/admin/SystemHealth";
+import AdminAnalytics from "./pages/admin/Analytics";
+import AdminBulkOperations from "./pages/admin/BulkOperations";
+import AdminContentScheduler from "./pages/admin/ContentScheduler";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { DataProvider } from "./contexts/DataContext";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -86,7 +89,16 @@ export default function App(): React.ReactElement {
                   />
                   <Route path="donations" element={<AdminDonations />} />
                   <Route path="users" element={<AdminUsers />} />
-                  <Route path="health" element={<AdminHealthCheck />} />
+                  <Route path="system-health" element={<AdminSystemHealth />} />
+                  <Route path="analytics" element={<AdminAnalytics />} />
+                  <Route
+                    path="bulk-operations"
+                    element={<AdminBulkOperations />}
+                  />
+                  <Route
+                    path="content-scheduler"
+                    element={<AdminContentScheduler />}
+                  />
                 </Route>
 
                 {/* Add this before the catchall route */}
