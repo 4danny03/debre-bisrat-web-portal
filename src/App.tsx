@@ -1,3 +1,10 @@
+import * as React from "react";
+import { useState, useEffect } from "react";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { BrowserRouter, Routes, Route, useRoutes } from "react-router-dom";
+
 // Simple component to handle tempo routes without causing recursion
 function TempoRoutesHandler() {
   // Only render tempo routes if in tempo environment
@@ -37,11 +44,11 @@ import AdminAnalytics from "./pages/admin/Analytics";
 import AdminBulkOperations from "./pages/admin/BulkOperations";
 import AdminContentScheduler from "./pages/admin/ContentScheduler";
 import { LanguageProvider } from "./contexts/LanguageContext";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
 import { DataProvider } from "./contexts/DataContext";
+import ErrorBoundary from "./components/ErrorBoundary";
+import "@/utils/debugSync"; // Initialize debug utilities
 
-function App() {
+export default function App(): React.ReactElement {
   return (
     <ErrorBoundary>
       <DataProvider>
@@ -104,14 +111,5 @@ function App() {
         </LanguageProvider>
       </DataProvider>
     </ErrorBoundary>
-    <DataProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Index />} />
-        </Routes>
-      </Router>
-    </DataProvider>
   );
 }
-
-export default App;
