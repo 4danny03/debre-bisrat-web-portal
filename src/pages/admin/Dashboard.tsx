@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from "react";
 import { useDataContext } from "@/contexts/DataContext";
-import { DataSyncService } from "@/services/DataSyncService";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,38 +47,42 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
-    // Calculate statistics
-    const today = new Date();
-    const upcomingEvents = events.filter(
-      (event) => new Date(event.event_date) >= today,
-    ).length;
+    // Only calculate stats when data is available and not loading
+    if (!loading && !isRefreshing) {
+      const today = new Date();
+      const upcomingEvents = events.filter(
+        (event) => new Date(event.event_date) >= today,
+      ).length;
 
-    const pendingTestimonials = testimonials.filter(
-      (t) => !t.is_approved,
-    ).length;
+      const pendingTestimonials = testimonials.filter(
+        (t) => !t.is_approved,
+      ).length;
 
-    const totalDonationsAmount = donations.reduce(
-      (sum, donation) => sum + donation.amount,
-      0,
-    );
+      const totalDonationsAmount = donations.reduce(
+        (sum, donation) => sum + donation.amount,
+        0,
+      );
 
-    const unansweredPrayers = prayerRequests.filter(
-      (p) => !p.is_answered,
-    ).length;
+      const unansweredPrayers = prayerRequests.filter(
+        (p) => !p.is_answered,
+      ).length;
 
-    setStats({
-      totalMembers: members.length,
-      upcomingEvents,
-      totalSermons: sermons.length,
-      pendingTestimonials,
-      totalDonations: totalDonationsAmount,
-      galleryImages: gallery.length,
-      prayerRequests: unansweredPrayers,
-      recentActivity: events.length + testimonials.length + donations.length,
-    });
-  }, [events, gallery, sermons, testimonials, prayerRequests, donations, members]);
+      setStats({
+        totalMembers: members.length,
+        upcomingEvents,
+        totalSermons: sermons.length,
+        pendingTestimonials,
+        totalDonations: totalDonationsAmount,
+        galleryImages: gallery.length,
+        prayerRequests: unansweredPrayers,
+        recentActivity: events.length + testimonials.length + donations.length,
+      });
+    }
+  }, [events, gallery, sermons, testimonials, prayerRequests, donations, members, loading, isRefreshing]);
 
   const handleForceRefresh = async () => {
+    if (isRefreshing) return; // Prevent multiple refresh attempts
+    
     try {
       await forceSync();
       toast.success("Data refreshed successfully");
@@ -89,7 +92,7 @@ export default function Dashboard() {
     }
   };
 
-  if (loading) {
+  if (loading && !lastRefresh) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
@@ -100,14 +103,14 @@ export default function Dashboard() {
     );
   }
 
-  if (error) {
+  if (error && !lastRefresh) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <AlertCircle className="w-8 h-8 mx-auto mb-4 text-red-600" />
           <p className="text-red-600 mb-4">{error}</p>
-          <Button onClick={handleForceRefresh} variant="outline">
-            <RefreshCw className="w-4 h-4 mr-2" />
+          <Button onClick={handleForceRefresh} variant="outline" disabled={isRefreshing}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
             Retry
           </Button>
         </div>
@@ -136,7 +139,7 @@ export default function Dashboard() {
             <RefreshCw
               className={`w-4 h-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`}
             />
-            Refresh Data
+            {isRefreshing ? "Refreshing..." : "Refresh Data"}
           </Button>
         </div>
       </div>

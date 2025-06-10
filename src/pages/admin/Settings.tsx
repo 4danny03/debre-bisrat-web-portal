@@ -12,8 +12,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { CheckCircle, AlertCircle, ExternalLink } from "lucide-react";
 
 interface Settings {
   church_name: string;
@@ -49,15 +51,19 @@ export default function Settings() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [stripeStatus, setStripeStatus] = useState<'unconfigured' | 'configured' | 'testing'>('unconfigured');
   const { toast } = useToast();
 
   useEffect(() => {
     loadSettings();
   }, []);
 
+  useEffect(() => {
+    checkStripeConfiguration();
+  }, [settings.enable_stripe, settings.stripe_publishable_key]);
+
   const loadSettings = async () => {
     try {
-      // Try to get settings, create default if none exist
       let { data, error } = await supabase
         .from("site_settings")
         .select("*")
@@ -108,8 +114,42 @@ export default function Settings() {
     }
   };
 
+  const checkStripeConfiguration = () => {
+    if (!settings.enable_stripe) {
+      setStripeStatus('unconfigured');
+      return;
+    }
+
+    if (settings.stripe_publishable_key && settings.stripe_publishable_key.trim()) {
+      if (settings.stripe_publishable_key.startsWith('pk_test_')) {
+        setStripeStatus('testing');
+      } else if (settings.stripe_publishable_key.startsWith('pk_live_')) {
+        setStripeStatus('configured');
+      } else {
+        setStripeStatus('unconfigured');
+      }
+    } else {
+      setStripeStatus('unconfigured');
+    }
+  };
+
+  const validateStripeKey = (key: string) => {
+    if (!key) return true; // Allow empty for now
+    return key.startsWith('pk_test_') || key.startsWith('pk_live_');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (settings.enable_stripe && !validateStripeKey(settings.stripe_publishable_key)) {
+      toast({
+        title: "Invalid Stripe Key",
+        description: "Please enter a valid Stripe publishable key (starts with pk_test_ or pk_live_)",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -139,6 +179,17 @@ export default function Settings() {
 
   const handleChange = (field: keyof Settings, value: string | boolean) => {
     setSettings((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const getStripeStatusBadge = () => {
+    switch (stripeStatus) {
+      case 'configured':
+        return <Badge variant="default" className="bg-green-500"><CheckCircle className="w-3 h-3 mr-1" />Live Mode</Badge>;
+      case 'testing':
+        return <Badge variant="secondary"><CheckCircle className="w-3 h-3 mr-1" />Test Mode</Badge>;
+      default:
+        return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1" />Not Configured</Badge>;
+    }
   };
 
   if (loading) {
@@ -235,30 +286,88 @@ export default function Settings() {
         <TabsContent value="payments">
           <Card>
             <CardHeader>
-              <CardTitle>Payment Settings</CardTitle>
-              <CardDescription>Configure Stripe payment integration</CardDescription>
+              <CardTitle className="flex items-center justify-between">
+                Payment Settings
+                {getStripeStatusBadge()}
+              </CardTitle>
+              <CardDescription>Configure Stripe payment integration for donations and membership</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Enable Stripe Payments</Label>
-                  <p className="text-sm text-gray-500">Allow online donations via Stripe</p>
+                  <p className="text-sm text-gray-500">Allow online donations and membership payments via Stripe</p>
                 </div>
                 <Switch
                   checked={settings.enable_stripe}
                   onCheckedChange={(checked) => handleChange("enable_stripe", checked)}
                 />
               </div>
+              
               {settings.enable_stripe && (
-                <div className="space-y-2">
-                  <Label htmlFor="stripeKey">Stripe Publishable Key</Label>
-                  <Input
-                    id="stripeKey"
-                    value={settings.stripe_publishable_key}
-                    onChange={(e) => handleChange("stripe_publishable_key", e.target.value)}
-                    placeholder="pk_..."
-                  />
-                  <p className="text-sm text-gray-500">Your Stripe publishable key (starts with pk_)</p>
+                <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+                  <div className="space-y-2">
+                    <Label htmlFor="stripeKey">Stripe Publishable Key</Label>
+                    <Input
+                      id="stripeKey"
+                      value={settings.stripe_publishable_key}
+                      onChange={(e) => handleChange("stripe_publishable_key", e.target.value)}
+                      placeholder="pk_test_... or pk_live_..."
+                      className={!validateStripeKey(settings.stripe_publishable_key) && settings.stripe_publishable_key ? "border-red-500" : ""}
+                    />
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-gray-500">
+                        Your Stripe publishable key (starts with pk_test_ for testing or pk_live_ for production)
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open('https://dashboard.stripe.com/apikeys', '_blank')}
+                      >
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        Get Keys
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50 p-3 rounded border border-blue-200">
+                    <h4 className="font-medium text-blue-900 mb-2">Stripe Configuration Status</h4>
+                    <ul className="space-y-1 text-sm text-blue-800">
+                      <li className="flex items-center">
+                        {settings.enable_stripe ? <CheckCircle className="w-4 h-4 mr-2 text-green-600" /> : <AlertCircle className="w-4 h-4 mr-2 text-red-600" />}
+                        Stripe integration {settings.enable_stripe ? 'enabled' : 'disabled'}
+                      </li>
+                      <li className="flex items-center">
+                        {settings.stripe_publishable_key && validateStripeKey(settings.stripe_publishable_key) ? 
+                          <CheckCircle className="w-4 h-4 mr-2 text-green-600" /> : 
+                          <AlertCircle className="w-4 h-4 mr-2 text-red-600" />
+                        }
+                        Publishable key {settings.stripe_publishable_key && validateStripeKey(settings.stripe_publishable_key) ? 'configured' : 'missing or invalid'}
+                      </li>
+                      <li className="flex items-center">
+                        <AlertCircle className="w-4 h-4 mr-2 text-orange-600" />
+                        Secret key must be configured in Supabase Edge Function secrets
+                      </li>
+                    </ul>
+                  </div>
+
+                  {stripeStatus === 'testing' && (
+                    <div className="bg-yellow-50 p-3 rounded border border-yellow-200">
+                      <p className="text-sm text-yellow-800">
+                        <strong>Test Mode:</strong> You're using test keys. No real payments will be processed.
+                        Use test card number 4242424242424242 for testing.
+                      </p>
+                    </div>
+                  )}
+
+                  {stripeStatus === 'configured' && (
+                    <div className="bg-green-50 p-3 rounded border border-green-200">
+                      <p className="text-sm text-green-800">
+                        <strong>Live Mode:</strong> Real payments will be processed. Make sure your webhook endpoints are configured.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
