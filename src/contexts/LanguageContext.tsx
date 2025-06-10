@@ -20,6 +20,7 @@ const translations: Record<string, Record<Language, string>> = {
   about: { en: "About Us", am: "ስለ እኛ" },
   events: { en: "Events", am: "ዝግጅቶች" },
   services: { en: "Services", am: "አገልግሎቶች" },
+  sermons: { en: "Sermons", am: "ስብከቶች" },
   gallery: { en: "Gallery", am: "ፎቶዎች" },
   donation: { en: "Donation", am: "ልገሳ" },
   membership: { en: "Membership", am: "አባልነት" },
@@ -206,9 +207,8 @@ const translations: Record<string, Record<Language, string>> = {
   },
 };
 
-export const LanguageProvider: React.FC<{ children: ReactNode }> = ({
-  children,
-}) => {
+// Language Provider component
+function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>("en");
 
   // Translation function
@@ -225,13 +225,15 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({
       {children}
     </LanguageContext.Provider>
   );
-};
+}
 
 // Custom hook for using the language context
-export const useLanguage = (): LanguageContextType => {
+function useLanguage(): LanguageContextType {
   const context = useContext(LanguageContext);
   if (context === undefined) {
     throw new Error("useLanguage must be used within a LanguageProvider");
   }
   return context;
-};
+}
+
+export { LanguageProvider, useLanguage };

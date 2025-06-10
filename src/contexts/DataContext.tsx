@@ -1,8 +1,19 @@
 
+import React, { createContext, useContext, useState, ReactNode } from "react";
+
+interface GitStatus {
+  branch: string;
+  hasChanges: boolean;
+  changedFiles: string[];
+}
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface DataContextType {
   connectionHealth: boolean;
+  forceSync: () => Promise<void>;
+  syncStatus: Record<string, string>;
+  gitStatus: GitStatus;
   syncStatus: Record<string, string>;
   gitStatus: {
     branch: string;
@@ -23,6 +34,9 @@ interface DataProviderProps {
 
 export function DataProvider({ children }: DataProviderProps) {
   const [connectionHealth, setConnectionHealth] = useState(true);
+  const [syncStatus, setSyncStatus] = useState<Record<string, string>>({});
+  const [gitStatus, setGitStatus] = useState<GitStatus>({
+    branch: "main",
   const [syncStatus, setSyncStatus] = useState<Record<string, string>>({
     events: 'SUBSCRIBED',
     gallery: 'SUBSCRIBED',
@@ -40,6 +54,40 @@ export function DataProvider({ children }: DataProviderProps) {
   const [lastRefresh, setLastRefresh] = useState<Date | null>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  const refreshAllData = async () => {
+    if (isRefreshing) return;
+
+    setIsRefreshing(true);
+    try {
+      setConnectionHealth(true);
+      setLastRefresh(new Date());
+
+      // Update sync status for common tables
+      setSyncStatus({
+        events: "SUBSCRIBED",
+        members: "SUBSCRIBED",
+        sermons: "SUBSCRIBED",
+        gallery: "SUBSCRIBED",
+        testimonials: "SUBSCRIBED",
+        prayer_requests: "SUBSCRIBED",
+        donations: "SUBSCRIBED",
+      });
+
+      console.log("Data refresh completed");
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+      setConnectionHealth(false);
+
+      // Set error status for sync
+      setSyncStatus({
+        events: "CHANNEL_ERROR",
+        members: "CHANNEL_ERROR",
+        sermons: "CHANNEL_ERROR",
+        gallery: "CHANNEL_ERROR",
+        testimonials: "CHANNEL_ERROR",
+        prayer_requests: "CHANNEL_ERROR",
+        donations: "CHANNEL_ERROR",
+      });
   const forceSync = async () => {
     setIsRefreshing(true);
     try {
@@ -53,6 +101,16 @@ export function DataProvider({ children }: DataProviderProps) {
     }
   };
 
+  const forceSync = async () => {
+    console.log("Force syncing data...");
+    await refreshAllData();
+  };
+
+  const autoCommitAndPush = async (message: string): Promise<boolean> => {
+    try {
+      console.log("Auto commit and push:", message);
+      // Simulate git operations
+      setGitStatus((prev) => ({
   const autoCommitAndPush = async (message: string): Promise<boolean> => {
     try {
       console.log('Auto commit and push:', message);
@@ -65,11 +123,25 @@ export function DataProvider({ children }: DataProviderProps) {
       }));
       return true;
     } catch (error) {
+      console.error("Failed to commit and push:", error);
       console.error('Auto commit and push failed:', error);
       return false;
     }
   };
 
+  return (
+    <DataContext.Provider
+      value={{
+        refreshAllData,
+        isRefreshing,
+        lastRefresh,
+        connectionHealth,
+        forceSync,
+        syncStatus,
+        gitStatus,
+        autoCommitAndPush,
+      }}
+    >
   useEffect(() => {
     // Simulate periodic health checks
     const interval = setInterval(() => {

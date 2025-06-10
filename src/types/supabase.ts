@@ -12,7 +12,7 @@ export type Database = {
       donations: {
         Row: {
           amount: number
-          created_at: string | null
+          created_at: string
           donor_email: string | null
           donor_name: string | null
           id: string
@@ -21,11 +21,11 @@ export type Database = {
           payment_method: string | null
           payment_status: string | null
           purpose: string | null
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           amount: number
-          created_at?: string | null
+          created_at?: string
           donor_email?: string | null
           donor_name?: string | null
           id?: string
@@ -34,11 +34,11 @@ export type Database = {
           payment_method?: string | null
           payment_status?: string | null
           purpose?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           amount?: number
-          created_at?: string | null
+          created_at?: string
           donor_email?: string | null
           donor_name?: string | null
           id?: string
@@ -47,13 +47,172 @@ export type Database = {
           payment_method?: string | null
           payment_status?: string | null
           purpose?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      email_campaigns: {
+        Row: {
+          content: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          name: string
+          recipient_count: number | null
+          scheduled_at: string | null
+          sent_at: string | null
+          sent_count: number | null
+          status: string | null
+          subject: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          name: string
+          recipient_count?: number | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          sent_count?: number | null
+          status?: string | null
+          subject: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          name?: string
+          recipient_count?: number | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          sent_count?: number | null
+          status?: string | null
+          subject?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      email_settings: {
+        Row: {
+          auto_welcome_email: boolean | null
+          created_at: string | null
+          enable_newsletters: boolean | null
+          from_email: string | null
+          from_name: string | null
+          id: number
+          newsletter_frequency: string | null
+          smtp_host: string | null
+          smtp_password: string | null
+          smtp_port: number | null
+          smtp_username: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          auto_welcome_email?: boolean | null
+          created_at?: string | null
+          enable_newsletters?: boolean | null
+          from_email?: string | null
+          from_name?: string | null
+          id?: number
+          newsletter_frequency?: string | null
+          smtp_host?: string | null
+          smtp_password?: string | null
+          smtp_port?: number | null
+          smtp_username?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          auto_welcome_email?: boolean | null
+          created_at?: string | null
+          enable_newsletters?: boolean | null
+          from_email?: string | null
+          from_name?: string | null
+          id?: number
+          newsletter_frequency?: string | null
+          smtp_host?: string | null
+          smtp_password?: string | null
+          smtp_port?: number | null
+          smtp_username?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      email_subscribers: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          name: string | null
+          preferences: Json | null
+          status: string | null
+          subscribed_at: string | null
+          unsubscribed_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          name?: string | null
+          preferences?: Json | null
+          status?: string | null
+          subscribed_at?: string | null
+          unsubscribed_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string | null
+          preferences?: Json | null
+          status?: string | null
+          subscribed_at?: string | null
+          unsubscribed_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      email_templates: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          subject: string
+          template_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          subject: string
+          template_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          subject?: string
+          template_type?: string
           updated_at?: string | null
         }
         Relationships: []
       }
       events: {
         Row: {
-          created_at: string | null
+          created_at: string
           description: string | null
           event_date: string
           event_time: string | null
@@ -62,10 +221,10 @@ export type Database = {
           is_featured: boolean | null
           location: string | null
           title: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           description?: string | null
           event_date: string
           event_time?: string | null
@@ -74,10 +233,10 @@ export type Database = {
           is_featured?: boolean | null
           location?: string | null
           title: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           description?: string | null
           event_date?: string
           event_time?: string | null
@@ -86,140 +245,185 @@ export type Database = {
           is_featured?: boolean | null
           location?: string | null
           title?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
       gallery: {
         Row: {
           category: string | null
-          created_at: string | null
+          created_at: string
           description: string | null
           id: string
           image_url: string
           is_featured: boolean | null
           title: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           category?: string | null
-          created_at?: string | null
+          created_at?: string
           description?: string | null
           id?: string
           image_url: string
           is_featured?: boolean | null
           title: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           category?: string | null
-          created_at?: string | null
+          created_at?: string
           description?: string | null
           id?: string
           image_url?: string
           is_featured?: boolean | null
           title?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
       members: {
         Row: {
           address: string | null
-          created_at: string | null
+          created_at: string
           email: string | null
           full_name: string
           id: string
+          join_date: string | null
+          last_renewal_date: string | null
           membership_date: string | null
           membership_status: string | null
+          membership_type: string | null
+          next_renewal_date: string | null
           phone: string | null
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           address?: string | null
-          created_at?: string | null
+          created_at?: string
           email?: string | null
           full_name: string
           id?: string
+          join_date?: string | null
+          last_renewal_date?: string | null
           membership_date?: string | null
           membership_status?: string | null
+          membership_type?: string | null
+          next_renewal_date?: string | null
           phone?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           address?: string | null
-          created_at?: string | null
+          created_at?: string
           email?: string | null
           full_name?: string
           id?: string
+          join_date?: string | null
+          last_renewal_date?: string | null
           membership_date?: string | null
           membership_status?: string | null
+          membership_type?: string | null
+          next_renewal_date?: string | null
           phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      newsletter_subscribers: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          name: string | null
+          subscribed: boolean | null
+          subscription_date: string | null
+          unsubscribe_token: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          name?: string | null
+          subscribed?: boolean | null
+          subscription_date?: string | null
+          unsubscribe_token?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string | null
+          subscribed?: boolean | null
+          subscription_date?: string | null
+          unsubscribe_token?: string | null
           updated_at?: string | null
         }
         Relationships: []
       }
       prayer_requests: {
         Row: {
-          created_at: string | null
+          created_at: string
           email: string | null
           id: string
           is_answered: boolean | null
           is_public: boolean | null
           name: string
           request: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           email?: string | null
           id?: string
           is_answered?: boolean | null
           is_public?: boolean | null
           name: string
           request: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           email?: string | null
           id?: string
           is_answered?: boolean | null
           is_public?: boolean | null
           name?: string
           request?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
       profiles: {
         Row: {
-          created_at: string | null
+          created_at: string
           email: string | null
           id: string
           role: string | null
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
-          created_at?: string | null
-          email?: string | null
-          id: string
-          role?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
+          created_at?: string
           email?: string | null
           id?: string
           role?: string | null
-          updated_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
       sermons: {
         Row: {
           audio_url: string | null
-          created_at: string | null
+          created_at: string
           description: string | null
           id: string
           is_featured: boolean | null
@@ -227,11 +431,11 @@ export type Database = {
           scripture_reference: string | null
           sermon_date: string
           title: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           audio_url?: string | null
-          created_at?: string | null
+          created_at?: string
           description?: string | null
           id?: string
           is_featured?: boolean | null
@@ -239,11 +443,11 @@ export type Database = {
           scripture_reference?: string | null
           sermon_date: string
           title: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           audio_url?: string | null
-          created_at?: string | null
+          created_at?: string
           description?: string | null
           id?: string
           is_featured?: boolean | null
@@ -251,6 +455,99 @@ export type Database = {
           scripture_reference?: string | null
           sermon_date?: string
           title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      site_settings: {
+        Row: {
+          admin_email: string | null
+          church_address: string | null
+          church_name: string | null
+          created_at: string
+          email: string | null
+          enable_donations: boolean | null
+          enable_email_notifications: boolean | null
+          enable_membership: boolean | null
+          enable_newsletter: boolean | null
+          enable_stripe: boolean | null
+          from_email: string | null
+          id: number
+          maintenance_mode: boolean | null
+          phone_number: string | null
+          stripe_publishable_key: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_email?: string | null
+          church_address?: string | null
+          church_name?: string | null
+          created_at?: string
+          email?: string | null
+          enable_donations?: boolean | null
+          enable_email_notifications?: boolean | null
+          enable_membership?: boolean | null
+          enable_newsletter?: boolean | null
+          enable_stripe?: boolean | null
+          from_email?: string | null
+          id?: number
+          maintenance_mode?: boolean | null
+          phone_number?: string | null
+          stripe_publishable_key?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_email?: string | null
+          church_address?: string | null
+          church_name?: string | null
+          created_at?: string
+          email?: string | null
+          enable_donations?: boolean | null
+          enable_email_notifications?: boolean | null
+          enable_membership?: boolean | null
+          enable_newsletter?: boolean | null
+          enable_stripe?: boolean | null
+          from_email?: string | null
+          id?: number
+          maintenance_mode?: boolean | null
+          phone_number?: string | null
+          stripe_publishable_key?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      stripe_settings: {
+        Row: {
+          created_at: string | null
+          default_currency: string | null
+          enable_stripe: boolean | null
+          id: number
+          stripe_mode: string | null
+          stripe_publishable_key: string | null
+          stripe_secret_key: string | null
+          stripe_webhook_secret: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          default_currency?: string | null
+          enable_stripe?: boolean | null
+          id?: number
+          stripe_mode?: string | null
+          stripe_publishable_key?: string | null
+          stripe_secret_key?: string | null
+          stripe_webhook_secret?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          default_currency?: string | null
+          enable_stripe?: boolean | null
+          id?: number
+          stripe_mode?: string | null
+          stripe_publishable_key?: string | null
+          stripe_secret_key?: string | null
+          stripe_webhook_secret?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -258,27 +555,27 @@ export type Database = {
       testimonials: {
         Row: {
           content: string
-          created_at: string | null
+          created_at: string
           id: string
           is_approved: boolean | null
           name: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           content: string
-          created_at?: string | null
+          created_at?: string
           id?: string
           is_approved?: boolean | null
           name: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           content?: string
-          created_at?: string | null
+          created_at?: string
           id?: string
           is_approved?: boolean | null
           name?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: []
       }

@@ -199,6 +199,154 @@ export default function Home() {
               </Button>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+interface Event {
+  id: string;
+  title: string;
+  description: string | null;
+  event_date: string;
+  event_time: string | null;
+  location: string | null;
+  image_url: string | null;
+  is_featured: boolean;
+  created_at: string;
+}
+
+const Home: React.FC = () => {
+  const { t, language } = useLanguage();
+  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(true);
+
+  // Fallback events if no database events are available
+  const fallbackEvents = [
+    {
+      id: "fallback-1",
+      title:
+        language === "en"
+          ? "St. Gabriel Monthly Commemoration"
+          : "የቅዱስ ገብርኤል ወርሃዊ ተዝካር",
+      description: null,
+      event_date: "2025-05-19",
+      event_time: "10:00",
+      location: null,
+      image_url: "/images/religious/church-service.jpg",
+      is_featured: false,
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: "fallback-2",
+      title:
+        language === "en"
+          ? "Sunday School for Children"
+          : "የሰንበት ትምህርት ቤት ለልጆች",
+      description: null,
+      event_date: "2025-05-25",
+      event_time: "09:00",
+      location: null,
+      image_url: "/images/gallery/church-service.jpg",
+      is_featured: false,
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: "fallback-3",
+      title:
+        language === "en"
+          ? "Church Foundation Anniversary"
+          : "የቤተክርስቲያን መሰረት የተጣለበት ቀን",
+      description: null,
+      event_date: "2025-06-19",
+      event_time: "11:00",
+      location: null,
+      image_url: "/images/gallery/church-service.jpg",
+      is_featured: false,
+      created_at: new Date().toISOString(),
+    },
+  ];
+
+  const fetchUpcomingEvents = useCallback(async () => {
+    try {
+      setLoadingEvents(true);
+      const data = await api.events.getUpcomingEvents(3);
+
+      if (data && data.length > 0) {
+        setUpcomingEvents(data);
+      } else {
+        // Use fallback events if no database events
+        setUpcomingEvents(fallbackEvents);
+      }
+    } catch (error) {
+      console.error("Error fetching upcoming events:", error);
+      // Use fallback events on error
+      setUpcomingEvents(fallbackEvents);
+    } finally {
+      setLoadingEvents(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUpcomingEvents();
+  }, [fetchUpcomingEvents]);
+
+  // Removed data refresh hook to prevent circular dependencies
+
+  // Slides for the image slider
+  const sliderContent = [
+    {
+      image: "/images/gallery/church-front.jpg",
+      title:
+        language === "en"
+          ? "Welcome to Our Church"
+          : "ወደ ቤተክርስቲያናችን እንኳን ደህና መጡ",
+      content:
+        language === "en"
+          ? "Debre Bisrat Dagimawi Kulibi St.Gabriel Ethiopian Orthodox Tewahedo Church"
+          : "ደብረ ብሥራት ዳግማዊ ቁልቢ ቅዱስ ገብርኤል ቤተክርስቲያን",
+    },
+    {
+      image: "/images/religious/palm-sunday.jpg",
+      title: language === "en" ? "Palm Sunday" : "ሆሳዕና",
+      content:
+        language === "en"
+          ? "Commemorating Jesus's triumphal entry into Jerusalem"
+          : "የኢየሱስ ክርስቶስ ወደ ኢየሩሳሌም መግባትን የሚያስታውስ",
+    },
+    {
+      image: "/images/gallery/church-service.jpg",
+      title: language === "en" ? "Holy Sacrifice" : "ቅዱስ መስዋዕት",
+      content:
+        language === "en"
+          ? "Remembering the sacrifice of our Lord Jesus Christ"
+          : "የጌታችን የኢየሱስ ክርስቶስን መስዋዕትነት የምናስታውስበት",
+    },
+    {
+      image: "/images/gallery/timket.jpg",
+      title: language === "en" ? "Timket Celebration" : "የጥምቀት በዓል",
+      content:
+        language === "en"
+          ? "Celebrating the baptism of Jesus Christ in the Jordan River"
+          : "የኢየሱስ ክርስቶስ በዮርዳኖስ ወንዝ ጥምቀትን የምናከብርበት",
+    },
+    {
+      image: "/images/religious/crucifixion.jpg",
+      title: language === "en" ? "Good Friday" : "ስቅለት",
+      content:
+        language === "en"
+          ? "Remembering the crucifixion and death of our Lord Jesus Christ"
+          : "የጌታችን የኢየሱስ ክርስቶስን መስቀል እና ሞት የምናስታውስበት",
+    },
+  ];
+
+  return (
+    <Layout>
+      <div className="container mx-auto px-4 py-8">
+        {/* Enhanced Image Slider Section */}
+        <section className="mb-12 lg:mb-16">
+          <ImageSlider slides={sliderContent} />
         </section>
       )}
 
