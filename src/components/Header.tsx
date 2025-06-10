@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Globe, Menu, X } from "lucide-react";
@@ -117,6 +118,15 @@ const Header: React.FC = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 {t("services")}
+              </Link>
+            </li>
+            <li className="py-2 md:py-0">
+              <Link
+                to="/sermons"
+                className={`nav-link ${location.pathname === "/sermons" ? "active" : ""}`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {language === "en" ? "Sermons" : "ስብከቶች"}
               </Link>
             </li>
             <li className="py-2 md:py-0">
