@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
@@ -19,6 +18,55 @@ interface CheckoutRequest {
   memberId?: string;
 }
 
+// Input validation helper
+function validateInput(data: CheckoutRequest): {
+  isValid: boolean;
+  errors: string[];
+} {
+  const errors: string[] = [];
+
+  // Validate amount
+  const amount = parseFloat(data.amount);
+  if (isNaN(amount) || amount < 1 || amount > 10000) {
+    errors.push("Amount must be between $1 and $10,000");
+  }
+
+  // Validate donation type
+  const validDonationTypes = ["one_time", "monthly", "quarterly", "annually"];
+  if (!validDonationTypes.includes(data.donationType)) {
+    errors.push("Invalid donation type");
+  }
+
+  // Validate purpose
+  const validPurposes = [
+    "general_fund",
+    "building_fund",
+    "youth_programs",
+    "charity",
+    "membership_fee",
+  ];
+  if (!validPurposes.includes(data.purpose)) {
+    errors.push("Invalid donation purpose");
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(data.email)) {
+    errors.push("Invalid email format");
+  }
+
+  // Sanitize string inputs
+  if (data.name && data.name.length > 100) {
+    errors.push("Name must be less than 100 characters");
+  }
+
+  if (data.address && data.address.length > 200) {
+    errors.push("Address must be less than 200 characters");
+  }
+
+  return { isValid: errors.length === 0, errors };
+}
+
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -31,7 +79,21 @@ serve(async (req: Request) => {
     );
 
     const requestData: CheckoutRequest = await req.json();
-    const { amount, donationType, purpose, email, name, address, memberId } = requestData;
+
+    // Validate input data
+    const validation = validateInput(requestData);
+    if (!validation.isValid) {
+      return new Response(
+        JSON.stringify({ error: validation.errors.join(", ") }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        },
+      );
+    }
+
+    const { amount, donationType, purpose, email, name, address, memberId } =
+      requestData;
 
     if (!amount || !donationType || !purpose || !email) {
       throw new Error(
@@ -150,7 +212,8 @@ serve(async (req: Request) => {
     });
   } catch (error) {
     console.error("Error in create-checkout function:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,

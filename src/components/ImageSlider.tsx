@@ -21,13 +21,22 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ slides }) => {
   useEffect(() => {
     if (slides.length === 0) return;
 
-    // Auto advance slides every 6 seconds
+    // Auto advance slides every 7 seconds for better readability
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
-    }, 6000);
+    }, 7000);
 
     return () => clearInterval(interval);
   }, [slides.length]);
+
+  // Preload next image for better performance
+  useEffect(() => {
+    if (slides.length > 0) {
+      const nextIndex = (currentSlide + 1) % slides.length;
+      const img = new Image();
+      img.src = slides[nextIndex].image;
+    }
+  }, [currentSlide, slides]);
 
   const goToSlide = (index: number) => {
     setCurrentSlide(index);
@@ -71,14 +80,15 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ slides }) => {
   }
 
   return (
-    <div className="relative w-full h-[400px] md:h-[500px] lg:h-[600px] overflow-hidden rounded-lg shadow-2xl">
+    <div className="relative w-full h-[450px] md:h-[550px] lg:h-[650px] overflow-hidden rounded-2xl shadow-2xl border border-church-gold/20">
+      <div className="absolute inset-0 bg-gradient-to-br from-church-burgundy/5 via-transparent to-church-gold/5 pointer-events-none z-10"></div>
       {slides.map((slide, index) => (
         <div
           key={index}
-          className={`absolute inset-0 transition-all duration-1000 ease-in-out ${
+          className={`absolute inset-0 transition-all duration-1200 ease-in-out ${
             index === currentSlide
               ? "opacity-100 scale-100"
-              : "opacity-0 scale-105 pointer-events-none"
+              : "opacity-0 scale-110 pointer-events-none"
           }`}
         >
           {!imageLoaded[index] && index === currentSlide && (
@@ -96,33 +106,38 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ slides }) => {
             onError={() => handleImageError(index)}
             loading={index === 0 ? "eager" : "lazy"}
           />
-          {/* Subtle gradient overlay for better text readability */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20"></div>
+          {/* Enhanced gradient overlay for better text readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/30"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-church-burgundy/30 via-transparent to-church-gold/20"></div>
 
-          {/* Content overlay */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-6 md:p-8">
-            <div className="text-center max-w-4xl mx-auto backdrop-blur-sm bg-gradient-to-r from-church-burgundy/80 to-church-burgundy/60 rounded-xl p-6 md:p-8 border border-church-gold/30">
-              <h2
-                className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-3 md:mb-4 text-church-gold"
-                style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.8)" }}
-              >
-                {slide.title}
-              </h2>
-              <p
-                className="text-base md:text-lg lg:text-xl xl:text-2xl text-center leading-relaxed font-medium text-white"
-                style={{ textShadow: "1px 1px 2px rgba(0,0,0,0.8)" }}
-              >
-                {slide.content}
-              </p>
+          {/* Content overlay with enhanced styling */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-6 md:p-8 z-20">
+            <div className="text-center max-w-5xl mx-auto backdrop-blur-md bg-gradient-to-br from-church-burgundy/85 via-church-burgundy/75 to-church-burgundy/80 rounded-2xl p-8 md:p-10 border border-church-gold/40 shadow-2xl animate-slide-up">
+              <div className="absolute inset-0 bg-gradient-to-br from-church-gold/10 via-transparent to-church-gold/5 rounded-2xl"></div>
+              <div className="relative z-10">
+                <h2
+                  className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-4 md:mb-6 text-church-gold font-serif"
+                  style={{ textShadow: "3px 3px 6px rgba(0,0,0,0.9)" }}
+                >
+                  {slide.title}
+                </h2>
+                <div className="w-24 h-1 bg-gradient-to-r from-transparent via-church-gold to-transparent mx-auto mb-4 md:mb-6"></div>
+                <p
+                  className="text-base md:text-lg lg:text-xl xl:text-2xl text-center leading-relaxed font-medium text-white/95"
+                  style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.8)" }}
+                >
+                  {slide.content}
+                </p>
+              </div>
             </div>
           </div>
         </div>
       ))}
 
-      {/* Navigation arrows - more subtle design */}
+      {/* Enhanced navigation arrows */}
       <button
         onClick={prevSlide}
-        className="absolute left-4 md:left-6 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-2 md:p-3 rounded-full transition-all duration-300 hover:scale-110 backdrop-blur-sm"
+        className="absolute left-4 md:left-6 top-1/2 transform -translate-y-1/2 bg-church-burgundy/80 hover:bg-church-burgundy/90 text-church-gold p-3 md:p-4 rounded-full transition-all duration-300 hover:scale-110 backdrop-blur-md border border-church-gold/30 shadow-lg z-30"
         aria-label="Previous image"
       >
         <svg
@@ -130,18 +145,18 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ slides }) => {
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
+          strokeWidth={2.5}
         >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={2}
             d="M15 19l-7-7 7-7"
           />
         </svg>
       </button>
       <button
         onClick={nextSlide}
-        className="absolute right-4 md:right-6 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-2 md:p-3 rounded-full transition-all duration-300 hover:scale-110 backdrop-blur-sm"
+        className="absolute right-4 md:right-6 top-1/2 transform -translate-y-1/2 bg-church-burgundy/80 hover:bg-church-burgundy/90 text-church-gold p-3 md:p-4 rounded-full transition-all duration-300 hover:scale-110 backdrop-blur-md border border-church-gold/30 shadow-lg z-30"
         aria-label="Next image"
       >
         <svg
@@ -149,36 +164,43 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ slides }) => {
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
+          strokeWidth={2.5}
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 5l7 7-7 7"
-          />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
         </svg>
       </button>
 
-      {/* Dots indicator - blended design */}
-      <div className="absolute bottom-4 md:bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2">
+      {/* Enhanced dots indicator */}
+      <div className="absolute bottom-6 md:bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-3 z-30">
         {slides.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}
-            className={`w-2 h-2 md:w-3 md:h-3 rounded-full transition-all duration-300 ${
+            className={`relative transition-all duration-400 ${
               index === currentSlide
-                ? "bg-church-gold scale-125 shadow-lg"
-                : "bg-white/50 hover:bg-white/70 hover:scale-110"
+                ? "w-4 h-4 md:w-5 md:h-5"
+                : "w-3 h-3 md:w-4 md:h-4 hover:scale-110"
             }`}
             aria-label={`Go to slide ${index + 1}`}
-          />
+          >
+            <div
+              className={`w-full h-full rounded-full transition-all duration-400 ${
+                index === currentSlide
+                  ? "bg-church-gold shadow-lg animate-pulse-glow"
+                  : "bg-white/60 hover:bg-white/80 backdrop-blur-sm"
+              }`}
+            />
+            {index === currentSlide && (
+              <div className="absolute inset-0 rounded-full border-2 border-church-gold/50 animate-ping"></div>
+            )}
+          </button>
         ))}
       </div>
 
-      {/* Progress bar - more subtle */}
-      <div className="absolute bottom-0 left-0 w-full h-0.5 bg-black/20">
+      {/* Enhanced progress bar */}
+      <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-black/30 via-black/20 to-black/30">
         <div
-          className="h-full bg-church-gold transition-all duration-300 ease-linear"
+          className="h-full bg-gradient-to-r from-church-gold via-church-gold/80 to-church-gold transition-all duration-500 ease-out shadow-sm"
           style={{ width: `${((currentSlide + 1) / slides.length) * 100}%` }}
         ></div>
       </div>

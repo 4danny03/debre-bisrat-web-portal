@@ -84,16 +84,23 @@ const WisdomSlider: React.FC<WisdomSliderProps> = ({ language }) => {
   const currentQuote = wisdoms[currentWisdom];
 
   return (
-    <section className="py-16 lg:py-20 bg-gradient-to-br from-white to-church-cream/20">
-      <div className="container mx-auto max-w-6xl px-4">
-        <h2 className="text-3xl lg:text-4xl font-serif mb-12 text-center text-church-burgundy">
-          <span className="inline-flex items-center">
-            <Church size={32} className="text-church-burgundy mr-3" />
+    <section className="py-20 lg:py-24 bg-gradient-to-br from-church-cream/30 via-white to-church-cream/20 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-church-burgundy/5 via-transparent to-church-gold/5"></div>
+      <div className="container mx-auto max-w-6xl px-4 relative z-10">
+        <div className="text-center mb-16 animate-slide-up">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-church-burgundy rounded-full mb-6">
+            <Church size={32} className="text-church-gold" />
+          </div>
+          <h2 className="text-3xl lg:text-4xl xl:text-5xl font-serif text-church-burgundy mb-4">
             {language === "en" ? "Words of Wisdom" : "የጥበብ ቃላት"}
-          </span>
-        </h2>
+          </h2>
+          <div className="w-24 h-1 bg-gradient-to-r from-transparent via-church-gold to-transparent mx-auto"></div>
+        </div>
 
-        <div className="relative bg-white rounded-lg shadow-xl border-t-4 border-church-gold max-w-4xl mx-auto">
+        <div
+          className="relative bg-gradient-to-br from-white via-white to-church-cream/50 rounded-2xl shadow-2xl border border-church-gold/20 max-w-5xl mx-auto animate-slide-up"
+          style={{ animationDelay: "0.3s" }}
+        >
           <div className="p-8 lg:p-12">
             <div className="min-h-[200px] flex flex-col justify-center">
               <p className="text-xl mb-6 italic text-gray-800 leading-relaxed">
@@ -241,12 +248,10 @@ const Home: React.FC = () => {
     fetchUpcomingEvents();
   }, [fetchUpcomingEvents]);
 
-  // Removed data refresh hook to prevent circular dependencies
-
-  // Slides for the image slider
+  // Slides for the image slider with new church images
   const sliderContent = [
     {
-      image: "/images/gallery/church-front.jpg",
+      image: "/images/gallery/church-procession-1.jpg",
       title:
         language === "en"
           ? "Welcome to Our Church"
@@ -257,20 +262,28 @@ const Home: React.FC = () => {
           : "ደብረ ብሥራት ዳግማዊ ቁልቢ ቅዱስ ገብርኤል ቤተክርስቲያን",
     },
     {
-      image: "/images/religious/palm-sunday.jpg",
-      title: language === "en" ? "Palm Sunday" : "ሆሳዕና",
+      image: "/images/gallery/church-ceremony-new.jpg",
+      title: language === "en" ? "Sacred Ceremony" : "ቅዱስ ሥርዓት",
       content:
         language === "en"
-          ? "Commemorating Jesus's triumphal entry into Jerusalem"
-          : "የኢየሱስ ክርስቶስ ወደ ኢየሩሳሌም መግባትን የሚያስታውስ",
+          ? "Celebrating our faith through traditional Orthodox ceremonies"
+          : "በባህላዊ ኦርቶዶክስ ሥርዓቶች እምነታችንን እናከብራለን",
     },
     {
-      image: "/images/gallery/church-service.jpg",
-      title: language === "en" ? "Holy Sacrifice" : "ቅዱስ መስዋዕት",
+      image: "/images/gallery/church-celebration.jpg",
+      title: language === "en" ? "Community Celebration" : "የማህበረሰብ በዓል",
       content:
         language === "en"
-          ? "Remembering the sacrifice of our Lord Jesus Christ"
-          : "የጌታችን የኢየሱስ ክርስቶስን መስዋዕትነት የምናስታውስበት",
+          ? "United in faith, celebrating God's blessings together"
+          : "በእምነት አንድ ሆነን የእግዚአብሔርን በረከት በአንድነት እናከብራለን",
+    },
+    {
+      image: "/images/gallery/church-gathering.jpg",
+      title: language === "en" ? "Faithful Gathering" : "የምእመናን ስብሰባ",
+      content:
+        language === "en"
+          ? "Our community comes together in worship and fellowship"
+          : "ማህበረሰባችን በአምልኮ እና በህብረት ይሰበሰባል",
     },
     {
       image: "/images/gallery/timket.jpg",
@@ -280,30 +293,38 @@ const Home: React.FC = () => {
           ? "Celebrating the baptism of Jesus Christ in the Jordan River"
           : "የኢየሱስ ክርስቶስ በዮርዳኖስ ወንዝ ጥምቀትን የምናከብርበት",
     },
-    {
-      image: "/images/religious/crucifixion.jpg",
-      title: language === "en" ? "Good Friday" : "ስቅለት",
-      content:
-        language === "en"
-          ? "Remembering the crucifixion and death of our Lord Jesus Christ"
-          : "የጌታችን የኢየሱስ ክርስቶስን መስቀል እና ሞት የምናስታውስበት",
-    },
   ];
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-6 md:py-8">
         {/* Enhanced Image Slider Section */}
-        <section className="mb-12 lg:mb-16">
-          <ImageSlider slides={sliderContent} />
+        <section className="mb-16 lg:mb-20">
+          <div className="animate-slide-up">
+            <ImageSlider slides={sliderContent} />
+          </div>
         </section>
 
         {/* Enhanced Two Column Section for Events and Donation */}
-        <section className="py-16 lg:py-20">
+        <section className="py-20 lg:py-24">
           <div className="container mx-auto max-w-7xl">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif text-church-burgundy mb-4 animate-slide-up">
+                {language === "en" ? "Stay Connected" : "ተገናኙ"}
+              </h2>
+              <div className="w-24 h-1 bg-gradient-to-r from-transparent via-church-gold to-transparent mx-auto mb-6"></div>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto animate-slide-up">
+                {language === "en"
+                  ? "Discover upcoming events and support our mission through your generous contributions."
+                  : "የሚመጡ ዝግጅቶችን ያግኙ እና በልግስ አስተዋፅዖዎ ተልዕኮአችንን ይደግፉ።"}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
               {/* Enhanced Upcoming Events Column */}
-              <div className="eth-card eth-flag-ribbon nostalgic-paper transform hover:scale-105 transition-all duration-300">
+              <div
+                className="eth-card animate-slide-up"
+                style={{ animationDelay: "0.2s" }}
+              >
                 <div className="bg-gradient-to-r from-church-burgundy to-church-burgundy/90 text-white p-6 flex items-center">
                   <Calendar size={28} className="text-church-gold mr-3" />
                   <h2 className="text-2xl lg:text-3xl font-serif font-bold">
@@ -380,7 +401,10 @@ const Home: React.FC = () => {
               </div>
 
               {/* Enhanced Donation Column */}
-              <div className="eth-card eth-flag-ribbon nostalgic-paper transform hover:scale-105 transition-all duration-300">
+              <div
+                className="eth-card animate-slide-up"
+                style={{ animationDelay: "0.4s" }}
+              >
                 <div className="bg-gradient-to-r from-church-burgundy to-church-burgundy/90 text-white p-6 flex items-center">
                   <DollarSign size={28} className="text-church-gold mr-3" />
                   <h2 className="text-2xl lg:text-3xl font-serif font-bold">

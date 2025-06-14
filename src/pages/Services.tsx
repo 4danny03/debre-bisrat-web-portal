@@ -40,6 +40,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
+import { api } from "@/integrations/supabase/api";
 
 interface ServiceItemProps {
   title: string;
@@ -59,7 +60,9 @@ const ServiceItem: React.FC<ServiceItemProps> = ({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { language } = useLanguage();
   const { toast } = useToast();
-  const handleAppointmentSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAppointmentSubmit = async (
+    e: React.FormEvent<HTMLFormElement>,
+  ) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const name = formData.get("name") as string;
@@ -69,19 +72,41 @@ const ServiceItem: React.FC<ServiceItemProps> = ({
     const time = formData.get("time") as string;
     const notes = formData.get("notes") as string;
 
-    // In a real application, you would send this data to your backend
-    console.log({ name, email, phone, date, time, notes, service: title });
+    try {
+      // Save appointment to database
+      await api.appointments.createAppointment({
+        name,
+        email,
+        phone,
+        service_title: title,
+        requested_date: date,
+        requested_time: time,
+        notes,
+        status: "pending",
+      });
 
-    // Show success message
-    toast({
-      title: language === "en" ? "Appointment Request Sent" : "የቀጠሮ ጥያቄ ተልኳል",
-      description:
-        language === "en"
-          ? `We've received your request for ${title}. We'll contact you soon to confirm.`
-          : `ለ${title} የቀጠሮ ጥያቄዎን ተቀብለናል። በቅርቡ ለማረጋገጥ እናገኝዎታለን።`,
-    });
+      // Show success message
+      toast({
+        title: language === "en" ? "Appointment Request Sent" : "የቀጠሮ ጥያቄ ተልኳል",
+        description:
+          language === "en"
+            ? `We've received your request for ${title}. We'll contact you soon to confirm.`
+            : `ለ${title} የቀጠሮ ጥያቄዎን ተቀብለናል። በቅርቡ ለማረጋገጥ እናገኝዎታለን።`,
+      });
 
-    setIsDialogOpen(false);
+      setIsDialogOpen(false);
+      (e.target as HTMLFormElement).reset();
+    } catch (error) {
+      console.error("Error submitting appointment:", error);
+      toast({
+        title: language === "en" ? "Error" : "ስህተት",
+        description:
+          language === "en"
+            ? "Failed to submit appointment request. Please try again."
+            : "የቀጠሮ ጥያቄ ማስገባት አልተሳካም። እባክዎ እንደገና ይሞክሩ።",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

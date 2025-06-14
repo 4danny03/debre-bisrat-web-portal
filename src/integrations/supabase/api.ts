@@ -779,4 +779,121 @@ export const api = {
       return true;
     },
   },
+
+  appointments: {
+    getAppointments: async () => {
+      const { data, error } = await supabase
+        .from("appointments")
+        .select(
+          `
+          *,
+          responded_by_profile:profiles!appointments_responded_by_fkey(email)
+        `,
+        )
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    getAppointmentById: async (id: string) => {
+      const { data, error } = await supabase
+        .from("appointments")
+        .select(
+          `
+          *,
+          responded_by_profile:profiles!appointments_responded_by_fkey(email)
+        `,
+        )
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    createAppointment: async (appointment: any) => {
+      const { data, error } = await supabase
+        .from("appointments")
+        .insert([appointment])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    updateAppointment: async (id: string, updates: any) => {
+      const { data, error } = await supabase
+        .from("appointments")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Notify data sync service
+      dataSyncService.notifyAdminAction("update", "appointments", data);
+
+      return data;
+    },
+    respondToAppointment: async (
+      id: string,
+      response: {
+        status: string;
+        admin_response: string;
+        admin_notes?: string;
+        confirmed_date?: string;
+        confirmed_time?: string;
+        responded_by: string;
+      },
+    ) => {
+      const { data, error } = await supabase
+        .from("appointments")
+        .update({
+          ...response,
+          responded_at: new Date().toISOString(),
+        })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Notify data sync service
+      dataSyncService.notifyAdminAction(
+        "respond_appointment",
+        "appointments",
+        data,
+      );
+
+      return data;
+    },
+    deleteAppointment: async (id: string) => {
+      const { error } = await supabase
+        .from("appointments")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      // Notify data sync service
+      dataSyncService.notifyAdminAction("delete", "appointments", { id });
+
+      return true;
+    },
+    getAppointmentsByStatus: async (status: string) => {
+      const { data, error } = await supabase
+        .from("appointments")
+        .select(
+          `
+          *,
+          responded_by_profile:profiles!appointments_responded_by_fkey(email)
+        `,
+        )
+        .eq("status", status)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+  },
 };

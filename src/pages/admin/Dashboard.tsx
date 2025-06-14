@@ -732,7 +732,7 @@ export default function Dashboard() {
                       <Label htmlFor="membership_type">Membership Type</Label>
                       <Select name="membership_type" defaultValue="regular">
                         <SelectTrigger>
-                          <SelectValue />
+                          <SelectValue placeholder="Select membership type" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="regular">Regular</SelectItem>
