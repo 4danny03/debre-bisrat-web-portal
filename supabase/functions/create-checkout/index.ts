@@ -1,222 +1,124 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface CheckoutRequest {
-  amount: string;
-  donationType: string;
-  purpose: string;
-  email: string;
-  name?: string;
-  address?: string;
-  memberId?: string;
-}
-
-// Input validation helper
-function validateInput(data: CheckoutRequest): {
-  isValid: boolean;
-  errors: string[];
-} {
-  const errors: string[] = [];
-
-  // Validate amount
-  const amount = parseFloat(data.amount);
-  if (isNaN(amount) || amount < 1 || amount > 10000) {
-    errors.push("Amount must be between $1 and $10,000");
-  }
-
-  // Validate donation type
-  const validDonationTypes = ["one_time", "monthly", "quarterly", "annually"];
-  if (!validDonationTypes.includes(data.donationType)) {
-    errors.push("Invalid donation type");
-  }
-
-  // Validate purpose
-  const validPurposes = [
-    "general_fund",
-    "building_fund",
-    "youth_programs",
-    "charity",
-    "membership_fee",
-  ];
-  if (!validPurposes.includes(data.purpose)) {
-    errors.push("Invalid donation purpose");
-  }
-
-  // Validate email format
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(data.email)) {
-    errors.push("Invalid email format");
-  }
-
-  // Sanitize string inputs
-  if (data.name && data.name.length > 100) {
-    errors.push("Name must be less than 100 characters");
-  }
-
-  if (data.address && data.address.length > 200) {
-    errors.push("Address must be less than 200 characters");
-  }
-
-  return { isValid: errors.length === 0, errors };
-}
-
-serve(async (req: Request) => {
+serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-    );
+    const {
+      amount,
+      currency = "usd",
+      membershipType,
+      memberName,
+      memberEmail,
+      memberId,
+    } = await req.json();
 
-    const requestData: CheckoutRequest = await req.json();
-
-    // Validate input data
-    const validation = validateInput(requestData);
-    if (!validation.isValid) {
-      return new Response(
-        JSON.stringify({ error: validation.errors.join(", ") }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 400,
-        },
-      );
+    if (!amount || !membershipType || !memberName || !memberEmail) {
+      throw new Error("Missing required parameters");
     }
 
-    const { amount, donationType, purpose, email, name, address, memberId } =
-      requestData;
-
-    if (!amount || !donationType || !purpose || !email) {
-      throw new Error(
-        "Missing required fields: amount, donationType, purpose, email",
-      );
-    }
-
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || "";
-    const stripe = new Stripe(stripeKey, {
+    // Initialize Stripe
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",
     });
 
-    const customers = await stripe.customers.list({ email, limit: 1 });
+    // Create or get customer
     let customerId;
-    if (customers.data.length > 0) {
-      customerId = customers.data[0].id;
+    const existingCustomers = await stripe.customers.list({
+      email: memberEmail,
+      limit: 1,
+    });
 
-      if (name || address) {
-        await stripe.customers.update(customerId, {
-          name: name || undefined,
-          address: address
-            ? {
-                line1: address,
-              }
-            : undefined,
-        });
-      }
+    if (existingCustomers.data.length > 0) {
+      customerId = existingCustomers.data[0].id;
     } else {
       const customer = await stripe.customers.create({
-        email,
-        name: name || undefined,
-        address: address
-          ? {
-              line1: address,
-            }
-          : undefined,
+        email: memberEmail,
+        name: memberName,
+        metadata: {
+          membershipType,
+          memberId: memberId || "",
+        },
       });
       customerId = customer.id;
     }
 
-    const amountInCents = Math.round(parseFloat(amount) * 100);
-    const productName =
-      purpose === "general_fund"
-        ? "General Fund Donation"
-        : purpose === "building_fund"
-          ? "Building Fund Donation"
-          : purpose === "youth_programs"
-            ? "Youth Programs Donation"
-            : purpose === "membership_fee"
-              ? "Membership Fee"
-              : "Charitable Donation";
+    // Get origin for redirect URLs
+    const origin = req.headers.get("origin") || "https://your-domain.com";
 
-    const isRecurring = donationType !== "one_time";
-
-    const sessionConfig: Stripe.Checkout.SessionCreateParams = {
+    // Create checkout session
+    const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      payment_method_types: ["card"],
       line_items: [
         {
           price_data: {
-            currency: "usd",
+            currency,
             product_data: {
-              name: productName,
-              description: `${purpose.replace("_", " ")} - ${isRecurring ? "Recurring" : "One-time"} donation`,
+              name: `Church Membership - ${membershipType.charAt(0).toUpperCase() + membershipType.slice(1)}`,
+              description: `Annual membership fee for ${memberName}`,
             },
-            unit_amount: amountInCents,
-            ...(isRecurring && {
-              recurring: {
-                interval:
-                  donationType === "monthly"
-                    ? "month"
-                    : donationType === "quarterly"
-                      ? "month"
-                      : "year",
-                interval_count: donationType === "quarterly" ? 3 : 1,
-              },
-            }),
+            unit_amount: amount,
           },
           quantity: 1,
         },
       ],
-      mode: isRecurring ? "subscription" : "payment",
-      success_url: `${req.headers.get("origin")}/donation-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get("origin")}/donation`,
+      mode: "payment",
+      success_url: `${origin}/membership-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/membership-registration?cancelled=true`,
       metadata: {
-        purpose,
-        email,
-        donationType,
+        membershipType,
+        memberName,
+        memberEmail,
         memberId: memberId || "",
-        demo_mode: "true",
       },
-    };
+    });
 
-    const session = await stripe.checkout.sessions.create(sessionConfig);
+    // Update member record with payment session ID
+    if (memberId) {
+      const supabaseClient = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      );
 
-    try {
-      await supabaseClient.from("donations").insert([
-        {
-          amount: parseFloat(amount),
-          donor_email: email,
-          donor_name: name || null,
-          purpose: purpose,
-          payment_status: "pending",
-          payment_id: session.id,
-          payment_method: "stripe",
-          is_anonymous: false,
-        },
-      ]);
-    } catch (dbError) {
-      console.error("Error storing donation record:", dbError);
+      await supabaseClient
+        .from("members")
+        .update({
+          membership_status: "payment_pending",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", memberId);
     }
 
-    return new Response(JSON.stringify({ url: session.url }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+    return new Response(
+      JSON.stringify({
+        url: session.url,
+        sessionId: session.id,
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      }
+    );
   } catch (error) {
-    console.error("Error in create-checkout function:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    console.error("Error creating checkout session:", error);
+    return new Response(
+      JSON.stringify({
+        error: error instanceof Error ? error.message : "Unknown error",
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      }
+    );
   }
 });
