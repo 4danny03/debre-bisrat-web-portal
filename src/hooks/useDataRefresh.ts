@@ -1,5 +1,7 @@
 
 import { useEffect, useRef, useCallback } from "react";
+import { DataSyncService } from "@/services/DataSyncService";
+import { useDataContext } from "@/contexts/DataContext";
 
 /**
  * Simplified data refresh hook without complex event listeners
@@ -8,9 +10,6 @@ import { useEffect, useRef, useCallback } from "react";
  * @param dependencies - Dependencies array to restart the interval
  * @param tableName - Optional table name for logging
  */
-import { DataSyncService } from "@/services/DataSyncService";
-import { useDataContext } from "@/contexts/DataContext";
-
 export const useDataRefresh = (
   refreshFunction: () => void | Promise<void>,
   intervalMs: number = 5 * 60 * 1000,
@@ -34,33 +33,7 @@ export const useDataRefresh = (
       clearInterval(intervalRef.current);
     }
 
-    // Simple refresh function with debouncing
-    const safeRefreshFunction = async () => {
-      if (!isActiveRef.current || isRefreshingRef.current) return;
-
-      isRefreshingRef.current = true;
-      try {
-        await refreshFunction();
-        lastRefreshRef.current = new Date();
-        console.log(`Data refresh successful for ${tableName || "component"}`);
-      } catch (error) {
-        console.error(
-          `Error during data refresh for ${tableName || "component"}:`,
-          error,
-        );
-      } finally {
-        isRefreshingRef.current = false;
-      }
-    };
-
-    // Set up simple interval - no event listeners
-    intervalRef.current = setInterval(() => {
-      if (isActiveRef.current) {
-        safeRefreshFunction();
-      }
-    }, intervalMs);
-
-    // Cleanup function
+    // Enhanced refresh function with retry logic
     const enhancedRefreshFunction = async () => {
       if (!isActiveRef.current) return;
 
@@ -142,8 +115,6 @@ export const useDataRefresh = (
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
-    };
-  }, [tableName, intervalMs, ...dependencies]);
 
       if (tableName) {
         DataSyncService.unsubscribe(`${tableName}Changed`, handleDataChange);
