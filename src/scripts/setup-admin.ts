@@ -1,8 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../integrations/supabase/types';
 
-const supabaseUrl = 'https://nvigfdxosyqhnoljtfld.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52aWdmZHhvc3lxaG5vbGp0ZmxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcxNjU0MjMsImV4cCI6MjA2Mjc0MTQyM30.3fkZqIajZVAg__YHUr7rbBMOxXwVSjKBgcoQkKCqAPY';
+const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://nvigfdxosyqhnoljtfld.supabase.co';
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52aWdmZHhvc3lxaG5vbGp0ZmxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcxNjU0MjMsImV4cCI6MjA2Mjc0MTQyM30.3fkZqIajZVAg__YHUr7rbBMOxXwVSjKBgcoQkKCqAPY';
+
+const ADMIN_EMAIL = 'admin@church.test';
+const ADMIN_PASSWORD = 'admin1234';
 
 async function setupAdmin() {
   const supabase = createClient<Database>(supabaseUrl, supabaseKey);
@@ -10,16 +13,16 @@ async function setupAdmin() {
   try {
     // First, sign in with the existing account
     const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email: 'khaliddawit7546@gmail.com',
-      password: '12345678'
+      email: ADMIN_EMAIL,
+      password: ADMIN_PASSWORD
     });
 
     if (signInError) {
       // If sign in fails, try to sign up
-      console.log('Attempting to create new user...');
+      console.log('Attempting to create new admin user...');
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email: 'khaliddawit7546@gmail.com',
-        password: '12345678'
+        email: ADMIN_EMAIL,
+        password: ADMIN_PASSWORD
       });
 
       if (signUpError) {

@@ -28,21 +28,25 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     outDir: "dist",
-    sourcemap: false,
+    sourcemap: mode === "development",
     rollupOptions: {
-      external: [
-        // Exclude all supabase functions from the build
-        /^.*\/supabase\/functions\/.*/,
-        /^supabase\/functions\/.*/,
-      ],
+      output: {
+        manualChunks: {
+          vendor: [
+            'react',
+            'react-dom',
+            'react-router-dom',
+            '@supabase/supabase-js',
+          ],
+          ui: [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-popover',
+            '@radix-ui/react-toast',
+          ],
+        },
+      },
     },
-  },
-  // Define globals for compatibility
-  define: {
-    global: "globalThis",
-  },
-  // Exclude supabase functions from optimization
-  optimizeDeps: {
-    exclude: ["supabase/functions"],
+    chunkSizeWarningLimit: 500,
   },
 }));
