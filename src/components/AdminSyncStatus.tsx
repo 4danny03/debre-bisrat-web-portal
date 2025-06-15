@@ -1,17 +1,9 @@
-import React from "react";
-import { useDataContext } from "@/contexts/DataContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  CheckCircle,
-  XCircle,
-  RefreshCw,
-  GitBranch,
-  Database,
-  Wifi,
-  WifiOff,
-} from "lucide-react";
+
+import { useDataContext } from "../contexts/DataContext";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
+import { Wifi, WifiOff, Database, GitBranch, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 
 interface AdminSyncStatusProps {
@@ -19,63 +11,22 @@ interface AdminSyncStatusProps {
 }
 
 export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
-  const {
-    connectionHealth,
-    syncStatus,
-    gitStatus,
-    lastRefresh,
-    isRefreshing,
-    forceSync,
-    autoCommitAndPush,
-  } = useDataContext();
+  const { connectionHealth, gitStatus, lastRefresh, isRefreshing, forceSync, autoCommitAndPush } = useDataContext();
 
   const handleForceSync = async () => {
-    console.log("Force sync triggered from admin panel");
     await forceSync();
   };
 
   const handleAutoCommit = async () => {
-    const success = await autoCommitAndPush(
-      "Admin sync: Manual commit from dashboard",
-    );
+    const success = await autoCommitAndPush("Auto commit from admin panel");
     if (success) {
-      console.log("Successfully committed and pushed changes");
-    } else {
-      console.error("Failed to commit and push changes");
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "SUBSCRIBED":
-        return (
-          <Badge className="bg-green-100 text-green-800">
-            <CheckCircle className="w-3 h-3 mr-1" />
-            Connected
-          </Badge>
-        );
-      case "CHANNEL_ERROR":
-        return (
-          <Badge className="bg-red-100 text-red-800">
-            <XCircle className="w-3 h-3 mr-1" />
-            Error
-          </Badge>
-        );
-      case "CONNECTING":
-        return (
-          <Badge className="bg-yellow-100 text-yellow-800">
-            <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
-            Connecting
-          </Badge>
-        );
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
+      console.log("Auto commit successful");
     }
   };
 
   // Ensure we have safe defaults for all data
   const safeConnectionHealth = connectionHealth ?? true;
-  const safeSyncStatus = syncStatus ?? {};
+  const syncStatus = {}; // Default empty object for sync status
   const safeGitStatus = gitStatus ?? {
     branch: "main",
     hasChanges: false,
@@ -83,6 +34,19 @@ export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
   };
   const safeLastRefresh = lastRefresh;
   const safeIsRefreshing = isRefreshing ?? false;
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "connected":
+        return <Badge className="bg-green-100 text-green-800">Connected</Badge>;
+      case "disconnected":
+        return <Badge className="bg-red-100 text-red-800">Disconnected</Badge>;
+      case "syncing":
+        return <Badge className="bg-blue-100 text-blue-800">Syncing</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-800">Unknown</Badge>;
+    }
+  };
 
   return (
     <div className={`space-y-4 ${className || ""}`}>
@@ -126,8 +90,8 @@ export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {Object.keys(safeSyncStatus).length > 0 ? (
-              Object.entries(safeSyncStatus).map(([table, status]) => (
+            {Object.keys(syncStatus).length > 0 ? (
+              Object.entries(syncStatus).map(([table, status]) => (
                 <div
                   key={table}
                   className="flex items-center justify-between text-sm"
@@ -193,8 +157,7 @@ export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
         </CardContent>
       </Card>
 
-      {/* Action Buttons */}
-      <div className="space-y-2">
+      <div className="mt-4 flex gap-2">
         <Button
           onClick={handleForceSync}
           disabled={safeIsRefreshing}
@@ -215,11 +178,16 @@ export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
             className="w-full"
             variant="default"
           >
-            <GitBranch className="w-4 h-4 mr-2" />
-            Commit & Push Changes
+            Auto Commit & Push
           </Button>
         )}
       </div>
+
+      {safeLastRefresh && (
+        <p className="text-xs text-gray-500 mt-2">
+          Last refresh: {safeLastRefresh.toLocaleString()}
+        </p>
+      )}
     </div>
   );
 }
