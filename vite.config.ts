@@ -17,6 +17,8 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // Configure base path for GitHub Pages deployment
+  base: mode === "production" ? "/" : "/",
   server: {
     host: "::",
     port: 8080,

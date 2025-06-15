@@ -24,6 +24,7 @@ import MembershipRegistration from "./pages/MembershipRegistration";
 import Donation from "./pages/Donation";
 import DonationSuccess from "./pages/DonationSuccess";
 import DonationDemo from "./pages/DonationDemo";
+import MembershipSuccess from "./pages/MembershipSuccess";
 import Gallery from "./pages/Gallery";
 import Services from "./pages/Services";
 import Sermons from "./pages/Sermons";
@@ -43,6 +44,7 @@ import AdminSystemHealth from "./pages/admin/SystemHealth";
 import AdminAnalytics from "./pages/admin/Analytics";
 import AdminBulkOperations from "./pages/admin/BulkOperations";
 import AdminContentScheduler from "./pages/admin/ContentScheduler";
+import AdminAppointments from "./pages/admin/Appointments";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { DataProvider } from "./contexts/DataContext";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -69,6 +71,10 @@ export default function App(): React.ReactElement {
                 <Route path="/donation" element={<Donation />} />
                 <Route path="/donation-success" element={<DonationSuccess />} />
                 <Route path="/donation-demo" element={<DonationDemo />} />
+                <Route
+                  path="/membership-success"
+                  element={<MembershipSuccess />}
+                />
                 <Route path="/gallery" element={<Gallery />} />
                 <Route path="/services" element={<Services />} />
                 <Route path="/sermons" element={<Sermons />} />
@@ -99,6 +105,7 @@ export default function App(): React.ReactElement {
                     path="content-scheduler"
                     element={<AdminContentScheduler />}
                   />
+                  <Route path="appointments" element={<AdminAppointments />} />
                 </Route>
 
                 {/* Add this before the catchall route */}

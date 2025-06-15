@@ -9,6 +9,74 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      appointments: {
+        Row: {
+          admin_notes: string | null
+          admin_response: string | null
+          confirmed_date: string | null
+          confirmed_time: string | null
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+          notes: string | null
+          phone: string
+          requested_date: string
+          requested_time: string
+          responded_at: string | null
+          responded_by: string | null
+          service_title: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          admin_response?: string | null
+          confirmed_date?: string | null
+          confirmed_time?: string | null
+          created_at?: string | null
+          email: string
+          id?: string
+          name: string
+          notes?: string | null
+          phone: string
+          requested_date: string
+          requested_time: string
+          responded_at?: string | null
+          responded_by?: string | null
+          service_title: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          admin_response?: string | null
+          confirmed_date?: string | null
+          confirmed_time?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string
+          requested_date?: string
+          requested_time?: string
+          responded_at?: string | null
+          responded_by?: string | null
+          service_title?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_responded_by_fkey"
+            columns: ["responded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       donations: {
         Row: {
           amount: number

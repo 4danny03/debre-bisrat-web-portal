@@ -102,23 +102,50 @@ body {
 
 /* Enhanced Cards */
 .eth-card {
-  background-color: white;
-  border-radius: 1rem;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 255, 255, 0.9) 100%
+  );
+  border-radius: 1.25rem;
   box-shadow:
-    0 20px 40px -10px rgba(0, 0, 0, 0.1),
-    0 8px 16px -4px rgba(0, 0, 0, 0.05);
+    0 25px 50px -12px rgba(0, 0, 0, 0.12),
+    0 10px 20px -5px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   overflow: hidden;
   border-top: 6px solid hsl(var(--church-gold));
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(10px);
+  border-left: 1px solid rgba(218, 165, 32, 0.2);
+  border-right: 1px solid rgba(218, 165, 32, 0.2);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(20px);
+  position: relative;
+}
+
+.eth-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(218, 165, 32, 0.5),
+    transparent
+  );
 }
 
 .eth-card:hover {
-  transform: translateY(-4px) scale(1.02);
+  transform: translateY(-8px) scale(1.03);
   box-shadow:
-    0 32px 64px -12px rgba(0, 0, 0, 0.2),
-    0 16px 24px -8px rgba(0, 0, 0, 0.1);
+    0 40px 80px -15px rgba(0, 0, 0, 0.25),
+    0 20px 30px -10px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(218, 165, 32, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
   border-top-width: 8px;
+  border-left-color: rgba(218, 165, 32, 0.4);
+  border-right-color: rgba(218, 165, 32, 0.4);
 }
 
 @media (min-width: 1024px) {
@@ -208,6 +235,50 @@ body {
   animation: float 6s ease-in-out infinite;
 }
 
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(218, 165, 32, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(218, 165, 32, 0.6);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.6s ease-out;
+}
+
+@keyframes gradient-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+
 /* Focus States */
 .focus-visible:focus {
   outline: 2px solid hsl(var(--church-gold));
@@ -230,4 +301,48 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--church-gold));
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .eth-card {
+    border: 2px solid hsl(var(--church-burgundy));
+  }
+
+  .nav-link:hover {
+    background-color: hsl(var(--church-gold));
+    color: hsl(var(--church-burgundy));
+  }
+}
+
+/* Focus indicators for better accessibility */
+.focus-visible:focus-visible {
+  outline: 3px solid hsl(var(--church-gold));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Print styles */
+@media print {
+  .eth-card {
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+
+  .animate-slide-up,
+  .animate-pulse-glow,
+  .animate-gradient {
+    animation: none;
+  }
 }

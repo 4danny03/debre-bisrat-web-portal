@@ -20,12 +20,16 @@ import {
   TrendingUp,
   Upload,
   Clock,
+  CalendarCheck,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function AdminLayout() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -153,6 +157,12 @@ export default function AdminLayout() {
       description: "Track donations",
     },
     {
+      to: "/admin/appointments",
+      icon: CalendarCheck,
+      label: "Appointments",
+      description: "Manage appointment requests",
+    },
+    {
       to: "/admin/users",
       icon: UsersIcon,
       label: "Users",
@@ -211,27 +221,46 @@ export default function AdminLayout() {
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-72 bg-church-burgundy text-white transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
+          "fixed inset-y-0 left-0 z-50 bg-church-burgundy text-white transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
+          sidebarCollapsed ? "w-16" : "w-72",
         )}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-church-burgundy/20">
-            <div>
-              <h1 className="text-xl font-bold text-church-gold">
-                Admin Panel
-              </h1>
-              <p className="text-sm text-white/70">Church Management</p>
+            {!sidebarCollapsed && (
+              <div>
+                <h1 className="text-xl font-bold text-church-gold">
+                  Admin Panel
+                </h1>
+                <p className="text-sm text-white/70">Church Management</p>
+              </div>
+            )}
+            <div className="flex items-center space-x-2">
+              {/* Desktop collapse toggle */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="hidden lg:flex text-white hover:bg-church-burgundy/20"
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              >
+                {sidebarCollapsed ? (
+                  <ChevronRight className="w-5 h-5" />
+                ) : (
+                  <ChevronLeft className="w-5 h-5" />
+                )}
+              </Button>
+              {/* Mobile close button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="lg:hidden text-white hover:bg-church-burgundy/20"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <X className="w-5 h-5" />
+              </Button>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="lg:hidden text-white hover:bg-church-burgundy/20"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <X className="w-5 h-5" />
-            </Button>
           </div>
 
           {/* Navigation */}
@@ -251,14 +280,16 @@ export default function AdminLayout() {
                   onClick={() => setSidebarOpen(false)}
                 >
                   <Icon className="w-5 h-5 mr-3 flex-shrink-0 text-church-gold" />
-                  <div className="flex-1">
-                    <div className="font-medium text-church-gold">
-                      {item.label}
+                  {!sidebarCollapsed && (
+                    <div className="flex-1">
+                      <div className="font-medium text-church-gold">
+                        {item.label}
+                      </div>
+                      <div className="text-xs text-white/50">
+                        {item.description}
+                      </div>
                     </div>
-                    <div className="text-xs text-white/50">
-                      {item.description}
-                    </div>
-                  </div>
+                  )}
                 </a>
               ) : (
                 <Link
@@ -280,24 +311,28 @@ export default function AdminLayout() {
                         : "text-white/70 group-hover:text-white",
                     )}
                   />
-                  <div className="flex-1">
-                    <div
-                      className={cn(
-                        "font-medium",
-                        isActive ? "text-church-burgundy" : "text-white",
-                      )}
-                    >
-                      {item.label}
+                  {!sidebarCollapsed && (
+                    <div className="flex-1">
+                      <div
+                        className={cn(
+                          "font-medium",
+                          isActive ? "text-church-burgundy" : "text-white",
+                        )}
+                      >
+                        {item.label}
+                      </div>
+                      <div
+                        className={cn(
+                          "text-xs",
+                          isActive
+                            ? "text-church-burgundy/70"
+                            : "text-white/50",
+                        )}
+                      >
+                        {item.description}
+                      </div>
                     </div>
-                    <div
-                      className={cn(
-                        "text-xs",
-                        isActive ? "text-church-burgundy/70" : "text-white/50",
-                      )}
-                    >
-                      {item.description}
-                    </div>
-                  </div>
+                  )}
                 </Link>
               );
             })}
@@ -311,10 +346,12 @@ export default function AdminLayout() {
               onClick={handleSignOut}
             >
               <LogOut className="w-5 h-5 mr-3" />
-              <div className="text-left">
-                <div className="font-medium">Sign Out</div>
-                <div className="text-xs text-white/50">Exit admin panel</div>
-              </div>
+              {!sidebarCollapsed && (
+                <div className="text-left">
+                  <div className="font-medium">Sign Out</div>
+                  <div className="text-xs text-white/50">Exit admin panel</div>
+                </div>
+              )}
             </Button>
           </div>
         </div>

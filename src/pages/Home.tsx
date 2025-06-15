@@ -1,202 +1,158 @@
-
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import NewsletterSubscription from "@/components/NewsletterSubscription";
-import { supabase } from "@/integrations/supabase/client";
+import React, { useState, useEffect, useCallback } from "react";
+import Layout from "../components/Layout";
 import { Link } from "react-router-dom";
-import { Calendar, MapPin, Clock, Heart, Book, Users } from "lucide-react";
+import {
+  Calendar,
+  DollarSign,
+  Church,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import { useLanguage } from "../contexts/LanguageContext";
+import { Button } from "@/components/ui/button";
+import ImageSlider from "../components/ImageSlider";
+import { api } from "@/integrations/supabase/api";
+import { format } from "date-fns";
+import { useDataRefresh } from "@/hooks/useDataRefresh";
 
-export default function Home() {
-  const [upcomingEvents, setUpcomingEvents] = useState([]);
-  const [featuredSermons, setFeaturedSermons] = useState([]);
-  const [settings, setSettings] = useState(null);
+// Wisdom Slider Component
+interface WisdomSliderProps {
+  language: string;
+}
+
+const WisdomSlider: React.FC<WisdomSliderProps> = ({ language }) => {
+  const [currentWisdom, setCurrentWisdom] = useState(0);
+
+  const wisdoms = [
+    {
+      english:
+        "Give, and it will be given to you. A good measure, pressed down, shaken together and running over, will be poured into your lap. For with the measure you use, it will be measured to you.",
+      amharic:
+        "ስጡ፥ ይሰጣችሁማል፤ መልካም መስፈሪያ የተደቆሰ የተነቀነቀ የተትረፈረፈ በኩራባችሁ ይሰጣችሁማል፤ በምትሰፍሩበት መስፈሪያ ይሰፈርላችሁማልና።",
+      reference: "Luke 6:38",
+      amharicRef: "ሉቃስ 6:38",
+    },
+    {
+      english:
+        "Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.",
+      amharic:
+        "በሙሉ ልብህ እግዚአብሔርን አምን፥ በራስህም ማስተዋል አትታመን፤ በሁሉም መንገዶችህ አስብበት፥ እርሱም መንገዶችህን ያቀናል።",
+      reference: "Proverbs 3:5-6",
+      amharicRef: "ምሳሌ 3:5-6",
+    },
+    {
+      english:
+        "For I know the plans I have for you, declares the Lord, plans to prosper you and not to harm you, to give you hope and a future.",
+      amharic:
+        "እኔ ስለ እናንተ የማስበውን አሳብ አውቃለሁ፥ ይላል እግዚአብሔር፤ የክፋት አሳብ ሳይሆን የሰላም አሳብ ነው፥ የተስፋና የመጨረሻ ዕድል ልሰጣችሁ።",
+      reference: "Jeremiah 29:11",
+      amharicRef: "ኤርምያስ 29:11",
+    },
+    {
+      english:
+        "Be strong and courageous. Do not be afraid; do not be discouraged, for the Lord your God will be with you wherever you go.",
+      amharic:
+        "ጠንካራና ደፋር ሁን፤ አትፍራ፥ አትደንግጥ፤ እግዚአብሔር አምላክህ የምትሄድበት ሁሉ ከአንተ ጋር ነውና።",
+      reference: "Joshua 1:9",
+      amharicRef: "ኢያሱ 1:9",
+    },
+    {
+      english:
+        "And we know that in all things God works for the good of those who love him, who have been called according to his purpose.",
+      amharic: "እግዚአብሔርን ለሚወዱት፥ በአሳቡም ለተጠሩት ሁሉ ነገር በጎ እንደሚሆን እናውቃለን።",
+      reference: "Romans 8:28",
+      amharicRef: "ሮሜ 8:28",
+    },
+  ];
 
   useEffect(() => {
-    loadHomeData();
-  }, []);
+    const interval = setInterval(() => {
+      setCurrentWisdom((prev) => (prev + 1) % wisdoms.length);
+    }, 8000); // Change every 8 seconds
 
-  const loadHomeData = async () => {
-    try {
-      // Get upcoming events
-      const today = new Date().toISOString().split('T')[0];
-      const { data: events } = await supabase
-        .from("events")
-        .select("*")
-        .gte("event_date", today)
-        .order("event_date", { ascending: true })
-        .limit(3);
+    return () => clearInterval(interval);
+  }, [wisdoms.length]);
 
-      // Get featured sermons
-      const { data: sermons } = await supabase
-        .from("sermons")
-        .select("*")
-        .eq("is_featured", true)
-        .order("sermon_date", { ascending: false })
-        .limit(3);
-
-      // Get site settings
-      const { data: siteSettings } = await supabase
-        .from("site_settings")
-        .select("*")
-        .single();
-
-      setUpcomingEvents(events || []);
-      setFeaturedSermons(sermons || []);
-      setSettings(siteSettings);
-    } catch (error) {
-      console.error("Error loading home data:", error);
-    }
+  const nextWisdom = () => {
+    setCurrentWisdom((prev) => (prev + 1) % wisdoms.length);
   };
 
+  const prevWisdom = () => {
+    setCurrentWisdom((prev) => (prev - 1 + wisdoms.length) % wisdoms.length);
+  };
+
+  const currentQuote = wisdoms[currentWisdom];
+
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-blue-600 to-purple-600 text-white py-20">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-5xl font-bold mb-6">
-            Welcome to {settings?.church_name || "St. Gabriel Ethiopian Orthodox Church"}
-          </h1>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
-            Join our community of faith, worship, and service. Experience the rich traditions 
-            of Ethiopian Orthodox Christianity in a welcoming environment.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
-              <Link to="/about">Learn More</Link>
-            </Button>
-            {settings?.enable_donations && (
-              <Button asChild size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600">
-                <Link to="/donation">
-                  <Heart className="h-5 w-5 mr-2" />
-                  Donate
-                </Link>
-              </Button>
-            )}
+    <section className="py-20 lg:py-24 bg-gradient-to-br from-church-cream/30 via-white to-church-cream/20 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-church-burgundy/5 via-transparent to-church-gold/5"></div>
+      <div className="container mx-auto max-w-6xl px-4 relative z-10">
+        <div className="text-center mb-16 animate-slide-up">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-church-burgundy rounded-full mb-6">
+            <Church size={32} className="text-church-gold" />
           </div>
+          <h2 className="text-3xl lg:text-4xl xl:text-5xl font-serif text-church-burgundy mb-4">
+            {language === "en" ? "Words of Wisdom" : "የጥበብ ቃላት"}
+          </h2>
+          <div className="w-24 h-1 bg-gradient-to-r from-transparent via-church-gold to-transparent mx-auto"></div>
         </div>
-      </section>
 
-      {/* Quick Info */}
-      <section className="py-12 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader className="text-center">
-                <Calendar className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-                <CardTitle>Service Times</CardTitle>
-              </CardHeader>
-              <CardContent className="text-center">
-                <p>Sunday Liturgy: 9:00 AM</p>
-                <p>Evening Prayer: 6:00 PM</p>
-                <p>Wednesday Service: 7:00 PM</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="text-center">
-                <MapPin className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-                <CardTitle>Location</CardTitle>
-              </CardHeader>
-              <CardContent className="text-center">
-                <p>{settings?.church_address || "Church Address"}</p>
-                <Button asChild variant="link" className="p-0">
-                  <Link to="/contact">Get Directions</Link>
-                </Button>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="text-center">
-                <Users className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-                <CardTitle>Get Involved</CardTitle>
-              </CardHeader>
-              <CardContent className="text-center">
-                <p>Join our community</p>
-                {settings?.enable_membership && (
-                  <Button asChild variant="link" className="p-0">
-                    <Link to="/membership-registration">Become a Member</Link>
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
+        <div
+          className="relative bg-gradient-to-br from-white via-white to-church-cream/50 rounded-2xl shadow-2xl border border-church-gold/20 max-w-5xl mx-auto animate-slide-up"
+          style={{ animationDelay: "0.3s" }}
+        >
+          <div className="p-8 lg:p-12">
+            <div className="min-h-[200px] flex flex-col justify-center">
+              <p className="text-xl mb-6 italic text-gray-800 leading-relaxed">
+                {language === "en"
+                  ? currentQuote.english
+                  : currentQuote.amharic}
+              </p>
+              <p className="text-right text-church-burgundy font-semibold text-lg">
+                {language === "en"
+                  ? currentQuote.reference
+                  : currentQuote.amharicRef}
+              </p>
+            </div>
 
-      {/* Upcoming Events */}
-      {upcomingEvents.length > 0 && (
-        <section className="py-12">
-          <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold text-center mb-8">Upcoming Events</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {upcomingEvents.map((event: any) => (
-                <Card key={event.id}>
-                  <CardHeader>
-                    <CardTitle className="text-lg">{event.title}</CardTitle>
-                    <CardDescription className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      {new Date(event.event_date).toLocaleDateString()}
-                      {event.event_time && (
-                        <>
-                          <Clock className="h-4 w-4 ml-2" />
-                          {event.event_time}
-                        </>
-                      )}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-600 mb-3">{event.description}</p>
-                    {event.location && (
-                      <p className="text-sm text-gray-500 flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        {event.location}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="flex justify-center my-6">
+              <div className="h-px w-8 bg-green-600"></div>
+              <div className="h-px w-8 bg-yellow-400"></div>
+              <div className="h-px w-8 bg-red-600"></div>
             </div>
-            <div className="text-center mt-8">
-              <Button asChild>
-                <Link to="/events">View All Events</Link>
-              </Button>
-            </div>
-          </div>
-        </section>
-      )}
 
-      {/* Featured Sermons */}
-      {featuredSermons.length > 0 && (
-        <section className="py-12 bg-gray-50">
-          <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold text-center mb-8">Featured Sermons</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {featuredSermons.map((sermon: any) => (
-                <Card key={sermon.id}>
-                  <CardHeader>
-                    <CardTitle className="text-lg">{sermon.title}</CardTitle>
-                    <CardDescription className="flex items-center gap-2">
-                      <Book className="h-4 w-4" />
-                      {sermon.scripture_reference}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-600 mb-3">{sermon.description}</p>
-                    <p className="text-sm text-gray-500">
-                      Preacher: {sermon.preacher}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Date: {new Date(sermon.sermon_date).toLocaleDateString()}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            <div className="text-center mt-8">
-              <Button asChild>
-                <Link to="/sermons">View All Sermons</Link>
-              </Button>
+            {/* Navigation */}
+            <div className="flex justify-between items-center mt-8">
+              <button
+                onClick={prevWisdom}
+                className="p-2 rounded-full bg-church-burgundy/10 hover:bg-church-burgundy/20 text-church-burgundy transition-colors"
+                aria-label="Previous wisdom"
+              >
+                <ChevronLeft size={24} />
+              </button>
+
+              <div className="flex space-x-2">
+                {wisdoms.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentWisdom(index)}
+                    className={`w-3 h-3 rounded-full transition-all ${
+                      index === currentWisdom
+                        ? "bg-church-burgundy scale-125"
+                        : "bg-gray-300 hover:bg-gray-400"
+                    }`}
+                    aria-label={`Go to wisdom ${index + 1}`}
+                  />
+                ))}
+              </div>
+
+              <button
+                onClick={nextWisdom}
+                className="p-2 rounded-full bg-church-burgundy/10 hover:bg-church-burgundy/20 text-church-burgundy transition-colors"
+                aria-label="Next wisdom"
+              >
+                <ChevronRight size={24} />
+              </button>
             </div>
           </div>
         </div>
@@ -292,12 +248,10 @@ const Home: React.FC = () => {
     fetchUpcomingEvents();
   }, [fetchUpcomingEvents]);
 
-  // Removed data refresh hook to prevent circular dependencies
-
-  // Slides for the image slider
+  // Slides for the image slider with new church images
   const sliderContent = [
     {
-      image: "/images/gallery/church-front.jpg",
+      image: "/images/gallery/church-procession-1.jpg",
       title:
         language === "en"
           ? "Welcome to Our Church"
@@ -308,20 +262,28 @@ const Home: React.FC = () => {
           : "ደብረ ብሥራት ዳግማዊ ቁልቢ ቅዱስ ገብርኤል ቤተክርስቲያን",
     },
     {
-      image: "/images/religious/palm-sunday.jpg",
-      title: language === "en" ? "Palm Sunday" : "ሆሳዕና",
+      image: "/images/gallery/church-ceremony-new.jpg",
+      title: language === "en" ? "Sacred Ceremony" : "ቅዱስ ሥርዓት",
       content:
         language === "en"
-          ? "Commemorating Jesus's triumphal entry into Jerusalem"
-          : "የኢየሱስ ክርስቶስ ወደ ኢየሩሳሌም መግባትን የሚያስታውስ",
+          ? "Celebrating our faith through traditional Orthodox ceremonies"
+          : "በባህላዊ ኦርቶዶክስ ሥርዓቶች እምነታችንን እናከብራለን",
     },
     {
-      image: "/images/gallery/church-service.jpg",
-      title: language === "en" ? "Holy Sacrifice" : "ቅዱስ መስዋዕት",
+      image: "/images/gallery/church-celebration.jpg",
+      title: language === "en" ? "Community Celebration" : "የማህበረሰብ በዓል",
       content:
         language === "en"
-          ? "Remembering the sacrifice of our Lord Jesus Christ"
-          : "የጌታችን የኢየሱስ ክርስቶስን መስዋዕትነት የምናስታውስበት",
+          ? "United in faith, celebrating God's blessings together"
+          : "በእምነት አንድ ሆነን የእግዚአብሔርን በረከት በአንድነት እናከብራለን",
+    },
+    {
+      image: "/images/gallery/church-gathering.jpg",
+      title: language === "en" ? "Faithful Gathering" : "የምእመናን ስብሰባ",
+      content:
+        language === "en"
+          ? "Our community comes together in worship and fellowship"
+          : "ማህበረሰባችን በአምልኮ እና በህብረት ይሰበሰባል",
     },
     {
       image: "/images/gallery/timket.jpg",
@@ -331,42 +293,154 @@ const Home: React.FC = () => {
           ? "Celebrating the baptism of Jesus Christ in the Jordan River"
           : "የኢየሱስ ክርስቶስ በዮርዳኖስ ወንዝ ጥምቀትን የምናከብርበት",
     },
-    {
-      image: "/images/religious/crucifixion.jpg",
-      title: language === "en" ? "Good Friday" : "ስቅለት",
-      content:
-        language === "en"
-          ? "Remembering the crucifixion and death of our Lord Jesus Christ"
-          : "የጌታችን የኢየሱስ ክርስቶስን መስቀል እና ሞት የምናስታውስበት",
-    },
   ];
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-6 md:py-8">
         {/* Enhanced Image Slider Section */}
-        <section className="mb-12 lg:mb-16">
-          <ImageSlider slides={sliderContent} />
+        <section className="mb-16 lg:mb-20">
+          <div className="animate-slide-up">
+            <ImageSlider slides={sliderContent} />
+          </div>
         </section>
-      )}
 
-      {/* Newsletter Subscription */}
-      {settings?.enable_newsletter && (
-        <section className="py-12">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-4">Stay Connected</h2>
-              <p className="text-lg text-gray-600">
-                Subscribe to our newsletter to receive updates about church events, 
-                announcements, and spiritual reflections.
+        {/* Enhanced Two Column Section for Events and Donation */}
+        <section className="py-20 lg:py-24">
+          <div className="container mx-auto max-w-7xl">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif text-church-burgundy mb-4 animate-slide-up">
+                {language === "en" ? "Stay Connected" : "ተገናኙ"}
+              </h2>
+              <div className="w-24 h-1 bg-gradient-to-r from-transparent via-church-gold to-transparent mx-auto mb-6"></div>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto animate-slide-up">
+                {language === "en"
+                  ? "Discover upcoming events and support our mission through your generous contributions."
+                  : "የሚመጡ ዝግጅቶችን ያግኙ እና በልግስ አስተዋፅዖዎ ተልዕኮአችንን ይደግፉ።"}
               </p>
             </div>
-            <div className="flex justify-center">
-              <NewsletterSubscription />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
+              {/* Enhanced Upcoming Events Column */}
+              <div
+                className="eth-card animate-slide-up"
+                style={{ animationDelay: "0.2s" }}
+              >
+                <div className="bg-gradient-to-r from-church-burgundy to-church-burgundy/90 text-white p-6 flex items-center">
+                  <Calendar size={28} className="text-church-gold mr-3" />
+                  <h2 className="text-2xl lg:text-3xl font-serif font-bold">
+                    {t("upcoming_events")}
+                  </h2>
+                </div>
+                <div className="p-6 lg:p-8">
+                  {loadingEvents ? (
+                    <div className="space-y-4">
+                      {[...Array(3)].map((_, index) => (
+                        <div
+                          key={index}
+                          className="border-b border-church-gold/30 pb-3 last:border-0 flex items-start animate-pulse"
+                        >
+                          <div className="flex-1">
+                            <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+                            <div className="h-5 bg-gray-200 rounded w-48"></div>
+                          </div>
+                          <div className="w-20 h-20 bg-gray-200 rounded-md ml-3 flex-shrink-0"></div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <ul className="space-y-4">
+                      {upcomingEvents.map((event) => (
+                        <li
+                          key={event.id}
+                          className="border-b border-church-gold/30 pb-3 last:border-0 flex items-start"
+                        >
+                          <div className="flex-1">
+                            <p className="text-sm text-church-burgundy font-semibold">
+                              {format(
+                                new Date(event.event_date),
+                                "MMMM d, yyyy",
+                              )}
+                              {event.event_time && (
+                                <span className="ml-2 text-xs">
+                                  at {event.event_time}
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-lg">{event.title}</p>
+                            {event.location && (
+                              <p className="text-sm text-gray-600 mt-1">
+                                {event.location}
+                              </p>
+                            )}
+                          </div>
+                          {(event.image_url ||
+                            "/images/gallery/church-service.jpg") && (
+                            <div className="w-20 h-20 rounded-md overflow-hidden ml-3 flex-shrink-0">
+                              <img
+                                src={
+                                  event.image_url ||
+                                  "/images/gallery/church-service.jpg"
+                                }
+                                alt={event.title}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <div className="mt-6">
+                    <Link to="/events">
+                      <Button className="bg-church-burgundy hover:bg-church-burgundy/90 text-white font-semibold">
+                        {t("view all")} →
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+
+              {/* Enhanced Donation Column */}
+              <div
+                className="eth-card animate-slide-up"
+                style={{ animationDelay: "0.4s" }}
+              >
+                <div className="bg-gradient-to-r from-church-burgundy to-church-burgundy/90 text-white p-6 flex items-center">
+                  <DollarSign size={28} className="text-church-gold mr-3" />
+                  <h2 className="text-2xl lg:text-3xl font-serif font-bold">
+                    {t("support_our_church")}
+                  </h2>
+                </div>
+                <div className="p-6 lg:p-8">
+                  <p className="mb-6">
+                    {language === "en"
+                      ? "Your generous support helps us maintain our church and community programs. Consider making a donation today."
+                      : "የእርስዎ ገንዘባዊ ድጋፍ ቤተ ክርስቲያናችንንና የማህበረሰብ ፕሮግራሞቻችንን እንድንጠብቅ ይረዳናል። ዛሬ ለመለገስ ይፈልጋሉ?"}
+                  </p>
+
+                  <div className="flex flex-col space-y-4">
+                    <Link to="/donation">
+                      <Button className="w-full bg-church-gold hover:bg-church-gold/90 text-church-burgundy font-semibold">
+                        {t("donate_now")}
+                      </Button>
+                    </Link>
+
+                    <Link
+                      to="/donation"
+                      className="text-church-burgundy hover:text-church-gold transition-colors text-center"
+                    ></Link>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
-      )}
-    </div>
+
+        {/* Enhanced Wisdom Section with Sliding Wisdoms */}
+        <WisdomSlider language={language} />
+      </div>
+    </Layout>
   );
-}
+};
+
+export default Home;

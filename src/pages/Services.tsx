@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -17,6 +16,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import {
   Accordion,
@@ -24,6 +24,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -39,6 +40,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
+import { api } from "@/integrations/supabase/api";
 
 interface ServiceItemProps {
   title: string;
@@ -58,8 +60,9 @@ const ServiceItem: React.FC<ServiceItemProps> = ({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { language } = useLanguage();
   const { toast } = useToast();
-  
-  const handleAppointmentSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAppointmentSubmit = async (
+    e: React.FormEvent<HTMLFormElement>,
+  ) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const name = formData.get("name") as string;
@@ -69,19 +72,41 @@ const ServiceItem: React.FC<ServiceItemProps> = ({
     const time = formData.get("time") as string;
     const notes = formData.get("notes") as string;
 
-    // In a real application, you would send this data to your backend
-    console.log({ name, email, phone, date, time, notes, service: title });
+    try {
+      // Save appointment to database
+      await api.appointments.createAppointment({
+        name,
+        email,
+        phone,
+        service_title: title,
+        requested_date: date,
+        requested_time: time,
+        notes,
+        status: "pending",
+      });
 
-    // Show success message
-    toast({
-      title: language === "en" ? "Appointment Request Sent" : "የቀጠሮ ጥያቄ ተልኳል",
-      description:
-        language === "en"
-          ? `We've received your request for ${title}. We'll contact you soon to confirm.`
-          : `ለ${title} የቀጠሮ ጥያቄዎን ተቀብለናል። በቅርቡ ለማረጋገጥ እናገኝዎታለን።`,
-    });
+      // Show success message
+      toast({
+        title: language === "en" ? "Appointment Request Sent" : "የቀጠሮ ጥያቄ ተልኳል",
+        description:
+          language === "en"
+            ? `We've received your request for ${title}. We'll contact you soon to confirm.`
+            : `ለ${title} የቀጠሮ ጥያቄዎን ተቀብለናል። በቅርቡ ለማረጋገጥ እናገኝዎታለን።`,
+      });
 
-    setIsDialogOpen(false);
+      setIsDialogOpen(false);
+      (e.target as HTMLFormElement).reset();
+    } catch (error) {
+      console.error("Error submitting appointment:", error);
+      toast({
+        title: language === "en" ? "Error" : "ስህተት",
+        description:
+          language === "en"
+            ? "Failed to submit appointment request. Please try again."
+            : "የቀጠሮ ጥያቄ ማስገባት አልተሳካም። እባክዎ እንደገና ይሞክሩ።",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -104,7 +129,7 @@ const ServiceItem: React.FC<ServiceItemProps> = ({
           <DialogTrigger asChild>
             <Button
               variant="outline"
-              size="sm"
+              size="xs"
               className="mt-2 bg-church-burgundy text-white hover:bg-church-burgundy/90 text-xs py-1 px-2"
             >
               <CalendarCheck className="mr-1 h-3 w-3" />
@@ -222,7 +247,7 @@ const ServiceItem: React.FC<ServiceItemProps> = ({
 };
 
 // Religious service images mapping
-const religiousServiceImages: Record<string, string> = {
+const religiousServiceImages = {
   "Christian Initiation": "/images/religious/palm-sunday.jpg",
   "ክርስትና ማስነሳት": "/images/religious/palm-sunday.jpg",
   "Qendil Prayer": "/images/gallery/church/sanctuary.jpg",
@@ -242,7 +267,7 @@ const religiousServiceImages: Record<string, string> = {
   "Qeder Baptism": "/images/gallery/nd14_timket_09-3x1500-1.jpg",
   "የቄደር ጥምቀት": "/images/gallery/nd14_timket_09-3x1500-1.jpg",
   "Divine Liturgy (Kidase)": "/images/gallery/church-service.jpg",
-  "ቅዳሴ": "/images/gallery/church-service.jpg",
+  ቅዳሴ: "/images/gallery/church-service.jpg",
 };
 
 // Function to get a religious image based on service title
@@ -381,7 +406,7 @@ const Services: React.FC = () => {
             <Card>
               <CardHeader className="bg-church-burgundy text-white">
                 <CardTitle className="text-church-gold">
-                  {t("regular_services") || "Regular Services"}
+                  {t("regular_services")}
                 </CardTitle>
                 <CardDescription className="text-white/80">
                   {language === "en"
@@ -406,7 +431,7 @@ const Services: React.FC = () => {
             <Card>
               <CardHeader className="bg-church-burgundy text-white">
                 <CardTitle className="text-church-gold">
-                  {t("special_services") || "Special Services"}
+                  {t("special_services")}
                 </CardTitle>
                 <CardDescription className="text-white/80">
                   {language === "en"
@@ -431,7 +456,7 @@ const Services: React.FC = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>{t("children_services") || "Children & Educational Services"}</CardTitle>
+              <CardTitle>{t("children_services")}</CardTitle>
             </CardHeader>
             <CardContent>
               <Accordion type="single" collapsible>
@@ -492,7 +517,7 @@ const Services: React.FC = () => {
                   <AccordionContent>
                     {language === "en"
                       ? "Adult religious education classes are held on Sundays after the Divine Liturgy from 1:00 PM to 2:30 PM. These classes cover Orthodox theology, church history, patristic teachings, and spiritual practices for daily life."
-                      : "የአዋቂዎች ሃይማኖታዊ ትምህርት ክፍሎች በየሰንበቱ ከቅዳሴ በኋላ ከ1፡00 ከሰዓት እስከ 2፡30 ከሰዓት ይካሄዳሉ። እነዚህ ክፍሎች የኦርቶዶክስ ሥነ መለኮት፣ የቤተክርስቲያን ታሪክ፣ የአባቶች ትምህርቶች እና ለዕለት ተዕለት ሕይወት መንፈሳዊ ልምምዶችን ያካትታሉ།"}
+                      : "የአዋቂዎች ሃይማኖታዊ ትምህርት ክፍሎች በየሰንበቱ ከቅዳሴ በኋላ ከ1፡00 ከሰዓት እስከ 2፡30 ከሰዓት ይካሄዳሉ። እነዚህ ክፍሎች የኦርቶዶክስ ሥነ መለኮት፣ የቤተክርስቲያን ታሪክ፣ የአባቶች ትምህርቶች እና ለዕለት ተዕለት ሕይወት መንፈሳዊ ልምምዶችን ያካትታሉ።"}
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
