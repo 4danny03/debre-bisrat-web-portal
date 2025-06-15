@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link, Outlet, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import AdminErrorBoundary from "@/components/AdminErrorBoundary";
 import {
   LayoutDashboard,
   Calendar,
@@ -378,7 +379,9 @@ export default function AdminLayout() {
 
         {/* Page content */}
         <main className="flex-1 p-6 lg:p-8 overflow-auto">
-          <Outlet />
+          <AdminErrorBoundary>
+            <Outlet />
+          </AdminErrorBoundary>
         </main>
       </div>
     </div>

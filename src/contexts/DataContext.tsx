@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface GitStatus {
   branch: string;
@@ -43,10 +44,27 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   });
 
   const refreshAllData = async () => {
-    if (isRefreshing) return;
+    if (isRefreshing) {
+      console.log("Refresh already in progress, skipping...");
+      return;
+    }
 
     setIsRefreshing(true);
     try {
+      console.log("Starting data refresh...");
+
+      // Test database connection first
+      const { error: connectionError } = await supabase
+        .from("profiles")
+        .select("count")
+        .limit(1);
+
+      if (connectionError) {
+        throw new Error(
+          `Database connection failed: ${connectionError.message}`,
+        );
+      }
+
       setConnectionHealth(true);
       setLastRefresh(new Date());
 
@@ -61,7 +79,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         donations: "SUBSCRIBED",
       });
 
-      console.log("Data refresh completed");
+      console.log("Data refresh completed successfully");
     } catch (error) {
       console.error("Error refreshing data:", error);
       setConnectionHealth(false);
@@ -83,6 +101,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   const forceSync = async () => {
     console.log("Force syncing data...");
+    // Debounce force sync to prevent infinite loops
+    if (isRefreshing) {
+      console.log("Sync already in progress, skipping...");
+      return;
+    }
     await refreshAllData();
   };
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { AlertTriangle, RefreshCw, Home } from "lucide-react";
+import { AlertTriangle, RefreshCw, Home, Bug } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { dataSyncService } from "@/services/DataSyncService";
+import { useToast } from "@/components/ui/use-toast";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -100,6 +101,38 @@ class ErrorBoundary extends React.Component<
       errorInfo: undefined,
       errorId: undefined,
     });
+
+    // Clear any cached data that might be causing issues
+    if (typeof window !== "undefined") {
+      try {
+        // Clear relevant localStorage items (but preserve important user data)
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (
+            key &&
+            (key.includes("admin_cache") ||
+              key.includes("sync_cache") ||
+              key.includes("temp_"))
+          ) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach((key) => localStorage.removeItem(key));
+
+        // Clear only temporary session storage items
+        const sessionKeysToRemove: string[] = [];
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const key = sessionStorage.key(i);
+          if (key && (key.includes("temp_") || key.includes("cache_"))) {
+            sessionKeysToRemove.push(key);
+          }
+        }
+        sessionKeysToRemove.forEach((key) => sessionStorage.removeItem(key));
+      } catch (e) {
+        console.warn("Failed to clear storage:", e);
+      }
+    }
   };
 
   render() {

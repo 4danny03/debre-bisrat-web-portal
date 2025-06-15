@@ -103,31 +103,39 @@ export default function Donation() {
           ? (formData.get("email") as string)
           : (formData.get("phone") as string);
 
+      const checkoutData = {
+        amount,
+        donationType,
+        purpose,
+        email: contactMethod === "email" ? contactInfo : "",
+        name: (formData.get("name") as string) || "",
+        address: (formData.get("address") as string) || "",
+        isAnonymous,
+        includeBulletin,
+        memorial: memorial.trim(),
+      };
+
+      console.log("Invoking create-checkout function with data:", checkoutData);
+
       const { data, error } = await supabase.functions.invoke(
-        "supabase-functions-create-checkout",
+        "create-checkout",
         {
-          body: {
-            amount,
-            donationType,
-            purpose,
-            email: contactMethod === "email" ? contactInfo : "",
-            phone: contactMethod === "phone" ? contactInfo : "",
-            name: (formData.get("name") as string) || "",
-            address: (formData.get("address") as string) || "",
-            isAnonymous,
-            includeBulletin,
-            memorial: memorial.trim(),
-          },
+          body: checkoutData,
         },
       );
 
+      console.log("Function response:", { data, error });
+
       if (error) {
+        console.error("Function error:", error);
         throw new Error(error.message || "Payment initiation failed");
       }
 
       if (data?.url) {
+        console.log("Redirecting to checkout URL:", data.url);
         window.location.href = data.url;
       } else {
+        console.error("No checkout URL in response:", data);
         throw new Error("No checkout URL received");
       }
     } catch (error) {

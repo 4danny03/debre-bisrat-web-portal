@@ -9,7 +9,7 @@ import { useEffect, useRef, useCallback } from "react";
  */
 export const useDataRefresh = (
   refreshFunction: () => void | Promise<void>,
-  intervalMs: number = 5 * 60 * 1000,
+  intervalMs: number = 30 * 60 * 1000, // Increased to 30 minutes to reduce frequency
   dependencies: any[] = [],
   tableName?: string,
 ) => {
@@ -26,7 +26,12 @@ export const useDataRefresh = (
 
     // Simple refresh function with debouncing
     const safeRefreshFunction = async () => {
-      if (!isActiveRef.current || isRefreshingRef.current) return;
+      if (!isActiveRef.current || isRefreshingRef.current) {
+        console.log(
+          `Skipping refresh for ${tableName || "component"} - already refreshing or inactive`,
+        );
+        return;
+      }
 
       isRefreshingRef.current = true;
       try {

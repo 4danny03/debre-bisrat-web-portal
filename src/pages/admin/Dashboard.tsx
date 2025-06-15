@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -89,7 +89,8 @@ export default function Dashboard() {
   const [openDialog, setOpenDialog] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { forceSync } = useDataContext();
+  // Data context for sync operations
+  // const { forceSync } = useDataContext(); // Commented to prevent infinite loops
 
   useEffect(() => {
     loadDashboardData();
@@ -98,6 +99,8 @@ export default function Dashboard() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
+      console.log("Loading dashboard data...");
+
       // Load statistics from all tables with error handling for each
       const results = await Promise.allSettled([
         supabase.from("events").select("*", { count: "exact", head: true }),
@@ -124,11 +127,24 @@ export default function Dashboard() {
         prayerRequestsRes,
         sermonsRes,
       ] = results.map((result, index) => {
+        const tableNames = [
+          "events",
+          "members",
+          "donations",
+          "testimonials",
+          "prayer_requests",
+          "sermons",
+        ];
         if (result.status === "rejected") {
           console.error(
-            `Dashboard data load failed for query ${index}:`,
+            `Dashboard data load failed for ${tableNames[index]}:`,
             result.reason,
           );
+          toast({
+            title: "Warning",
+            description: `Failed to load ${tableNames[index]} data`,
+            variant: "destructive",
+          });
           return { data: null, count: 0, error: result.reason };
         }
         return result.value;
@@ -267,17 +283,32 @@ export default function Dashboard() {
     const formData = new FormData(form);
 
     try {
-      const { error } = await supabase.from("events").insert([
-        {
-          title: formData.get("title") as string,
-          description: formData.get("description") as string,
-          event_date: formData.get("event_date") as string,
-          event_time: formData.get("event_time") as string,
-          location: formData.get("location") as string,
-        },
-      ]);
+      const eventData = {
+        title: formData.get("title") as string,
+        description: formData.get("description") as string,
+        event_date: formData.get("event_date") as string,
+        event_time: (formData.get("event_time") as string) || null,
+        location: (formData.get("location") as string) || null,
+        is_featured: false,
+        image_url: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
 
-      if (error) throw error;
+      console.log("Creating event with data:", eventData);
+
+      const { data, error } = await supabase
+        .from("events")
+        .insert([eventData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
+
+      console.log("Event created successfully:", data);
 
       toast({
         title: "Success",
@@ -288,15 +319,14 @@ export default function Dashboard() {
       loadDashboardData();
 
       // Notify data sync service
-      dataSyncService.notifyAdminAction("create", "events", {
-        title: formData.get("title"),
-      });
-      await forceSync();
+      dataSyncService.notifyAdminAction("create", "events", data);
     } catch (error) {
       console.error("Error creating event:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       toast({
         title: "Error",
-        description: "Failed to create event",
+        description: `Failed to create event: ${errorMessage}`,
         variant: "destructive",
       });
     } finally {
@@ -311,20 +341,42 @@ export default function Dashboard() {
     const formData = new FormData(form);
 
     try {
-      const { error } = await supabase.from("members").insert([
-        {
-          full_name: formData.get("full_name") as string,
-          email: formData.get("email") as string,
-          phone: formData.get("phone") as string,
-          address: formData.get("address") as string,
-          membership_type: formData.get("membership_type") as string,
-          membership_status: "active",
-          join_date: new Date().toISOString(),
-          membership_date: new Date().toISOString(),
-        },
-      ]);
+      const fullName = formData.get("full_name") as string;
+      const nameParts = fullName.trim().split(" ");
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
 
-      if (error) throw error;
+      const memberData = {
+        full_name: fullName,
+        email: (formData.get("email") as string) || null,
+        phone: (formData.get("phone") as string) || null,
+        address: (formData.get("address") as string) || null,
+        membership_type:
+          (formData.get("membership_type") as string) || "regular",
+        membership_status: "active",
+        join_date: new Date().toISOString(),
+        membership_date: new Date().toISOString(),
+        registration_date: new Date().toISOString().split("T")[0],
+        first_name: firstName,
+        last_name: lastName,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      console.log("Creating member with data:", memberData);
+
+      const { data, error } = await supabase
+        .from("members")
+        .insert([memberData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
+
+      console.log("Member created successfully:", data);
 
       toast({
         title: "Success",
@@ -335,15 +387,14 @@ export default function Dashboard() {
       loadDashboardData();
 
       // Notify data sync service
-      dataSyncService.notifyAdminAction("create", "members", {
-        full_name: formData.get("full_name"),
-      });
-      await forceSync();
+      dataSyncService.notifyAdminAction("create", "members", data);
     } catch (error) {
       console.error("Error creating member:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       toast({
         title: "Error",
-        description: "Failed to add member",
+        description: `Failed to add member: ${errorMessage}`,
         variant: "destructive",
       });
     } finally {
@@ -358,33 +409,60 @@ export default function Dashboard() {
     const formData = new FormData(form);
 
     try {
-      const { error } = await supabase.from("profiles").insert([
-        {
-          email: formData.get("email") as string,
-          role: "admin",
-        },
-      ]);
+      const email = formData.get("email") as string;
 
-      if (error) throw error;
+      // Check if admin already exists
+      const { data: existingAdmin } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("email", email)
+        .single();
+
+      if (existingAdmin) {
+        throw new Error("Admin with this email already exists");
+      }
+
+      const adminData = {
+        id: crypto.randomUUID(),
+        email: email,
+        role: "admin",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      console.log("Creating admin with data:", adminData);
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .insert([adminData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
+
+      console.log("Admin created successfully:", data);
 
       toast({
         title: "Success",
-        description: "Admin user created successfully",
+        description:
+          "Admin user created successfully. They can now register with this email.",
       });
       setOpenDialog(null);
       form.reset();
       loadDashboardData();
 
       // Notify data sync service
-      dataSyncService.notifyAdminAction("create", "profiles", {
-        email: formData.get("email"),
-      });
-      await forceSync();
+      dataSyncService.notifyAdminAction("create", "profiles", data);
     } catch (error) {
       console.error("Error creating admin:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       toast({
         title: "Error",
-        description: "Failed to create admin user",
+        description: `Failed to create admin user: ${errorMessage}`,
         variant: "destructive",
       });
     } finally {
@@ -409,31 +487,79 @@ export default function Dashboard() {
       return;
     }
 
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Error",
+        description: "Please select a valid image file",
+        variant: "destructive",
+      });
+      setDialogLoading(false);
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "File size must be less than 5MB",
+        variant: "destructive",
+      });
+      setDialogLoading(false);
+      return;
+    }
+
     try {
+      console.log("Starting image upload:", file.name, file.size, file.type);
+
       // Upload file to storage bucket
       const fileExt = file.name.split(".").pop();
-      const filePath = `gallery/${Date.now()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage
-        .from("images")
-        .upload(filePath, file);
+      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      const filePath = `gallery/${fileName}`;
 
-      if (uploadError) throw uploadError;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("images")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        throw uploadError;
+      }
+
+      console.log("File uploaded successfully:", uploadData);
 
       // Get the public URL
       const {
         data: { publicUrl },
       } = supabase.storage.from("images").getPublicUrl(filePath);
 
-      // Create database entry
-      const { error: dbError } = await supabase.from("gallery").insert([
-        {
-          title: formData.get("title") as string,
-          description: formData.get("description") as string,
-          image_url: publicUrl,
-        },
-      ]);
+      console.log("Public URL:", publicUrl);
 
-      if (dbError) throw dbError;
+      // Create database entry
+      const galleryData = {
+        title: formData.get("title") as string,
+        description: (formData.get("description") as string) || null,
+        image_url: publicUrl,
+        created_at: new Date().toISOString(),
+      };
+
+      console.log("Creating gallery entry:", galleryData);
+
+      const { data, error: dbError } = await supabase
+        .from("gallery")
+        .insert([galleryData])
+        .select()
+        .single();
+
+      if (dbError) {
+        console.error("Database error:", dbError);
+        throw dbError;
+      }
+
+      console.log("Gallery entry created successfully:", data);
 
       toast({
         title: "Success",
@@ -444,15 +570,14 @@ export default function Dashboard() {
       loadDashboardData();
 
       // Notify data sync service
-      dataSyncService.notifyAdminAction("create", "gallery", {
-        title: formData.get("title"),
-      });
-      await forceSync();
+      dataSyncService.notifyAdminAction("create", "gallery", data);
     } catch (error) {
       console.error("Error uploading image:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       toast({
         title: "Error",
-        description: "Failed to upload image",
+        description: `Failed to upload image: ${errorMessage}`,
         variant: "destructive",
       });
     } finally {
@@ -467,19 +592,33 @@ export default function Dashboard() {
     const formData = new FormData(form);
 
     try {
-      const { error } = await supabase.from("sermons").insert([
-        {
-          title: formData.get("title") as string,
-          description: formData.get("description") as string,
-          scripture_reference: formData.get("scripture_reference") as string,
-          audio_url: formData.get("audio_url") as string,
-          preacher: formData.get("preacher") as string,
-          sermon_date: formData.get("sermon_date") as string,
-          is_featured: false,
-        },
-      ]);
+      const sermonData = {
+        title: formData.get("title") as string,
+        description: (formData.get("description") as string) || null,
+        scripture_reference:
+          (formData.get("scripture_reference") as string) || null,
+        audio_url: (formData.get("audio_url") as string) || null,
+        preacher: (formData.get("preacher") as string) || null,
+        sermon_date: formData.get("sermon_date") as string,
+        is_featured: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
 
-      if (error) throw error;
+      console.log("Creating sermon with data:", sermonData);
+
+      const { data, error } = await supabase
+        .from("sermons")
+        .insert([sermonData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
+
+      console.log("Sermon created successfully:", data);
 
       toast({
         title: "Success",
@@ -490,15 +629,14 @@ export default function Dashboard() {
       loadDashboardData();
 
       // Notify data sync service
-      dataSyncService.notifyAdminAction("create", "sermons", {
-        title: formData.get("title"),
-      });
-      await forceSync();
+      dataSyncService.notifyAdminAction("create", "sermons", data);
     } catch (error) {
       console.error("Error creating sermon:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       toast({
         title: "Error",
-        description: "Failed to add sermon",
+        description: `Failed to add sermon: ${errorMessage}`,
         variant: "destructive",
       });
     } finally {

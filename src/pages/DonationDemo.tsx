@@ -51,25 +51,36 @@ export default function DonationDemo() {
       }
 
       // Call the Supabase Edge Function to create a checkout session
+      const checkoutData = {
+        amount,
+        donationType,
+        purpose,
+        email,
+        name: name || "",
+      };
+
+      console.log("Invoking create-checkout function with data:", checkoutData);
+
       const { data, error: fnError } = await supabase.functions.invoke(
-        "supabase-functions-create-checkout",
+        "create-checkout",
         {
-          body: {
-            amount,
-            donationType,
-            purpose,
-            email,
-            name,
-          },
+          body: checkoutData,
         },
       );
 
-      if (fnError) throw new Error(fnError.message);
+      console.log("Function response:", { data, error: fnError });
+
+      if (fnError) {
+        console.error("Function error:", fnError);
+        throw new Error(fnError.message);
+      }
 
       // Redirect to Stripe checkout
       if (data?.url) {
+        console.log("Redirecting to checkout URL:", data.url);
         window.location.href = data.url;
       } else {
+        console.error("No checkout URL in response:", data);
         throw new Error("No checkout URL returned");
       }
     } catch (err) {
