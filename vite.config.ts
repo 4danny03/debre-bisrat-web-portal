@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   // Configure base path for GitHub Pages deployment
-  base: mode === "production" ? "/" : "/",
+  base: mode === "production" ? "/debre-bisrat-web-portal/" : "/",
   server: {
     host: "::",
     port: 8080,
