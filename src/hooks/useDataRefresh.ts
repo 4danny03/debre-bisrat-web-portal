@@ -12,7 +12,7 @@ import { useDataContext } from "@/contexts/DataContext";
  */
 export const useDataRefresh = (
   refreshFunction: () => void | Promise<void>,
-  intervalMs: number = 5 * 60 * 1000,
+  intervalMs: number = 30 * 60 * 1000, // Increased to 30 minutes to reduce frequency
   dependencies: any[] = [],
   tableName?: string,
 ) => {
@@ -33,10 +33,14 @@ export const useDataRefresh = (
       clearInterval(intervalRef.current);
     }
 
-    // Enhanced refresh function with retry logic
-    const enhancedRefreshFunction = async () => {
-      if (!isActiveRef.current) return;
-
+    // Simple refresh function with debouncing
+    const safeRefreshFunction = async () => {
+      if (!isActiveRef.current || isRefreshingRef.current) {
+        console.log(
+          `Skipping refresh for ${tableName || "component"} - already refreshing or inactive`,
+        );
+        return;
+      }
       const maxRetries = 3;
       let retryCount = 0;
 

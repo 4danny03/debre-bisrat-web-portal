@@ -198,12 +198,12 @@ class DataSyncService {
   private startHealthMonitoring() {
     this.syncStatus.startTime = Date.now();
 
-    // Run health check every 5 minutes
+    // Run health check every 10 minutes to reduce frequency
     setInterval(
       () => {
         this.checkHealth();
       },
-      5 * 60 * 1000,
+      10 * 60 * 1000,
     );
   }
 

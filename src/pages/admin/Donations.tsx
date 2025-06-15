@@ -11,6 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  safeDataLoader,
+  logAdminAction,
+  formatErrorMessage,
+} from "@/utils/adminHelpers";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -77,24 +82,41 @@ export default function AdminDonations() {
   }, [donations, searchTerm, statusFilter, purposeFilter, dateRange]);
 
   const loadDonations = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("donations")
-        .select("*")
-        .order("created_at", { ascending: false });
+    setLoading(true);
 
-      if (error) throw error;
-      setDonations(data || []);
-    } catch (error) {
-      console.error("Error loading donations:", error);
+    const { data, error } = await safeDataLoader(
+      () =>
+        supabase
+          .from("donations")
+          .select("*")
+          .order("created_at", { ascending: false }),
+      "donations",
+    );
+
+    if (error) {
       toast({
         title: "Error",
-        description: "Failed to load donations",
+        description: formatErrorMessage(error, "Failed to load donations"),
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
+      setDonations([]);
+    } else {
+      // Ensure data has proper structure
+      const processedData = data.map((donation) => ({
+        ...donation,
+        amount: Number(donation.amount) || 0,
+        payment_status: donation.payment_status || "pending",
+        is_anonymous: Boolean(donation.is_anonymous),
+        donor_name: donation.donor_name || null,
+        donor_email: donation.donor_email || "",
+        purpose: donation.purpose || "general_fund",
+      }));
+
+      setDonations(processedData);
+      logAdminAction("load", "donations", { count: processedData.length });
     }
+
+    setLoading(false);
   };
 
   const filterDonations = () => {

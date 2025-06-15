@@ -12,6 +12,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  safeDataLoader,
+  logAdminAction,
+  formatErrorMessage,
+} from "@/utils/adminHelpers";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -61,7 +66,22 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
-import { Member } from "@/types/member";
+
+interface Member {
+  id: string;
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  membership_type: "regular" | "student" | "senior" | "family";
+  membership_status: "pending" | "active" | "inactive";
+  join_date: string;
+  membership_date: string | null;
+  last_renewal_date: string | null;
+  next_renewal_date: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 export default function AdminMembers() {
   const [members, setMembers] = useState<Member[]>([]);
@@ -83,24 +103,39 @@ export default function AdminMembers() {
   }, [members, searchTerm, statusFilter, typeFilter]);
 
   const loadMembers = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("members")
-        .select("*")
-        .order("created_at", { ascending: false });
+    setLoading(true);
 
-      if (error) throw error;
-      setMembers(data || []);
-    } catch (error) {
-      console.error("Error loading members:", error);
+    const { data, error } = await safeDataLoader(
+      () =>
+        supabase
+          .from("members")
+          .select("*")
+          .order("created_at", { ascending: false }),
+      "members",
+    );
+
+    if (error) {
       toast({
         title: "Error",
-        description: "Failed to load members",
+        description: formatErrorMessage(error, "Failed to load members"),
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
+      setMembers([]);
+    } else {
+      // Ensure data has proper structure
+      const processedData = data.map((member) => ({
+        ...member,
+        membership_type: member.membership_type || "regular",
+        membership_status: member.membership_status || "pending",
+        join_date: member.join_date || member.created_at,
+        updated_at: member.updated_at || member.created_at,
+      }));
+
+      setMembers(processedData);
+      logAdminAction("load", "members", { count: processedData.length });
     }
+
+    setLoading(false);
   };
 
   const filterMembers = () => {

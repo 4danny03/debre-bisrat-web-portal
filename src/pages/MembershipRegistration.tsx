@@ -381,32 +381,39 @@ const MembershipRegistration: FC = () => {
         ] || "100";
 
       // Create Stripe checkout session using the existing edge function
-      const response = await supabase.functions.invoke(
-        "supabase-functions-create-checkout",
-        {
-          body: {
-            amount: membershipFee,
-            donationType: "one_time",
-            purpose: "membership_fee",
-            email: formData.email,
-            name: `${formData.firstName} ${formData.middleName ? formData.middleName + " " : ""}${formData.lastName}`,
-            address: `${formData.streetAddress}${formData.aptSuiteBldg ? ", " + formData.aptSuiteBldg : ""}, ${formData.city}, ${formData.stateProvinceRegion} ${formData.postalZipCode}`,
-            memberId: memberData.id,
-            membershipType: formData.membershipType,
-            isAnonymous: false,
-            includeBulletin: false,
-            memorial: "",
-            successUrl: `${window.location.origin}/membership-success?session_id={CHECKOUT_SESSION_ID}`,
-            cancelUrl: `${window.location.origin}/membership`,
-          },
-        },
-      );
+      const checkoutData = {
+        amount: membershipFee,
+        donationType: "one_time",
+        purpose: "membership_fee",
+        email: formData.email,
+        name: `${formData.firstName} ${formData.middleName ? formData.middleName + " " : ""}${formData.lastName}`,
+        address: `${formData.streetAddress}${formData.aptSuiteBldg ? ", " + formData.aptSuiteBldg : ""}, ${formData.city}, ${formData.stateProvinceRegion} ${formData.postalZipCode}`,
+        memberId: memberData.id,
+        membershipType: formData.membershipType,
+      };
+
+      console.log("Invoking create-checkout function with data:", checkoutData);
+
+      const response = await supabase.functions.invoke("create-checkout", {
+        body: checkoutData,
+      });
+
+      console.log("Function response:", response);
 
       if (response.error) {
-        throw new Error("Payment initiation failed");
+        console.error("Function error:", response.error);
+        throw new Error(
+          `Payment initiation failed: ${response.error.message || "Unknown error"}`,
+        );
+      }
+
+      if (!response.data?.url) {
+        console.error("No checkout URL in response:", response.data);
+        throw new Error("No checkout URL received");
       }
 
       // Redirect to Stripe checkout
+      console.log("Redirecting to checkout URL:", response.data.url);
       window.location.href = response.data.url;
     } catch (error) {
       console.error("Membership registration error:", error);

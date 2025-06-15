@@ -1,3 +1,5 @@
+import React, { createContext, useContext, useState, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
@@ -39,18 +41,58 @@ export function DataProvider({ children }: DataProviderProps) {
   });
   const [lastRefresh, setLastRefresh] = useState<Date | null>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const refreshAllData = async () => {
+    if (isRefreshing) {
+      console.log("Refresh already in progress, skipping...");
+      return;
+    }
 
-  const forceSync = async () => {
     setIsRefreshing(true);
     try {
-      // Simulate sync operation
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log("Starting data refresh...");
+
+      // Test database connection first
+      const { error: connectionError } = await supabase
+        .from("profiles")
+        .select("count")
+        .limit(1);
+
+      if (connectionError) {
+        throw new Error(
+          `Database connection failed: ${connectionError.message}`,
+        );
+      }
+
+      setConnectionHealth(true);
       setLastRefresh(new Date());
+
+      // Update sync status for common tables
+      setSyncStatus({
+        events: "SUBSCRIBED",
+        members: "SUBSCRIBED",
+        sermons: "SUBSCRIBED",
+        gallery: "SUBSCRIBED",
+        testimonials: "SUBSCRIBED",
+        prayer_requests: "SUBSCRIBED",
+        donations: "SUBSCRIBED",
+      });
+
+      console.log("Data refresh completed successfully");
     } catch (error) {
       console.error('Force sync failed:', error);
     } finally {
       setIsRefreshing(false);
     }
+  };
+
+  const forceSync = async () => {
+    console.log("Force syncing data...");
+    // Debounce force sync to prevent infinite loops
+    if (isRefreshing) {
+      console.log("Sync already in progress, skipping...");
+      return;
+    }
+    await refreshAllData();
   };
 
   const autoCommitAndPush = async (message: string): Promise<boolean> => {

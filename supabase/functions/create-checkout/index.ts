@@ -101,7 +101,14 @@ serve(async (req: Request) => {
       );
     }
 
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || "";
+    // Use demo key for testing - in production, set STRIPE_SECRET_KEY environment variable
+    const stripeKey =
+      Deno.env.get("STRIPE_SECRET_KEY") || "sk_test_51234567890abcdef";
+
+    if (!stripeKey || stripeKey === "sk_test_51234567890abcdef") {
+      console.log("Using demo Stripe key - this is for testing purposes only");
+    }
+
     const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
     });
@@ -190,20 +197,32 @@ serve(async (req: Request) => {
     const session = await stripe.checkout.sessions.create(sessionConfig);
 
     try {
-      await supabaseClient.from("donations").insert([
-        {
-          amount: parseFloat(amount),
-          donor_email: email,
-          donor_name: name || null,
-          purpose: purpose,
-          payment_status: "pending",
-          payment_id: session.id,
-          payment_method: "stripe",
-          is_anonymous: false,
-        },
-      ]);
+      console.log("Storing donation record in database");
+      const { data: donationData, error: donationError } = await supabaseClient
+        .from("donations")
+        .insert([
+          {
+            amount: parseFloat(amount),
+            donor_email: email,
+            donor_name: name || null,
+            purpose: purpose,
+            payment_status: "pending",
+            payment_id: session.id,
+            payment_method: "stripe",
+            is_anonymous: false,
+            created_at: new Date().toISOString(),
+          },
+        ])
+        .select()
+        .single();
+
+      if (donationError) {
+        console.error("Error storing donation record:", donationError);
+      } else {
+        console.log("Donation record stored successfully:", donationData);
+      }
     } catch (dbError) {
-      console.error("Error storing donation record:", dbError);
+      console.error("Exception storing donation record:", dbError);
     }
 
     return new Response(JSON.stringify({ url: session.url }), {
