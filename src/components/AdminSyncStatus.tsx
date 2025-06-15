@@ -1,8 +1,32 @@
 
 import { useDataContext } from "../contexts/DataContext";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { 
+  Wifi, 
+  WifiOff, 
+  Database, 
+  GitBranch, 
+  RefreshCw,
+  CheckCircle,
+  AlertCircle
+} from "lucide-react";
+import { format } from "date-fns";
 
-export default function AdminSyncStatus() {
-  const { connectionHealth, gitStatus, lastRefresh, isRefreshing, forceSync, autoCommitAndPush } = useDataContext();
+interface AdminSyncStatusProps {
+  className?: string;
+}
+
+export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
+  const { 
+    connectionHealth, 
+    gitStatus, 
+    lastRefresh, 
+    isRefreshing, 
+    forceSync, 
+    autoCommitAndPush 
+  } = useDataContext();
 
   const handleForceSync = async () => {
     await forceSync();
@@ -17,7 +41,6 @@ export default function AdminSyncStatus() {
 
   // Ensure we have safe defaults for all data
   const safeConnectionHealth = connectionHealth ?? true;
-  const safeSyncStatus = syncStatus ?? {};
   const safeGitStatus = gitStatus ?? {
     branch: "main",
     hasChanges: false,
@@ -25,6 +48,19 @@ export default function AdminSyncStatus() {
   };
   const safeLastRefresh = lastRefresh;
   const safeIsRefreshing = isRefreshing ?? false;
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "connected":
+        return <Badge className="bg-green-100 text-green-800">Connected</Badge>;
+      case "disconnected":
+        return <Badge className="bg-red-100 text-red-800">Disconnected</Badge>;
+      case "syncing":
+        return <Badge className="bg-blue-100 text-blue-800">Syncing</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-800">Unknown</Badge>;
+    }
+  };
 
   return (
     <div className={`space-y-4 ${className || ""}`}>
@@ -53,44 +89,6 @@ export default function AdminSyncStatus() {
               <span className="text-xs text-gray-500">
                 Last: {format(safeLastRefresh, "HH:mm:ss")}
               </span>
-            )}
-    <div className="p-4 bg-white rounded-lg shadow">
-      <h2 className="text-lg font-semibold mb-4">Sync Status</h2>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <h3 className="font-medium">Connection Health</h3>
-          <div className={`inline-flex items-center px-2 py-1 rounded text-sm ${
-            connectionHealth ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-          }`}>
-            {connectionHealth ? 'Connected' : 'Disconnected'}
-          </div>
-        </div>
-
-      {/* Real-time Sync Status */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium flex items-center">
-            <Database className="w-4 h-4 mr-2" />
-            Real-time Subscriptions
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {Object.keys(safeSyncStatus).length > 0 ? (
-              Object.entries(safeSyncStatus).map(([table, status]) => (
-                <div
-                  key={table}
-                  className="flex items-center justify-between text-sm"
-                >
-                  <span className="capitalize">{table}</span>
-                  {getStatusBadge(status || "unknown")}
-                </div>
-              ))
-            ) : (
-              <div className="text-sm text-gray-500">
-                No active subscriptions
-              </div>
             )}
           </div>
         </CardContent>
@@ -140,31 +138,16 @@ export default function AdminSyncStatus() {
                   </div>
                 </div>
               )}
-        <div className="space-y-2">
-          <h3 className="font-medium">Git Status</h3>
-          <div className="text-sm text-gray-600">
-            <p>Branch: {gitStatus.branch}</p>
-            <p>Changes: {gitStatus.hasChanges ? 'Yes' : 'No'}</p>
-            {gitStatus.changedFiles.length > 0 && (
-              <div className="mt-1">
-                <p className="font-medium">Changed files:</p>
-                <ul className="list-disc list-inside ml-2">
-                  {gitStatus.changedFiles.map((file: string, index: number) => (
-                    <li key={index} className="text-xs">{file}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      <div className="mt-4 flex gap-2">
-        <button
+      <div className="flex gap-2">
+        <Button
           onClick={handleForceSync}
           disabled={safeIsRefreshing}
-          className="w-full"
           variant="outline"
+          className="w-full"
         >
           {safeIsRefreshing ? (
             <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
@@ -176,25 +159,17 @@ export default function AdminSyncStatus() {
 
         {safeGitStatus.hasChanges && (
           <Button
-          disabled={isRefreshing}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
-        >
-          {isRefreshing ? 'Syncing...' : 'Force Sync'}
-        </button>
-        
-        {gitStatus.hasChanges && (
-          <button
             onClick={handleAutoCommit}
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+            className="bg-green-500 hover:bg-green-600 text-white"
           >
             Auto Commit & Push
-          </button>
+          </Button>
         )}
       </div>
 
-      {lastRefresh && (
+      {safeLastRefresh && (
         <p className="text-xs text-gray-500 mt-2">
-          Last refresh: {lastRefresh.toLocaleString()}
+          Last refresh: {safeLastRefresh.toLocaleString()}
         </p>
       )}
     </div>
