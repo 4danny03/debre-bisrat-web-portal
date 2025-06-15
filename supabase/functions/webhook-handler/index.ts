@@ -3,120 +3,95 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+  apiVersion: "2023-10-16",
+});
 
-const STRIPE_WEBHOOK_SECRET = "whsec_test_placeholder";
-
-serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
+serve(async (req) => {
+  const signature = req.headers.get("stripe-signature");
+  
   try {
-    const signature = req.headers.get("stripe-signature");
-    if (!signature) {
-      return new Response(JSON.stringify({ error: "No signature provided" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      });
-    }
-
     const body = await req.text();
-
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2023-10-16",
-    });
-
-    let event: Stripe.Event;
-    try {
-      event = stripe.webhooks.constructEvent(
-        body,
-        signature,
-        Deno.env.get("STRIPE_WEBHOOK_SECRET") || STRIPE_WEBHOOK_SECRET,
-      );
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Unknown error";
-      console.error(`Webhook signature verification failed: ${errorMessage}`);
-      return new Response(
-        JSON.stringify({ error: `Webhook signature verification failed` }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 400,
-        },
-      );
-    }
+    const event = stripe.webhooks.constructEvent(
+      body,
+      signature!,
+      Deno.env.get("STRIPE_WEBHOOK_SECRET") || ""
+    );
 
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    switch (event.type) {
-      case "checkout.session.completed": {
-        const session = event.data.object as Stripe.Checkout.Session;
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object as Stripe.Checkout.Session;
+      
+      // Update donation status
+      const { error: updateError } = await supabaseClient
+        .from("donations")
+        .update({ 
+          payment_status: "completed",
+          updated_at: new Date().toISOString()
+        })
+        .eq("payment_id", session.id);
 
-        const { error } = await supabaseClient
-          .from("donations")
-          .update({
-            payment_status: "completed",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("payment_id", session.id);
+      if (updateError) {
+        console.error("Error updating donation:", updateError);
+      }
 
-        if (error) {
-          console.error("Error updating donation status:", error);
+      // Get donation details for email
+      const { data: donation } = await supabaseClient
+        .from("donations")
+        .select("*")
+        .eq("payment_id", session.id)
+        .single();
+
+      if (donation) {
+        // Get site settings
+        const { data: settings } = await supabaseClient
+          .from("site_settings")
+          .select("admin_email, enable_email_notifications")
+          .single();
+
+        // Send confirmation email to donor
+        if (donation.donor_email && !donation.is_anonymous) {
+          await supabaseClient.functions.invoke("send-email", {
+            body: {
+              type: "donation_confirmation",
+              data: {
+                donor_name: donation.donor_name,
+                amount: donation.amount,
+                purpose: donation.purpose,
+                date: new Date(donation.created_at).toLocaleDateString()
+              },
+              recipients: [donation.donor_email]
+            }
+          });
         }
 
-        if (
-          session.metadata?.purpose === "membership_fee" &&
-          session.metadata?.memberId
-        ) {
-          const { error: memberError } = await supabaseClient
-            .from("members")
-            .update({
-              membership_status: "active",
-              membership_date: new Date().toISOString(),
-            })
-            .eq("id", session.metadata.memberId);
-
-          if (memberError) {
-            console.error("Error updating member status:", memberError);
-          }
+        // Send notification to admin
+        if (settings?.admin_email && settings?.enable_email_notifications) {
+          await supabaseClient.functions.invoke("send-email", {
+            body: {
+              type: "admin_notification",
+              data: {
+                donor_name: donation.donor_name || "Anonymous",
+                donor_email: donation.donor_email || "Not provided",
+                amount: donation.amount,
+                purpose: donation.purpose,
+                date: new Date(donation.created_at).toLocaleDateString(),
+                status: "completed"
+              },
+              recipients: [settings.admin_email]
+            }
+          });
         }
-        break;
       }
-      case "payment_intent.succeeded": {
-        const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        console.log(
-          `PaymentIntent for ${paymentIntent.amount} was successful!`,
-        );
-        break;
-      }
-      case "payment_intent.payment_failed": {
-        const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        console.log(
-          `Payment failed: ${paymentIntent.last_payment_error?.message}`,
-        );
-        break;
-      }
-      default:
-        console.log(`Unhandled event type ${event.type}`);
     }
 
-    return new Response(JSON.stringify({ received: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+    return new Response(JSON.stringify({ received: true }), { status: 200 });
   } catch (error) {
-    console.error("Error in webhook handler:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    console.error("Webhook error:", error);
+    return new Response(`Webhook error: ${error.message}`, { status: 400 });
   }
 });
