@@ -1,7 +1,5 @@
 
 import { useEffect, useRef, useCallback } from "react";
-import { DataSyncService } from "@/services/DataSyncService";
-import { useDataContext } from "@/contexts/DataContext";
 
 /**
  * Simplified data refresh hook without complex event listeners
@@ -10,6 +8,9 @@ import { useDataContext } from "@/contexts/DataContext";
  * @param dependencies - Dependencies array to restart the interval
  * @param tableName - Optional table name for logging
  */
+import { DataSyncService } from "@/services/DataSyncService";
+import { useDataContext } from "@/contexts/DataContext";
+
 export const useDataRefresh = (
   refreshFunction: () => void | Promise<void>,
   intervalMs: number = 5 * 60 * 1000,
@@ -20,8 +21,9 @@ export const useDataRefresh = (
   const isActiveRef = useRef(true);
   const lastRefreshRef = useRef<Date | null>(null);
   const isRefreshingRef = useRef(false);
+
   const refreshFunctionRef = useRef(refreshFunction);
-  const { connectionHealth } = useDataContext();
+  const { connectionHealth, forceSync } = useDataContext();
 
   useEffect(() => {
     refreshFunctionRef.current = refreshFunction;
@@ -32,11 +34,36 @@ export const useDataRefresh = (
       clearInterval(intervalRef.current);
     }
 
-    // Enhanced refresh function with retries
-    const enhancedRefreshFunction = async () => {
+    // Simple refresh function with debouncing
+    const safeRefreshFunction = async () => {
       if (!isActiveRef.current || isRefreshingRef.current) return;
 
       isRefreshingRef.current = true;
+      try {
+        await refreshFunction();
+        lastRefreshRef.current = new Date();
+        console.log(`Data refresh successful for ${tableName || "component"}`);
+      } catch (error) {
+        console.error(
+          `Error during data refresh for ${tableName || "component"}:`,
+          error,
+        );
+      } finally {
+        isRefreshingRef.current = false;
+      }
+    };
+
+    // Set up simple interval - no event listeners
+    intervalRef.current = setInterval(() => {
+      if (isActiveRef.current) {
+        safeRefreshFunction();
+      }
+    }, intervalMs);
+
+    // Cleanup function
+    const enhancedRefreshFunction = async () => {
+      if (!isActiveRef.current) return;
+
       const maxRetries = 3;
       let retryCount = 0;
 
@@ -66,7 +93,6 @@ export const useDataRefresh = (
           }
         }
       }
-      isRefreshingRef.current = false;
     };
 
     intervalRef.current = setInterval(async () => {
@@ -116,6 +142,8 @@ export const useDataRefresh = (
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
+    };
+  }, [tableName, intervalMs, ...dependencies]);
 
       if (tableName) {
         DataSyncService.unsubscribe(`${tableName}Changed`, handleDataChange);
@@ -159,7 +187,7 @@ export const useDataRefresh = (
         isRefreshingRef.current = false;
       }
     }
-  }, [refreshFunction, tableName]);
+  }, [tableName]);
 
   const forceSyncData = useCallback(async () => {
     console.log(`Force sync triggered for ${tableName || "component"}`);
@@ -169,8 +197,6 @@ export const useDataRefresh = (
   return {
     manualRefresh,
     forceSyncData,
-    pauseRefresh,
-    resumeRefresh,
     lastRefresh: lastRefreshRef.current,
     isActive: isActiveRef.current,
   };
