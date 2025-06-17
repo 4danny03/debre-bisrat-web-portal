@@ -1,9 +1,9 @@
 // Environment variable defaults for development
 const ENV_DEFAULTS = {
   VITE_APP_NAME: "St. Gabriel Ethiopian Orthodox Church",
-  VITE_SUPABASE_URL: "https://nvigfdxosyqhnoljtfld.supabase.co",
+  VITE_SUPABASE_URL: "https://azkinrdhnywkewpsliwz.supabase.co",
   VITE_SUPABASE_ANON_KEY:
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52aWdmZHhvc3lxaG5vbGp0ZmxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcxNjU0MjMsImV4cCI6MjA2Mjc0MTQyM30.3fkZqIajZVAg__YHUr7rbBMOxXwVSjKBgcoQkKCqAPY",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6a2lucmRobnl3a2V3cHNsaXd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxNTQ1ODUsImV4cCI6MjA2NDczMDU4NX0.5s0aTJGTROVr0ul5EgVzYm6TPa2ntq8m7fdk1n_6fRA",
   VITE_API_URL: "https://nvigfdxosyqhnoljtfld.supabase.co",
 } as const;
 
