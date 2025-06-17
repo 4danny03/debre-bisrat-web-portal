@@ -1,3 +1,4 @@
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -17,7 +18,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   // Configure base path for GitHub Pages deployment
-  base: mode === "production" ? "/" : "/",
+  base: mode === "production" ? "/debre-bisrat-web-portal/" : "/",
   server: {
     host: "::",
     port: 8080,
@@ -27,24 +28,25 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     outDir: "dist",
-    sourcemap: false,
+    sourcemap: mode === "development",
     rollupOptions: {
-      external: [
-        // Exclude all supabase functions from the build
-        /^supabase\/functions/,
-      ],
+      output: {
+        manualChunks: {
+          vendor: [
+            'react',
+            'react-dom',
+            'react-router-dom',
+            '@supabase/supabase-js',
+          ],
+          ui: [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-popover',
+            '@radix-ui/react-toast',
+          ],
+        },
+      },
     },
-  },
-  // Define globals for compatibility
-  define: {
-    global: "globalThis",
-  },
-  // Exclude supabase functions from optimization
-  optimizeDeps: {
-    exclude: ["supabase/functions"],
-  },
-  // Exclude supabase functions from being processed
-  esbuild: {
-    exclude: ["supabase/functions/**/*"],
+    chunkSizeWarningLimit: 500,
   },
 }));

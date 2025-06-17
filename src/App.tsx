@@ -3,7 +3,22 @@ import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { BrowserRouter, Routes, Route, useRoutes } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { usePerformanceMonitoring } from "@/hooks/use-performance-monitoring";
+
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(registration => {
+        console.log('ServiceWorker registration successful');
+      })
+      .catch(err => {
+        console.log('ServiceWorker registration failed: ', err);
+      });
+  });
+}
 
 // Simple component to handle tempo routes without causing recursion
 function TempoRoutesHandler() {
@@ -50,73 +65,88 @@ import { DataProvider } from "./contexts/DataContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 import "@/utils/debugSync"; // Initialize debug utilities
 
+function AppContent() {
+  usePerformanceMonitoring();
+  
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/events" element={<Events />} />
+      <Route path="/contact" element={<Contact />} />
+      <Route
+        path="/membership-registration"
+        element={<MembershipRegistration />}
+      />
+      <Route path="/donation" element={<Donation />} />
+      <Route path="/donation-success" element={<DonationSuccess />} />
+      <Route path="/donation-demo" element={<DonationDemo />} />
+      <Route
+        path="/membership-success"
+        element={<MembershipSuccess />}
+      />
+      <Route path="/gallery" element={<Gallery />} />
+      <Route path="/services" element={<Services />} />
+      <Route path="/sermons" element={<Sermons />} />
+
+      {/* Admin Routes */}
+      <Route path="/admin/login" element={<AdminLogin />} />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<AdminDashboard />} />
+        <Route path="events" element={<AdminEvents />} />
+        <Route path="gallery" element={<AdminGallery />} />
+        <Route path="settings" element={<AdminSettings />} />
+        <Route path="sermons" element={<AdminSermons />} />
+        <Route path="members" element={<AdminMembers />} />
+        <Route path="testimonials" element={<AdminTestimonials />} />
+        <Route
+          path="prayer-requests"
+          element={<AdminPrayerRequests />}
+        />
+        <Route path="donations" element={<AdminDonations />} />
+        <Route path="users" element={<AdminUsers />} />
+        <Route path="system-health" element={<AdminSystemHealth />} />
+        <Route path="analytics" element={<AdminAnalytics />} />
+        <Route
+          path="bulk-operations"
+          element={<AdminBulkOperations />}
+        />
+        <Route
+          path="content-scheduler"
+          element={<AdminContentScheduler />}
+        />
+        <Route path="appointments" element={<AdminAppointments />} />
+      </Route>
+
+      {/* Add this before the catchall route */}
+      {import.meta.env.VITE_TEMPO && <Route path="/tempobook/*" />}
+
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+}
+
 export default function App(): React.ReactElement {
   return (
     <ErrorBoundary>
-      <DataProvider>
-        <LanguageProvider>
+      <LanguageProvider>
+        <DataProvider>
           <TooltipProvider>
-            <Toaster />
-            <Sonner />
             <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/events" element={<Events />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route
-                  path="/membership"
-                  element={<MembershipRegistration />}
-                />
-                <Route path="/donation" element={<Donation />} />
-                <Route path="/donation-success" element={<DonationSuccess />} />
-                <Route path="/donation-demo" element={<DonationDemo />} />
-                <Route
-                  path="/membership-success"
-                  element={<MembershipSuccess />}
-                />
-                <Route path="/gallery" element={<Gallery />} />
-                <Route path="/services" element={<Services />} />
-                <Route path="/sermons" element={<Sermons />} />
-
-                {/* Admin routes */}
-                <Route path="/admin" element={<AdminLayout />}>
-                  <Route path="login" element={<AdminLogin />} />
-                  <Route path="dashboard" element={<AdminDashboard />} />
-                  <Route path="events" element={<AdminEvents />} />
-                  <Route path="gallery" element={<AdminGallery />} />
-                  <Route path="settings" element={<AdminSettings />} />
-                  <Route path="sermons" element={<AdminSermons />} />
-                  <Route path="members" element={<AdminMembers />} />
-                  <Route path="testimonials" element={<AdminTestimonials />} />
-                  <Route
-                    path="prayer-requests"
-                    element={<AdminPrayerRequests />}
-                  />
-                  <Route path="donations" element={<AdminDonations />} />
-                  <Route path="users" element={<AdminUsers />} />
-                  <Route path="system-health" element={<AdminSystemHealth />} />
-                  <Route path="analytics" element={<AdminAnalytics />} />
-                  <Route
-                    path="bulk-operations"
-                    element={<AdminBulkOperations />}
-                  />
-                  <Route
-                    path="content-scheduler"
-                    element={<AdminContentScheduler />}
-                  />
-                  <Route path="appointments" element={<AdminAppointments />} />
-                </Route>
-
-                {/* Add this before the catchall route */}
-                {import.meta.env.VITE_TEMPO && <Route path="/tempobook/*" />}
-
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <AppContent />
+              <Toaster />
+              <Sonner />
             </BrowserRouter>
           </TooltipProvider>
-        </LanguageProvider>
-      </DataProvider>
+        </DataProvider>
+      </LanguageProvider>
     </ErrorBoundary>
   );
 }

@@ -1,80 +1,73 @@
-import { useState, useEffect, type FC } from "react";
-
-interface SlideProps {
-  image: string;
-  title: string;
-  content: string;
-}
+import { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface ImageSliderProps {
-  slides: SlideProps[];
+  images: string[];
+  autoPlay?: boolean;
+  interval?: number;
 }
 
-const ImageSlider: React.FC<ImageSliderProps> = ({ slides }) => {
+export default function ImageSlider({
+  images,
+  autoPlay = false,
+  interval = 3000,
+}: ImageSliderProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [imageLoaded, setImageLoaded] = useState<{ [key: number]: boolean }>(
-    {},
+  const [imageLoaded, setImageLoaded] = useState<boolean[]>(
+    new Array(images.length).fill(false)
   );
 
   useEffect(() => {
-    if (slides.length === 0) return;
+    if (!autoPlay || images.length <= 1) return;
 
-    // Auto advance slides every 7 seconds for better readability
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
-    }, 7000);
+    const autoAdvance = setInterval(() => {
+      setCurrentSlide((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+    }, 7000); // 7 seconds for better readability
 
-    return () => clearInterval(interval);
-  }, [slides.length]);
+    return () => clearInterval(autoAdvance);
+  }, [autoPlay, images.length]);
 
   // Preload next image for better performance
   useEffect(() => {
-    if (slides.length > 0) {
-      const nextIndex = (currentSlide + 1) % slides.length;
+    if (images.length > 0) {
+      const nextIndex = (currentSlide + 1) % images.length;
       const img = new Image();
-      img.src = slides[nextIndex].image;
+      img.src = images[nextIndex];
     }
-  }, [currentSlide, slides]);
+  }, [currentSlide, images]);
+
+  const handleImageLoad = (index: number) => {
+    setImageLoaded((prev) => {
+      const newLoaded = [...prev];
+      newLoaded[index] = true;
+      return newLoaded;
+    });
+  };
+
+  const handleImageError = (index: number) => {
+    console.warn(`Image at index ${index} failed to load.`);
+  };
 
   const goToSlide = (index: number) => {
     setCurrentSlide(index);
   };
 
-  const nextSlide = () => {
-    setCurrentSlide((current) =>
-      current === slides.length - 1 ? 0 : current + 1,
-    );
-  };
-
   const prevSlide = () => {
-    setCurrentSlide((current) =>
-      current === 0 ? slides.length - 1 : current - 1,
+    setCurrentSlide(
+      currentSlide === 0 ? images.length - 1 : currentSlide - 1
     );
   };
 
-  const handleImageLoad = (index: number) => {
-    setImageLoaded((prev) => ({ ...prev, [index]: true }));
-    if (index === 0) {
-      setIsLoading(false);
-      setError(null);
-    }
+  const nextSlide = () => {
+    setCurrentSlide(
+      currentSlide === images.length - 1 ? 0 : currentSlide + 1
+    );
   };
 
-  const handleImageError = (index: number) => {
-    console.error(`Failed to load image at index ${index}`);
-    setImageLoaded((prev) => ({ ...prev, [index]: false }));
-    if (index === 0) {
-      setIsLoading(false);
-      setError("Failed to load image");
-    }
-  };
-
-  if (!slides || slides.length === 0) {
+  if (!images || images.length === 0) {
     return (
-      <div className="w-full h-[400px] md:h-[500px] lg:h-[600px] bg-gradient-to-br from-church-burgundy/20 to-church-gold/20 flex items-center justify-center">
-        <p className="text-church-burgundy text-lg">No slides available</p>
+      <div className="w-full h-64 bg-gray-200 flex items-center justify-center">
+        No images available
       </div>
     );
   }
@@ -82,7 +75,7 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ slides }) => {
   return (
     <div className="relative w-full h-[450px] md:h-[550px] lg:h-[650px] overflow-hidden rounded-2xl shadow-2xl border border-church-gold/20">
       <div className="absolute inset-0 bg-gradient-to-br from-church-burgundy/5 via-transparent to-church-gold/5 pointer-events-none z-10"></div>
-      {slides.map((slide, index) => (
+      {images.map((image, index) => (
         <div
           key={index}
           className={`absolute inset-0 transition-all duration-1200 ease-in-out ${
@@ -97,8 +90,8 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ slides }) => {
             </div>
           )}
           <img
-            src={slide.image}
-            alt={slide.title}
+            src={image}
+            alt={`Slide ${index + 1}`}
             className={`w-full h-full object-cover transition-all duration-1000 ${
               imageLoaded[index] ? "opacity-100" : "opacity-0"
             }`}
@@ -140,45 +133,24 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ slides }) => {
         </div>
       ))}
 
-      {/* Enhanced navigation arrows */}
       <button
         onClick={prevSlide}
         className="absolute left-4 md:left-6 top-1/2 transform -translate-y-1/2 bg-church-burgundy/80 hover:bg-church-burgundy/90 text-church-gold p-3 md:p-4 rounded-full transition-all duration-300 hover:scale-110 backdrop-blur-md border border-church-gold/30 shadow-lg z-30"
         aria-label="Previous image"
       >
-        <svg
-          className="w-5 h-5 md:w-6 md:h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          strokeWidth={2.5}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M15 19l-7-7 7-7"
-          />
-        </svg>
+        <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
       </button>
+
       <button
         onClick={nextSlide}
         className="absolute right-4 md:right-6 top-1/2 transform -translate-y-1/2 bg-church-burgundy/80 hover:bg-church-burgundy/90 text-church-gold p-3 md:p-4 rounded-full transition-all duration-300 hover:scale-110 backdrop-blur-md border border-church-gold/30 shadow-lg z-30"
         aria-label="Next image"
       >
-        <svg
-          className="w-5 h-5 md:w-6 md:h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          strokeWidth={2.5}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-        </svg>
+        <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
       </button>
 
-      {/* Enhanced dots indicator */}
       <div className="absolute bottom-6 md:bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-3 z-30">
-        {slides.map((_, index) => (
+        {images.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}
@@ -203,15 +175,14 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ slides }) => {
         ))}
       </div>
 
-      {/* Enhanced progress bar */}
       <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-black/30 via-black/20 to-black/30">
         <div
           className="h-full bg-gradient-to-r from-church-gold via-church-gold/80 to-church-gold transition-all duration-500 ease-out shadow-sm"
-          style={{ width: `${((currentSlide + 1) / slides.length) * 100}%` }}
+          style={{
+            width: `${((currentSlide + 1) / images.length) * 100}%`,
+          }}
         ></div>
       </div>
     </div>
   );
-};
-
-export default ImageSlider;
+}
