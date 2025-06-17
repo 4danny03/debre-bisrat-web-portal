@@ -48,6 +48,10 @@ import AuditLog from "@/components/AuditLog";
 import ErrorDiagnostics from "@/components/ErrorDiagnostics";
 import { useDataContext } from "@/contexts/DataContext";
 import { dataSyncService } from "@/services/DataSyncService";
+import {
+  AdminDiagnostics,
+  type DiagnosticResult,
+} from "@/utils/adminDiagnostics";
 
 interface DashboardStats {
   totalEvents: number;
@@ -87,6 +91,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [dialogLoading, setDialogLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState<string | null>(null);
+  const [diagnostics, setDiagnostics] = useState<DiagnosticResult[]>([]);
+  const [runningDiagnostics, setRunningDiagnostics] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   // Data context for sync operations
@@ -94,7 +100,20 @@ export default function Dashboard() {
 
   useEffect(() => {
     loadDashboardData();
+    runDiagnostics();
   }, []);
+
+  const runDiagnostics = async () => {
+    setRunningDiagnostics(true);
+    try {
+      const results = await AdminDiagnostics.runFullDiagnostics();
+      setDiagnostics(results);
+    } catch (error) {
+      console.error("Diagnostics failed:", error);
+    } finally {
+      setRunningDiagnostics(false);
+    }
+  };
 
   const loadDashboardData = async () => {
     try {
@@ -658,13 +677,23 @@ export default function Dashboard() {
         <h1 className="text-2xl sm:text-3xl font-bold text-church-burgundy">
           Admin Dashboard
         </h1>
-        <Button
-          onClick={loadDashboardData}
-          variant="outline"
-          className="w-full sm:w-auto"
-        >
-          Refresh Data
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={loadDashboardData}
+            variant="outline"
+            className="w-full sm:w-auto"
+          >
+            Refresh Data
+          </Button>
+          <Button
+            onClick={runDiagnostics}
+            variant="outline"
+            disabled={runningDiagnostics}
+            className="w-full sm:w-auto"
+          >
+            {runningDiagnostics ? "Running..." : "Run Diagnostics"}
+          </Button>
+        </div>
       </div>
 
       {/* Statistics Cards */}
@@ -1099,6 +1128,41 @@ export default function Dashboard() {
           </Card>
 
           <ErrorDiagnostics />
+
+          {/* System Diagnostics */}
+          <Card>
+            <CardHeader>
+              <CardTitle>System Diagnostics</CardTitle>
+              <CardDescription>Component health status</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {diagnostics.length > 0 ? (
+                  diagnostics.map((result, index) => (
+                    <div
+                      key={index}
+                      className={`flex items-center justify-between p-2 rounded text-sm ${
+                        result.status === "success"
+                          ? "bg-green-50 text-green-800"
+                          : result.status === "warning"
+                            ? "bg-yellow-50 text-yellow-800"
+                            : "bg-red-50 text-red-800"
+                      }`}
+                    >
+                      <span className="font-medium">{result.component}</span>
+                      <span className="text-xs">{result.message}</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-center py-4">
+                    {runningDiagnostics
+                      ? "Running diagnostics..."
+                      : "No diagnostics run yet"}
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 

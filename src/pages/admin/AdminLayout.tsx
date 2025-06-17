@@ -30,7 +30,13 @@ import { cn } from "@/lib/utils";
 export default function AdminLayout() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    // Persist sidebar state in localStorage
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("admin-sidebar-collapsed") === "true";
+    }
+    return false;
+  });
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -244,7 +250,14 @@ export default function AdminLayout() {
                 variant="ghost"
                 size="sm"
                 className="hidden lg:flex text-white hover:bg-church-burgundy/20"
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                onClick={() => {
+                  const newState = !sidebarCollapsed;
+                  setSidebarCollapsed(newState);
+                  localStorage.setItem(
+                    "admin-sidebar-collapsed",
+                    newState.toString(),
+                  );
+                }}
               >
                 {sidebarCollapsed ? (
                   <ChevronRight className="w-5 h-5" />
@@ -378,7 +391,27 @@ export default function AdminLayout() {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-6 lg:p-8 overflow-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
+          {/* Breadcrumb Navigation */}
+          <div className="mb-6">
+            <nav className="flex items-center space-x-2 text-sm text-gray-600">
+              <Link
+                to="/admin/dashboard"
+                className="hover:text-church-burgundy"
+              >
+                Dashboard
+              </Link>
+              {location.pathname !== "/admin/dashboard" && (
+                <>
+                  <span>/</span>
+                  <span className="text-church-burgundy font-medium capitalize">
+                    {location.pathname.split("/").pop()?.replace("-", " ")}
+                  </span>
+                </>
+              )}
+            </nav>
+          </div>
+
           <AdminErrorBoundary>
             <Outlet />
           </AdminErrorBoundary>
