@@ -99,8 +99,37 @@ export default function ImageSlider({
             onError={() => handleImageError(index)}
             loading={index === 0 ? "eager" : "lazy"}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/30"></div>
-          <div className="absolute inset-0 bg-gradient-to-br from-church-burgundy/30 via-transparent to-church-gold/20"></div>
+          {/* Reduced gradient overlay for better image visibility */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-black/20"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-church-burgundy/20 via-transparent to-church-gold/15"></div>
+
+          {/* Content overlay with reduced opacity for better background visibility */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-6 md:p-8 z-20">
+            <div className="text-center max-w-5xl mx-auto backdrop-blur-md bg-gradient-to-br from-church-burgundy/35 via-church-burgundy/25 to-church-burgundy/40 rounded-2xl p-8 md:p-10 border border-church-gold/40 shadow-2xl animate-slide-up">
+              <div className="absolute inset-0 bg-gradient-to-br from-church-gold/8 via-transparent to-church-gold/4 rounded-2xl"></div>
+              <div className="relative z-10">
+                <h2
+                  className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-4 md:mb-6 text-church-gold font-serif"
+                  style={{
+                    textShadow:
+                      "4px 4px 8px rgba(0,0,0,0.95), 2px 2px 4px rgba(0,0,0,0.8)",
+                  }}
+                >
+                  {slide.title}
+                </h2>
+                <div className="w-24 h-1 bg-gradient-to-r from-transparent via-church-gold to-transparent mx-auto mb-4 md:mb-6"></div>
+                <p
+                  className="text-base md:text-lg lg:text-xl xl:text-2xl text-center leading-relaxed font-medium text-white/98"
+                  style={{
+                    textShadow:
+                      "3px 3px 6px rgba(0,0,0,0.9), 1px 1px 3px rgba(0,0,0,0.7)",
+                  }}
+                >
+                  {slide.content}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       ))}
 

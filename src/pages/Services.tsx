@@ -117,6 +117,17 @@ const ServiceItem: React.FC<ServiceItemProps> = ({
             src={imageUrl}
             alt={title}
             className="object-cover w-full h-full transition-transform hover:scale-105 duration-300 rounded-md"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              // Try multiple fallback images in order
+              if (target.src.includes("church-service.jpg")) {
+                target.src = "/images/gallery/church-gathering.jpg";
+              } else if (target.src.includes("church-gathering.jpg")) {
+                target.src = "/images/gallery/ceremony-1.jpg";
+              } else {
+                target.src = "/images/gallery/church-service.jpg";
+              }
+            }}
           />
         </div>
       )}
@@ -246,33 +257,33 @@ const ServiceItem: React.FC<ServiceItemProps> = ({
   );
 };
 
-// Religious service images mapping
+// Religious service images mapping with verified paths
 const religiousServiceImages = {
   "Christian Initiation": "/images/religious/palm-sunday.jpg",
   "ክርስትና ማስነሳት": "/images/religious/palm-sunday.jpg",
-  "Qendil Prayer": "/images/gallery/church/sanctuary.jpg",
-  "ጸሎተ ቀንዲል": "/images/gallery/church/sanctuary.jpg",
+  "Qendil Prayer": "/images/gallery/church-service.jpg",
+  "ጸሎተ ቀንዲል": "/images/gallery/church-service.jpg",
   "Marriage and Communion Education": "/images/gallery/ceremony-1.jpg",
   "የጋብቻና የቁርባን ትምህርት": "/images/gallery/ceremony-1.jpg",
-  "Counseling Services": "/images/gallery/church/altar.jpg",
-  "የምክር አገልግሎት": "/images/gallery/church/altar.jpg",
-  "Marriage Ceremony": "/images/gallery/timket.jpg",
-  "ጋብቻ መፈፀም": "/images/gallery/timket.jpg",
+  "Counseling Services": "/images/gallery/church-gathering.jpg",
+  "የምክር አገልግሎት": "/images/gallery/church-gathering.jpg",
+  "Marriage Ceremony": "/images/gallery/ceremony-2.jpg",
+  "ጋብቻ መፈፀም": "/images/gallery/ceremony-2.jpg",
   "Funeral Prayer": "/images/religious/crucifixion.jpg",
   "ጸሎተ ፍትሐት": "/images/religious/crucifixion.jpg",
   "Holy Water Baptism": "/images/gallery/timket.jpg",
   "ጸበል መጠመቅ": "/images/gallery/timket.jpg",
   "Entering Lent": "/images/religious/procession.jpg",
   "ሱባኤ መግባት": "/images/religious/procession.jpg",
-  "Qeder Baptism": "/images/gallery/nd14_timket_09-3x1500-1.jpg",
-  "የቄደር ጥምቀት": "/images/gallery/nd14_timket_09-3x1500-1.jpg",
+  "Qeder Baptism": "/images/gallery/timket.jpg",
+  "የቄደር ጥምቀት": "/images/gallery/timket.jpg",
   "Divine Liturgy (Kidase)": "/images/gallery/church-service.jpg",
   ቅዳሴ: "/images/gallery/church-service.jpg",
 };
 
-// Function to get a religious image based on service title
-const getServiceImage = (title: string): string | undefined => {
-  return religiousServiceImages[title];
+// Function to get a religious image based on service title with fallback
+const getServiceImage = (title: string): string => {
+  return religiousServiceImages[title] || "/images/gallery/church-service.jpg";
 };
 
 const Services: React.FC = () => {

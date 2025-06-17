@@ -131,12 +131,25 @@ const PlaceholderEvents = () => {
               key={event.id}
               className="overflow-hidden hover:shadow-lg transition-shadow"
             >
-              <div
-                className="h-56 bg-cover bg-center relative"
-                style={{
-                  backgroundImage: `url(${event.image})`,
-                }}
-              >
+              <div className="h-56 bg-cover bg-center relative overflow-hidden">
+                <img
+                  src={event.image}
+                  alt={event.title}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    // Enhanced fallback system for placeholder events
+                    if (target.src.includes("church-service.jpg")) {
+                      target.src = "/images/gallery/church-gathering.jpg";
+                    } else if (target.src.includes("church-gathering.jpg")) {
+                      target.src = "/images/gallery/ceremony-1.jpg";
+                    } else if (target.src.includes("ceremony-1.jpg")) {
+                      target.src = "/images/gallery/timket.jpg";
+                    } else {
+                      target.src = "/images/gallery/church-service.jpg";
+                    }
+                  }}
+                />
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                   <IconComponent className="h-12 w-12 text-white" />
                 </div>
@@ -189,13 +202,17 @@ interface Event {
   created_at: string;
 }
 
-// Religious event images mapping
+// Religious event images mapping with verified paths
 const religiousEventImages = [
   "/images/religious/palm-sunday.jpg",
   "/images/religious/crucifixion.jpg",
   "/images/religious/procession.jpg",
   "/images/gallery/timket.jpg",
   "/images/gallery/church-service.jpg",
+  "/images/gallery/church-gathering.jpg",
+  "/images/gallery/ceremony-1.jpg",
+  "/images/gallery/ceremony-2.jpg",
+  "/images/gallery/ceremony-3.jpg",
 ];
 
 // Function to get a religious image based on event data
@@ -288,12 +305,26 @@ export default function Events() {
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {events.map((event) => (
               <Card key={event.id} className="overflow-hidden">
-                <div
-                  className="h-56 bg-cover bg-center"
-                  style={{
-                    backgroundImage: `url(${getReligiousImage(event)})`,
-                  }}
-                />
+                <div className="h-56 bg-cover bg-center relative overflow-hidden">
+                  <img
+                    src={getReligiousImage(event)}
+                    alt={event.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      // Enhanced fallback system for placeholder events
+                      if (target.src.includes("church-service.jpg")) {
+                        target.src = "/images/gallery/church-gathering.jpg";
+                      } else if (target.src.includes("church-gathering.jpg")) {
+                        target.src = "/images/gallery/ceremony-1.jpg";
+                      } else if (target.src.includes("ceremony-1.jpg")) {
+                        target.src = "/images/gallery/timket.jpg";
+                      } else {
+                        target.src = "/images/gallery/church-service.jpg";
+                      }
+                    }}
+                  />
+                </div>
                 <CardContent className="p-6">
                   <h3 className="text-xl font-bold text-church-burgundy mb-2">
                     {event.title}
