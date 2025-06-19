@@ -2,7 +2,11 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface ImageSliderProps {
-  slides: {image: string; title: string; content: string;}[];
+  slides: {
+    image: string; 
+    title: string; 
+    content: string;
+  }[];
   autoPlay?: boolean;
   interval?: number;
 }
