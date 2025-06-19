@@ -389,6 +389,8 @@ class DataSyncService {
     this.errorLog = [];
     this.syncStatus = {};
     console.log("DataSyncService cleaned up");
+  }
+}
 
 class DataSyncServiceClass {
   private listeners: Map<string, Set<Function>> = new Map();
@@ -457,4 +459,4 @@ class DataSyncServiceClass {
   }
 }
 
-export const DataSyncService = new DataSyncServiceClass();
+export const dataSyncService = new DataSyncServiceClass();

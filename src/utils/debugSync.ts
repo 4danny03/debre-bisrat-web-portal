@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { DataSyncService } from "@/services/DataSyncService";
+import { dataSyncService } from "@/services/DataSyncService";
 
 export interface DebugInfo {
   timestamp: string;
