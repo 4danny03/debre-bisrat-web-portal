@@ -5,19 +5,20 @@
 }
 
 .eth-flag-gradient {
-  background: linear-gradient(180deg, 
-    #009A49 0%,
-    #009A49 33.33%,
-    #FCD116 33.33%,
-    #FCD116 66.66%,
-    #EE1B24 66.66%,
-    #EE1B24 100%
+  background: linear-gradient(
+    180deg,
+    #009a49 0%,
+    #009a49 33.33%,
+    #fcd116 33.33%,
+    #fcd116 66.66%,
+    #ee1b24 66.66%,
+    #ee1b24 100%
   );
 }
 
 .eth-flag-accent {
   height: 4px;
-  background: #009A49;
+  background: #009a49;
 }
 
 .lalibela-pattern {

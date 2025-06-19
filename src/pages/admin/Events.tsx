@@ -145,7 +145,10 @@ const FileUpload: React.FC<FileUploadProps> = ({
       console.error("Error uploading file:", error);
       toast({
         title: "Upload failed",
-        description: error instanceof Error ? error.message : "An error occurred during upload",
+        description:
+          error instanceof Error
+            ? error.message
+            : "An error occurred during upload",
         variant: "destructive",
       });
     } finally {

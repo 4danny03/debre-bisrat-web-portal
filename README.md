@@ -303,6 +303,30 @@ The application supports English and Amharic languages:
 - Review Supabase documentation
 - Consult Stripe documentation for payment issues
 
+## Running & Writing Tests
+
+- Run all tests in watch mode:
+  ```bash
+  npm test
+  ```
+- Run tests once for CI:
+  ```bash
+  npm run test:ci
+  ```
+- Run with coverage:
+  ```bash
+  npm run test:coverage
+  ```
+- Test utilities are in `src/test/test-utils.tsx` for rendering components with context.
+
+## Continuous Integration
+
+This project uses GitHub Actions for CI. On every push or PR to `main`, the workflow will:
+- Install dependencies
+- Run type checks
+- Lint the code
+- Run the test suite
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.

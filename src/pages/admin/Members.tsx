@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   Table,
@@ -179,8 +178,8 @@ export default function AdminMembers() {
           address: formData.get("address") as string,
           membership_type: formData.get("membership_type") as string,
           membership_status: "active",
-          join_date: new Date().toISOString().split('T')[0],
-          membership_date: new Date().toISOString().split('T')[0],
+          join_date: new Date().toISOString().split("T")[0],
+          membership_date: new Date().toISOString().split("T")[0],
         },
       ]);
 
@@ -523,15 +522,17 @@ export default function AdminMembers() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {getTypeBadge(member.membership_type || 'regular')}
+                      {getTypeBadge(member.membership_type || "regular")}
                     </TableCell>
                     <TableCell>
-                      {getStatusBadge(member.membership_status || 'active')}
+                      {getStatusBadge(member.membership_status || "active")}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center text-sm">
                         <Calendar className="w-3 h-3 mr-1" />
-                        {member.join_date ? format(new Date(member.join_date), "MMM d, yyyy") : 'N/A'}
+                        {member.join_date
+                          ? format(new Date(member.join_date), "MMM d, yyyy")
+                          : "N/A"}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -634,7 +635,7 @@ export default function AdminMembers() {
                 <Label htmlFor="edit_membership_type">Membership Type</Label>
                 <Select
                   name="membership_type"
-                  defaultValue={editingMember.membership_type || 'regular'}
+                  defaultValue={editingMember.membership_type || "regular"}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -651,7 +652,7 @@ export default function AdminMembers() {
                 <Label htmlFor="edit_membership_status">Status</Label>
                 <Select
                   name="membership_status"
-                  defaultValue={editingMember.membership_status || 'active'}
+                  defaultValue={editingMember.membership_status || "active"}
                 >
                   <SelectTrigger>
                     <SelectValue />

@@ -1,7 +1,13 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 
 interface DataContextType {
   connectionHealth: boolean;
@@ -26,16 +32,16 @@ interface DataProviderProps {
 export function DataProvider({ children }: DataProviderProps) {
   const [connectionHealth, setConnectionHealth] = useState(true);
   const [syncStatus, setSyncStatus] = useState<Record<string, string>>({
-    events: 'SUBSCRIBED',
-    gallery: 'SUBSCRIBED',
-    sermons: 'SUBSCRIBED',
-    members: 'SUBSCRIBED',
-    testimonials: 'SUBSCRIBED',
-    prayer_requests: 'SUBSCRIBED',
-    donations: 'SUBSCRIBED',
+    events: "SUBSCRIBED",
+    gallery: "SUBSCRIBED",
+    sermons: "SUBSCRIBED",
+    members: "SUBSCRIBED",
+    testimonials: "SUBSCRIBED",
+    prayer_requests: "SUBSCRIBED",
+    donations: "SUBSCRIBED",
   });
   const [gitStatus, setGitStatus] = useState({
-    branch: 'main',
+    branch: "main",
     hasChanges: false,
     changedFiles: [],
   });
@@ -79,7 +85,7 @@ export function DataProvider({ children }: DataProviderProps) {
 
       console.log("Data refresh completed successfully");
     } catch (error) {
-      console.error('Force sync failed:', error);
+      console.error("Force sync failed:", error);
     } finally {
       setIsRefreshing(false);
     }
@@ -97,17 +103,17 @@ export function DataProvider({ children }: DataProviderProps) {
 
   const autoCommitAndPush = async (message: string): Promise<boolean> => {
     try {
-      console.log('Auto commit and push:', message);
+      console.log("Auto commit and push:", message);
       // Simulate git operations
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setGitStatus(prev => ({
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      setGitStatus((prev) => ({
         ...prev,
         hasChanges: false,
         changedFiles: [],
       }));
       return true;
     } catch (error) {
-      console.error('Auto commit and push failed:', error);
+      console.error("Auto commit and push failed:", error);
       return false;
     }
   };
@@ -131,17 +137,13 @@ export function DataProvider({ children }: DataProviderProps) {
     autoCommitAndPush,
   };
 
-  return (
-    <DataContext.Provider value={value}>
-      {children}
-    </DataContext.Provider>
-  );
+  return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }
 
 export function useDataContext() {
   const context = useContext(DataContext);
   if (context === undefined) {
-    throw new Error('useDataContext must be used within a DataProvider');
+    throw new Error("useDataContext must be used within a DataProvider");
   }
   return context;
 }

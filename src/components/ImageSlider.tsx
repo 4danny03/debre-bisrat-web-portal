@@ -14,7 +14,7 @@ export default function ImageSlider({
 }: ImageSliderProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [imageLoaded, setImageLoaded] = useState<boolean[]>(
-    new Array(images.length).fill(false)
+    new Array(images.length).fill(false),
   );
 
   useEffect(() => {
@@ -53,15 +53,11 @@ export default function ImageSlider({
   };
 
   const prevSlide = () => {
-    setCurrentSlide(
-      currentSlide === 0 ? images.length - 1 : currentSlide - 1
-    );
+    setCurrentSlide(currentSlide === 0 ? images.length - 1 : currentSlide - 1);
   };
 
   const nextSlide = () => {
-    setCurrentSlide(
-      currentSlide === images.length - 1 ? 0 : currentSlide + 1
-    );
+    setCurrentSlide(currentSlide === images.length - 1 ? 0 : currentSlide + 1);
   };
 
   if (!images || images.length === 0) {

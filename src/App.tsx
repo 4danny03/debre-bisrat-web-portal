@@ -8,14 +8,15 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { usePerformanceMonitoring } from "@/hooks/use-performance-monitoring";
 
 // Register Service Worker
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(registration => {
-        console.log('ServiceWorker registration successful');
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("/sw.js")
+      .then((registration) => {
+        console.log("ServiceWorker registration successful");
       })
-      .catch(err => {
-        console.log('ServiceWorker registration failed: ', err);
+      .catch((err) => {
+        console.log("ServiceWorker registration failed: ", err);
       });
   });
 }
@@ -67,7 +68,7 @@ import "@/utils/debugSync"; // Initialize debug utilities
 
 function AppContent() {
   usePerformanceMonitoring();
-  
+
   return (
     <Routes>
       <Route path="/" element={<Home />} />
@@ -81,10 +82,7 @@ function AppContent() {
       <Route path="/donation" element={<Donation />} />
       <Route path="/donation-success" element={<DonationSuccess />} />
       <Route path="/donation-demo" element={<DonationDemo />} />
-      <Route
-        path="/membership-success"
-        element={<MembershipSuccess />}
-      />
+      <Route path="/membership-success" element={<MembershipSuccess />} />
       <Route path="/gallery" element={<Gallery />} />
       <Route path="/services" element={<Services />} />
       <Route path="/sermons" element={<Sermons />} />
@@ -106,22 +104,13 @@ function AppContent() {
         <Route path="sermons" element={<AdminSermons />} />
         <Route path="members" element={<AdminMembers />} />
         <Route path="testimonials" element={<AdminTestimonials />} />
-        <Route
-          path="prayer-requests"
-          element={<AdminPrayerRequests />}
-        />
+        <Route path="prayer-requests" element={<AdminPrayerRequests />} />
         <Route path="donations" element={<AdminDonations />} />
         <Route path="users" element={<AdminUsers />} />
         <Route path="system-health" element={<AdminSystemHealth />} />
         <Route path="analytics" element={<AdminAnalytics />} />
-        <Route
-          path="bulk-operations"
-          element={<AdminBulkOperations />}
-        />
-        <Route
-          path="content-scheduler"
-          element={<AdminContentScheduler />}
-        />
+        <Route path="bulk-operations" element={<AdminBulkOperations />} />
+        <Route path="content-scheduler" element={<AdminContentScheduler />} />
         <Route path="appointments" element={<AdminAppointments />} />
       </Route>
 

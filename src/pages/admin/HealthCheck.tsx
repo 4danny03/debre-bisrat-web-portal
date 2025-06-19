@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,7 +22,16 @@ interface HealthStatus {
   };
 }
 
-type TableName = 'events' | 'members' | 'gallery' | 'sermons' | 'testimonials' | 'prayer_requests' | 'donations' | 'profiles' | 'site_settings';
+type TableName =
+  | "events"
+  | "members"
+  | "gallery"
+  | "sermons"
+  | "testimonials"
+  | "prayer_requests"
+  | "donations"
+  | "profiles"
+  | "site_settings";
 
 export default function HealthCheck() {
   const [status, setStatus] = useState<HealthStatus>({
@@ -235,7 +243,7 @@ export default function HealthCheck() {
             <div className="flex justify-between">
               <span>Supabase URL:</span>
               <span className="font-mono text-xs">
-                {import.meta.env.VITE_SUPABASE_URL || 'Not configured'}
+                {import.meta.env.VITE_SUPABASE_URL || "Not configured"}
               </span>
             </div>
             <div className="flex justify-between">
