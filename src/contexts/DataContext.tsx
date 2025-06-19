@@ -1,13 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
-
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from "react";
+import { useEffect, createContext, useContext, useState, ReactNode } from "react";
+import { supabase } from "../integrations/supabase/client";
 
 interface DataContextType {
   connectionHealth: boolean;
