@@ -1,11 +1,22 @@
-
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -19,7 +30,7 @@ export default function EmailTemplates() {
     subject: "",
     content: "",
     template_type: "newsletter",
-    is_active: true
+    is_active: true,
   });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -76,7 +87,7 @@ export default function EmailTemplates() {
         subject: "",
         content: "",
         template_type: "newsletter",
-        is_active: true
+        is_active: true,
       });
     } catch (error) {
       console.error("Error saving template:", error);
@@ -124,7 +135,9 @@ export default function EmailTemplates() {
       <Card>
         <CardHeader>
           <CardTitle>Create New Template</CardTitle>
-          <CardDescription>Create a new email template for various purposes</CardDescription>
+          <CardDescription>
+            Create a new email template for various purposes
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -133,23 +146,31 @@ export default function EmailTemplates() {
               <Input
                 id="name"
                 value={newTemplate.name}
-                onChange={(e) => setNewTemplate(prev => ({ ...prev, name: e.target.value }))}
+                onChange={(e) =>
+                  setNewTemplate((prev) => ({ ...prev, name: e.target.value }))
+                }
                 placeholder="Template name"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="type">Template Type</Label>
-              <Select 
-                value={newTemplate.template_type} 
-                onValueChange={(value) => setNewTemplate(prev => ({ ...prev, template_type: value }))}
+              <Select
+                value={newTemplate.template_type}
+                onValueChange={(value) =>
+                  setNewTemplate((prev) => ({ ...prev, template_type: value }))
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="newsletter">Newsletter</SelectItem>
-                  <SelectItem value="donation_confirmation">Donation Confirmation</SelectItem>
-                  <SelectItem value="admin_notification">Admin Notification</SelectItem>
+                  <SelectItem value="donation_confirmation">
+                    Donation Confirmation
+                  </SelectItem>
+                  <SelectItem value="admin_notification">
+                    Admin Notification
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -159,7 +180,9 @@ export default function EmailTemplates() {
             <Input
               id="subject"
               value={newTemplate.subject}
-              onChange={(e) => setNewTemplate(prev => ({ ...prev, subject: e.target.value }))}
+              onChange={(e) =>
+                setNewTemplate((prev) => ({ ...prev, subject: e.target.value }))
+              }
               placeholder="Email subject"
             />
           </div>
@@ -169,7 +192,9 @@ export default function EmailTemplates() {
               id="content"
               rows={8}
               value={newTemplate.content}
-              onChange={(e) => setNewTemplate(prev => ({ ...prev, content: e.target.value }))}
+              onChange={(e) =>
+                setNewTemplate((prev) => ({ ...prev, content: e.target.value }))
+              }
               placeholder="Email content (use {{variable}} for dynamic content)"
             />
           </div>
@@ -177,7 +202,9 @@ export default function EmailTemplates() {
             <Switch
               id="active"
               checked={newTemplate.is_active}
-              onCheckedChange={(checked) => setNewTemplate(prev => ({ ...prev, is_active: checked }))}
+              onCheckedChange={(checked) =>
+                setNewTemplate((prev) => ({ ...prev, is_active: checked }))
+              }
             />
             <Label htmlFor="active">Active</Label>
           </div>
@@ -195,8 +222,8 @@ export default function EmailTemplates() {
                 <div>
                   <CardTitle className="text-lg">{template.name}</CardTitle>
                   <CardDescription>
-                    Type: {template.template_type} | 
-                    Status: {template.is_active ? "Active" : "Inactive"}
+                    Type: {template.template_type} | Status:{" "}
+                    {template.is_active ? "Active" : "Inactive"}
                   </CardDescription>
                 </div>
                 <div className="flex space-x-2">
@@ -223,7 +250,12 @@ export default function EmailTemplates() {
                   <Label>Subject</Label>
                   <Input
                     value={editingTemplate.subject}
-                    onChange={(e) => setEditingTemplate(prev => ({ ...prev, subject: e.target.value }))}
+                    onChange={(e) =>
+                      setEditingTemplate((prev) => ({
+                        ...prev,
+                        subject: e.target.value,
+                      }))
+                    }
                   />
                 </div>
                 <div className="space-y-2">
@@ -231,7 +263,12 @@ export default function EmailTemplates() {
                   <Textarea
                     rows={6}
                     value={editingTemplate.content}
-                    onChange={(e) => setEditingTemplate(prev => ({ ...prev, content: e.target.value }))}
+                    onChange={(e) =>
+                      setEditingTemplate((prev) => ({
+                        ...prev,
+                        content: e.target.value,
+                      }))
+                    }
                   />
                 </div>
                 <div className="flex space-x-2">
@@ -239,7 +276,10 @@ export default function EmailTemplates() {
                     <Save className="h-4 w-4 mr-2" />
                     Save Changes
                   </Button>
-                  <Button variant="outline" onClick={() => setEditingTemplate(null)}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setEditingTemplate(null)}
+                  >
                     Cancel
                   </Button>
                 </div>

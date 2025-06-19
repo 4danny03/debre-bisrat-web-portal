@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 interface PerformanceMetrics {
   fcp: number; // First Contentful Paint
@@ -9,10 +9,13 @@ interface PerformanceMetrics {
   ttfb: number; // Time to First Byte
 }
 
-const sendMetricsToAnalytics = (metrics: Partial<PerformanceMetrics>, path: string) => {
+const sendMetricsToAnalytics = (
+  metrics: Partial<PerformanceMetrics>,
+  path: string,
+) => {
   // Replace this with your actual analytics service
-  console.log('Performance metrics for', path, metrics);
-  
+  console.log("Performance metrics for", path, metrics);
+
   // If you have a backend endpoint:
   // fetch('/api/metrics', {
   //   method: 'POST',
@@ -24,7 +27,7 @@ export function usePerformanceMonitoring() {
   const location = useLocation();
 
   useEffect(() => {
-    if ('PerformanceObserver' in window) {
+    if ("PerformanceObserver" in window) {
       // First Contentful Paint
       new PerformanceObserver((entryList) => {
         const entries = entryList.getEntries();
@@ -32,7 +35,7 @@ export function usePerformanceMonitoring() {
           const fcp = entries[0];
           sendMetricsToAnalytics({ fcp: fcp.startTime }, location.pathname);
         }
-      }).observe({ entryTypes: ['paint'] });
+      }).observe({ entryTypes: ["paint"] });
 
       // Largest Contentful Paint
       new PerformanceObserver((entryList) => {
@@ -41,16 +44,19 @@ export function usePerformanceMonitoring() {
           const lcp = entries[entries.length - 1];
           sendMetricsToAnalytics({ lcp: lcp.startTime }, location.pathname);
         }
-      }).observe({ entryTypes: ['largest-contentful-paint'] });
+      }).observe({ entryTypes: ["largest-contentful-paint"] });
 
       // First Input Delay
       new PerformanceObserver((entryList) => {
         const entries = entryList.getEntries();
         if (entries.length > 0) {
           const fid = entries[0];
-          sendMetricsToAnalytics({ fid: fid.processingStart - fid.startTime }, location.pathname);
+          sendMetricsToAnalytics(
+            { fid: fid.processingStart - fid.startTime },
+            location.pathname,
+          );
         }
-      }).observe({ entryTypes: ['first-input'] });
+      }).observe({ entryTypes: ["first-input"] });
 
       // Cumulative Layout Shift
       new PerformanceObserver((entryList) => {
@@ -61,10 +67,12 @@ export function usePerformanceMonitoring() {
           }
         }
         sendMetricsToAnalytics({ cls }, location.pathname);
-      }).observe({ entryTypes: ['layout-shift'] });
+      }).observe({ entryTypes: ["layout-shift"] });
 
       // Time to First Byte
-      const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+      const navigation = performance.getEntriesByType(
+        "navigation",
+      )[0] as PerformanceNavigationTiming;
       if (navigation) {
         const ttfb = navigation.responseStart - navigation.requestStart;
         sendMetricsToAnalytics({ ttfb }, location.pathname);

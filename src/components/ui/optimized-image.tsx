@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
+import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 
-interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
+interface OptimizedImageProps
+  extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
   alt: string;
   className?: string;
@@ -22,12 +23,12 @@ export function OptimizedImage({
   useEffect(() => {
     const img = new Image();
     img.src = src;
-    
+
     img.onload = () => {
       setCurrentSrc(src);
       setLoaded(true);
     };
-    
+
     img.onerror = () => {
       setError(true);
     };
@@ -38,7 +39,7 @@ export function OptimizedImage({
       <div
         className={cn(
           "flex items-center justify-center bg-gray-100",
-          className
+          className,
         )}
       >
         <span className="text-sm text-gray-500">Failed to load image</span>
@@ -53,7 +54,7 @@ export function OptimizedImage({
       className={cn(
         "transition-opacity duration-300",
         !loaded && "filter blur-sm",
-        className
+        className,
       )}
       {...props}
     />

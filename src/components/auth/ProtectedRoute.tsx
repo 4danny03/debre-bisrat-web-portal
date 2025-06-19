@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { useEffect, useState } from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
@@ -10,10 +10,12 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         setIsAuthenticated(!!session);
       } catch (error) {
-        console.error('Auth check failed:', error);
+        console.error("Auth check failed:", error);
         setIsAuthenticated(false);
       } finally {
         setLoading(false);
@@ -22,7 +24,9 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
     checkAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
     });
 

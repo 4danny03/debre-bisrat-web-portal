@@ -1,4 +1,3 @@
-
 import { useDataContext } from "../contexts/DataContext";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
@@ -11,7 +10,14 @@ interface AdminSyncStatusProps {
 }
 
 export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
-  const { connectionHealth, gitStatus, lastRefresh, isRefreshing, forceSync, autoCommitAndPush } = useDataContext();
+  const {
+    connectionHealth,
+    gitStatus,
+    lastRefresh,
+    isRefreshing,
+    forceSync,
+    autoCommitAndPush,
+  } = useDataContext();
 
   const handleForceSync = async () => {
     await forceSync();

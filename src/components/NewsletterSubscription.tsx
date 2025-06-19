@@ -1,9 +1,8 @@
-
-import { useState } from 'react';
-import { useToast } from '../hooks/use-toast';
+import { useState } from "react";
+import { useToast } from "../hooks/use-toast";
 
 export default function NewsletterSubscription() {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -19,9 +18,9 @@ export default function NewsletterSubscription() {
         title: "Success!",
         description: "Thank you for subscribing to our newsletter.",
       });
-      setEmail('');
+      setEmail("");
     } catch (error) {
-      console.error('Newsletter subscription error:', error);
+      console.error("Newsletter subscription error:", error);
       toast({
         title: "Error",
         description: "Failed to subscribe. Please try again.",
@@ -34,12 +33,16 @@ export default function NewsletterSubscription() {
 
   return (
     <div className="bg-white p-6 rounded-lg shadow">
-      <h3 className="text-lg font-semibold mb-4">Subscribe to Our Newsletter</h3>
+      <h3 className="text-lg font-semibold mb-4">
+        Subscribe to Our Newsletter
+      </h3>
       <form onSubmit={handleSubmit} className="flex gap-2">
         <input
           type="email"
           value={email}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setEmail(e.target.value)
+          }
           placeholder="Enter your email"
           className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
           required
@@ -49,7 +52,7 @@ export default function NewsletterSubscription() {
           disabled={isLoading}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
         >
-          {isLoading ? 'Subscribing...' : 'Subscribe'}
+          {isLoading ? "Subscribing..." : "Subscribe"}
         </button>
       </form>
     </div>

@@ -1,4 +1,3 @@
-
 import { supabase } from "./client";
 import { dataSyncService } from "@/services/DataSyncService";
 
