@@ -18,11 +18,68 @@ import { api } from "../../utils/api";
 import { toast } from "../../hooks/use-toast";
 import { supabase } from "../../lib/supabaseClient";
 
+interface SiteSettings {
+  id?: number;
+  church_name: string;
+  church_address: string;
+  phone_number: string;
+  email: string;
+  admin_email: string;
+  from_email: string;
+  enable_donations: boolean;
+  enable_membership: boolean;
+  enable_email_notifications: boolean;
+  enable_newsletter: boolean;
+  enable_stripe: boolean;
+  stripe_publishable_key: string;
+  maintenance_mode: boolean;
+}
+
+interface StripeSettings {
+  // Add actual fields as needed
+  [key: string]: any;
+}
+
+interface EmailSettings {
+  from_email?: string;
+  from_name?: string;
+  newsletter_frequency?: string;
+  enable_newsletters?: boolean;
+  auto_welcome_email?: boolean;
+  smtp_host?: string;
+  smtp_port?: number | null;
+  smtp_username?: string;
+  smtp_password?: string;
+  [key: string]: any;
+}
+
+interface Subscriber {
+  id: string;
+  email: string;
+  name?: string;
+  status: string;
+  subscribed_at: string;
+}
+
 export default function Settings() {
-  const [settings, setSettings] = useState<any>({});
-  const [stripeSettings, setStripeSettings] = useState<any>({});
-  const [emailSettings, setEmailSettings] = useState<any>({});
-  const [subscribers, setSubscribers] = useState<any[]>([]);
+  const [settings, setSettings] = useState<SiteSettings>({
+    church_name: "",
+    church_address: "",
+    phone_number: "",
+    email: "",
+    admin_email: "",
+    from_email: "",
+    enable_donations: false,
+    enable_membership: false,
+    enable_email_notifications: false,
+    enable_newsletter: false,
+    enable_stripe: false,
+    stripe_publishable_key: "",
+    maintenance_mode: false,
+  });
+  const [stripeSettings, setStripeSettings] = useState<StripeSettings>({});
+  const [emailSettings, setEmailSettings] = useState<EmailSettings>({});
+  const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [saving, setSaving] = useState(false);
   const [stripeStatus, setStripeStatus] = useState<"configured" | "unconfigured" | "testing">("unconfigured");
 
@@ -206,6 +263,7 @@ export default function Settings() {
             <TabsTrigger value="email">Email Settings</TabsTrigger>
             <TabsTrigger value="payments">Payment Settings</TabsTrigger>
             <TabsTrigger value="features">Features</TabsTrigger>
+            <TabsTrigger value="subscribers">Subscribers</TabsTrigger> {/* Added missing tab trigger */}
           </TabsList>
 
           <TabsContent value="general">
@@ -219,7 +277,7 @@ export default function Settings() {
                   <Label htmlFor="churchName">Church Name</Label>
                   <Input
                     id="churchName"
-                    value={settings.church_name}
+                    value={settings.church_name || ""}
                     onChange={(e) => handleChange("church_name", e.target.value)}
                   />
                 </div>
@@ -227,7 +285,7 @@ export default function Settings() {
                   <Label htmlFor="address">Address</Label>
                   <Input
                     id="address"
-                    value={settings.church_address}
+                    value={settings.church_address || ""}
                     onChange={(e) => handleChange("church_address", e.target.value)}
                   />
                 </div>
@@ -235,7 +293,7 @@ export default function Settings() {
                   <Label htmlFor="phone">Phone Number</Label>
                   <Input
                     id="phone"
-                    value={settings.phone_number}
+                    value={settings.phone_number || ""}
                     onChange={(e) => handleChange("phone_number", e.target.value)}
                   />
                 </div>
@@ -244,7 +302,7 @@ export default function Settings() {
                   <Input
                     id="email"
                     type="email"
-                    value={settings.email}
+                    value={settings.email || ""}
                     onChange={(e) => handleChange("email", e.target.value)}
                   />
                 </div>
@@ -264,7 +322,7 @@ export default function Settings() {
                   <Input
                     id="adminEmail"
                     type="email"
-                    value={settings.admin_email}
+                    value={settings.admin_email || ""}
                     onChange={(e) => handleChange("admin_email", e.target.value)}
                     placeholder="admin@church.com"
                   />
@@ -276,7 +334,7 @@ export default function Settings() {
                     <Input
                       id="fromEmail"
                       type="email"
-                      value={emailSettings.from_email}
+                      value={emailSettings.from_email || ""}
                       onChange={(e) => handleEmailChange("from_email", e.target.value)}
                       placeholder="noreply@church.org"
                     />
@@ -285,7 +343,7 @@ export default function Settings() {
                     <Label htmlFor="fromName">From Name</Label>
                     <Input
                       id="fromName"
-                      value={emailSettings.from_name}
+                      value={emailSettings.from_name || ""}
                       onChange={(e) => handleEmailChange("from_name", e.target.value)}
                       placeholder="St. Gabriel Church"
                     />
@@ -294,7 +352,7 @@ export default function Settings() {
                 <div className="space-y-2">
                   <Label htmlFor="newsletterFreq">Newsletter Frequency</Label>
                   <Select
-                    value={emailSettings.newsletter_frequency}
+                    value={emailSettings.newsletter_frequency || ""}
                     onValueChange={(value) => handleEmailChange("newsletter_frequency", value)}
                   >
                     <SelectTrigger>
@@ -313,7 +371,7 @@ export default function Settings() {
                     <p className="text-sm text-gray-500">Allow newsletter subscriptions and campaigns</p>
                   </div>
                   <Switch
-                    checked={emailSettings.enable_newsletters}
+                    checked={emailSettings.enable_newsletters || false}
                     onCheckedChange={(checked: boolean) => handleEmailChange("enable_newsletters", checked)}
                   />
                 </div>
@@ -323,7 +381,7 @@ export default function Settings() {
                     <p className="text-sm text-gray-500">Send welcome email to new subscribers</p>
                   </div>
                   <Switch
-                    checked={emailSettings.auto_welcome_email}
+                    checked={emailSettings.auto_welcome_email || false}
                     onCheckedChange={(checked: boolean) => handleEmailChange("auto_welcome_email", checked)}
                   />
                 </div>
@@ -334,7 +392,7 @@ export default function Settings() {
                       <Label htmlFor="smtpHost">SMTP Host</Label>
                       <Input
                         id="smtpHost"
-                        value={emailSettings.smtp_host}
+                        value={emailSettings.smtp_host || ""}
                         onChange={(e) => handleEmailChange("smtp_host", e.target.value)}
                         placeholder="smtp.gmail.com"
                       />
@@ -344,8 +402,8 @@ export default function Settings() {
                       <Input
                         id="smtpPort"
                         type="number"
-                        value={emailSettings.smtp_port}
-                        onChange={(e) => handleEmailChange("smtp_port", parseInt(e.target.value))}
+                        value={emailSettings.smtp_port === undefined || emailSettings.smtp_port === null ? "" : emailSettings.smtp_port}
+                        onChange={(e) => handleEmailChange("smtp_port", e.target.value === "" ? null : parseInt(e.target.value))}
                         placeholder="587"
                       />
                     </div>
@@ -355,7 +413,7 @@ export default function Settings() {
                       <Label htmlFor="smtpUsername">SMTP Username</Label>
                       <Input
                         id="smtpUsername"
-                        value={emailSettings.smtp_username}
+                        value={emailSettings.smtp_username || ""}
                         onChange={(e) => handleEmailChange("smtp_username", e.target.value)}
                         placeholder="your-email@gmail.com"
                       />
@@ -365,7 +423,7 @@ export default function Settings() {
                       <Input
                         id="smtpPassword"
                         type="password"
-                        value={emailSettings.smtp_password}
+                        value={emailSettings.smtp_password || ""}
                         onChange={(e) => handleEmailChange("smtp_password", e.target.value)}
                         placeholder="your-app-password"
                       />
@@ -402,10 +460,10 @@ export default function Settings() {
                       <Label htmlFor="stripeKey">Stripe Publishable Key</Label>
                       <Input
                         id="stripeKey"
-                        value={settings.stripe_publishable_key}
+                        value={settings.stripe_publishable_key || ""}
                         onChange={(e) => handleChange("stripe_publishable_key", e.target.value)}
                         placeholder="pk_test_... or pk_live_..."
-                        className={!validateStripeKey(settings.stripe_publishable_key) && settings.stripe_publishable_key ? "border-red-500" : ""}
+                        className={!validateStripeKey(settings.stripe_publishable_key || "") && settings.stripe_publishable_key ? "border-red-500" : ""}
                       />
                       <div className="flex items-center justify-between">
                         <p className="text-sm text-gray-500">Your Stripe publishable key (starts with pk_test_ for testing or pk_live_ for production)</p>

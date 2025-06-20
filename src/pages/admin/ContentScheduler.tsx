@@ -43,12 +43,9 @@ import {
   Clock,
   Mail,
   FileText,
-  Image,
-  Play,
   Pause,
   Trash2,
   Plus,
-  Edit,
   CheckCircle,
   XCircle,
   AlertTriangle,
@@ -60,7 +57,7 @@ import { api } from "@/integrations/supabase/api";
 
 interface ScheduledContent {
   id: string;
-  type: "event" | "sermon" | "email" | "post";
+  type: "event" | "sermon" | "email";
   title: string;
   content: any;
   scheduledFor: Date;
@@ -74,26 +71,41 @@ interface ScheduledContent {
   publishedAt?: Date;
 }
 
+type NewContentType = {
+  type: "event" | "sermon" | "email";
+  title: string;
+  description: string;
+  scheduledFor: string;
+  scheduledTime: string;
+  recurring: boolean;
+  frequency: "daily" | "weekly" | "monthly";
+  interval: number;
+  endDate: string;
+  emailSubject: string;
+  emailContent: string;
+  eventLocation: string;
+  eventTime: string;
+  sermonPreacher: string;
+  sermonAudioUrl: string;
+};
+
 export default function ContentScheduler() {
   const [scheduledContent, setScheduledContent] = useState<ScheduledContent[]>(
     [],
   );
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingContent, setEditingContent] = useState<ScheduledContent | null>(
-    null,
-  );
   const [activeTab, setActiveTab] = useState("scheduled");
   const { toast } = useToast();
 
-  const [newContent, setNewContent] = useState({
-    type: "event" as const,
+  const [newContent, setNewContent] = useState<NewContentType>({
+    type: "event",
     title: "",
     description: "",
     scheduledFor: "",
     scheduledTime: "",
     recurring: false,
-    frequency: "weekly" as const,
+    frequency: "weekly",
     interval: 1,
     endDate: "",
     emailSubject: "",
@@ -376,8 +388,6 @@ export default function ContentScheduler() {
         return <FileText className="h-4 w-4" />;
       case "email":
         return <Mail className="h-4 w-4" />;
-      case "post":
-        return <Image className="h-4 w-4" />;
     }
   };
 
@@ -436,7 +446,6 @@ export default function ContentScheduler() {
                       <SelectItem value="event">Event</SelectItem>
                       <SelectItem value="sermon">Sermon</SelectItem>
                       <SelectItem value="email">Email Campaign</SelectItem>
-                      <SelectItem value="post">Post</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -446,7 +455,7 @@ export default function ContentScheduler() {
                     id="title"
                     placeholder="Content title"
                     value={newContent.title}
-                    onChange={(e) =>
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setNewContent((prev) => ({
                         ...prev,
                         title: e.target.value,
@@ -462,7 +471,7 @@ export default function ContentScheduler() {
                   id="description"
                   placeholder="Content description"
                   value={newContent.description}
-                  onChange={(e) =>
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
                     setNewContent((prev) => ({
                       ...prev,
                       description: e.target.value,
@@ -479,7 +488,7 @@ export default function ContentScheduler() {
                     id="scheduled-date"
                     type="date"
                     value={newContent.scheduledFor}
-                    onChange={(e) =>
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setNewContent((prev) => ({
                         ...prev,
                         scheduledFor: e.target.value,
@@ -493,7 +502,7 @@ export default function ContentScheduler() {
                     id="scheduled-time"
                     type="time"
                     value={newContent.scheduledTime}
-                    onChange={(e) =>
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setNewContent((prev) => ({
                         ...prev,
                         scheduledTime: e.target.value,
@@ -512,7 +521,7 @@ export default function ContentScheduler() {
                       id="event-location"
                       placeholder="Event location"
                       value={newContent.eventLocation}
-                      onChange={(e) =>
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setNewContent((prev) => ({
                           ...prev,
                           eventLocation: e.target.value,
@@ -526,7 +535,7 @@ export default function ContentScheduler() {
                       id="event-time"
                       type="time"
                       value={newContent.eventTime}
-                      onChange={(e) =>
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setNewContent((prev) => ({
                           ...prev,
                           eventTime: e.target.value,
@@ -545,7 +554,7 @@ export default function ContentScheduler() {
                       id="sermon-preacher"
                       placeholder="Preacher name"
                       value={newContent.sermonPreacher}
-                      onChange={(e) =>
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setNewContent((prev) => ({
                           ...prev,
                           sermonPreacher: e.target.value,
@@ -559,7 +568,7 @@ export default function ContentScheduler() {
                       id="sermon-audio"
                       placeholder="Audio file URL"
                       value={newContent.sermonAudioUrl}
-                      onChange={(e) =>
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setNewContent((prev) => ({
                           ...prev,
                           sermonAudioUrl: e.target.value,
@@ -578,7 +587,7 @@ export default function ContentScheduler() {
                       id="email-subject"
                       placeholder="Email subject line"
                       value={newContent.emailSubject}
-                      onChange={(e) =>
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setNewContent((prev) => ({
                           ...prev,
                           emailSubject: e.target.value,
@@ -592,7 +601,7 @@ export default function ContentScheduler() {
                       id="email-content"
                       placeholder="Email content"
                       value={newContent.emailContent}
-                      onChange={(e) =>
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
                         setNewContent((prev) => ({
                           ...prev,
                           emailContent: e.target.value,
@@ -610,7 +619,7 @@ export default function ContentScheduler() {
                   <Switch
                     id="recurring"
                     checked={newContent.recurring}
-                    onCheckedChange={(checked) =>
+                    onCheckedChange={(checked: boolean) =>
                       setNewContent((prev) => ({ ...prev, recurring: checked }))
                     }
                   />
@@ -647,7 +656,7 @@ export default function ContentScheduler() {
                         type="number"
                         min="1"
                         value={newContent.interval}
-                        onChange={(e) =>
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           setNewContent((prev) => ({
                             ...prev,
                             interval: parseInt(e.target.value) || 1,
@@ -661,7 +670,7 @@ export default function ContentScheduler() {
                         id="end-date"
                         type="date"
                         value={newContent.endDate}
-                        onChange={(e) =>
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           setNewContent((prev) => ({
                             ...prev,
                             endDate: e.target.value,
