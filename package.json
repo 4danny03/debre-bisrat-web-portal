@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://4danny03.github.io/ydebre-bisrat-web-portal",
+  "homepage": "https://4danny03.github.io/debre-bisrat-web-portal",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
