@@ -76,7 +76,7 @@ function AppContent() {
       <Route path="/events" element={<Events />} />
       <Route path="/contact" element={<Contact />} />
       <Route
-        path="/membership-registration"
+        path="/membership"
         element={<MembershipRegistration />}
       />
       <Route path="/donation" element={<Donation />} />

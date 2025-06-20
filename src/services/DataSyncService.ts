@@ -458,4 +458,4 @@ class DataSyncServiceClass {
   }
 }
 
-export const DataSyncService = new DataSyncServiceClass();
+export const dataSyncService = new DataSyncServiceClass();
