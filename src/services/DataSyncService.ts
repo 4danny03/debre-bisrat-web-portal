@@ -1,9 +1,8 @@
-
 /**
  * Enhanced data synchronization service with admin action tracking
  */
-class DataSyncService {
-  private static instance: DataSyncService;
+class DataSyncServiceSingleton {
+  private static instance: DataSyncServiceSingleton;
   private isInitialized = false;
   private adminActions: Array<{
     action: string;
@@ -22,11 +21,11 @@ class DataSyncService {
 
   private constructor() {}
 
-  static getInstance(): DataSyncService {
-    if (!DataSyncService.instance) {
-      DataSyncService.instance = new DataSyncService();
+  static getInstance(): DataSyncServiceSingleton {
+    if (!DataSyncServiceSingleton.instance) {
+      DataSyncServiceSingleton.instance = new DataSyncServiceSingleton();
     }
-    return DataSyncService.instance;
+    return DataSyncServiceSingleton.instance;
   }
 
   initialize() {
@@ -389,6 +388,8 @@ class DataSyncService {
     this.errorLog = [];
     this.syncStatus = {};
     console.log("DataSyncService cleaned up");
+  }
+}
 
 class DataSyncServiceClass {
   private listeners: Map<string, Set<Function>> = new Map();
@@ -398,7 +399,7 @@ class DataSyncServiceClass {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());
     }
-    
+
     this.listeners.get(event)!.add(callback);
 
     return () => {
@@ -424,20 +425,20 @@ class DataSyncServiceClass {
 
   emitEvent(event: string, data?: any): void {
     if (this.isProcessing) {
-      console.log('DataSyncService: Already processing, skipping emit');
+      console.log("DataSyncService: Already processing, skipping emit");
       return;
     }
 
     const eventListeners = this.listeners.get(event);
     if (eventListeners && eventListeners.size > 0) {
       this.isProcessing = true;
-      
+
       try {
         eventListeners.forEach((callback) => {
           try {
             callback(data);
           } catch (error) {
-            console.error('DataSyncService: Error in event listener:', error);
+            console.error("DataSyncService: Error in event listener:", error);
           }
         });
       } finally {
@@ -447,8 +448,8 @@ class DataSyncServiceClass {
   }
 
   forceRefresh(): void {
-    console.log('DataSyncService: Force refresh requested');
-    this.emitEvent('forceRefresh');
+    console.log("DataSyncService: Force refresh requested");
+    this.emitEvent("forceRefresh");
   }
 
   clearAll(): void {

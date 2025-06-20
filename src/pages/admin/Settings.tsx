@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   Card,
@@ -122,24 +121,24 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
-  const [stripeStatus, setStripeStatus] = useState<'unconfigured' | 'configured' | 'testing'>('unconfigured');
+  const [stripeStatus, setStripeStatus] = useState<
+    "unconfigured" | "configured" | "testing"
+  >("unconfigured");
   const { toast } = useToast();
 
   useEffect(() => {
     loadAllSettings();
   }, []);
 
+  useEffect(() => {
+    checkStripeConfiguration();
+  }, [settings.enable_stripe, settings.stripe_publishable_key]);
+
   const loadAllSettings = async () => {
     try {
       setLoading(true);
 
       // Load general settings
-  useEffect(() => {
-    checkStripeConfiguration();
-  }, [settings.enable_stripe, settings.stripe_publishable_key]);
-
-  const loadSettings = async () => {
-    try {
       let { data, error } = await supabase
         .from("site_settings")
         .select("*")
@@ -208,38 +207,44 @@ export default function Settings() {
     }
   };
 
-  const handleGeneralSubmit = async (e: React.FormEvent) => {
   const checkStripeConfiguration = () => {
     if (!settings.enable_stripe) {
-      setStripeStatus('unconfigured');
+      setStripeStatus("unconfigured");
       return;
     }
 
-    if (settings.stripe_publishable_key && settings.stripe_publishable_key.trim()) {
-      if (settings.stripe_publishable_key.startsWith('pk_test_')) {
-        setStripeStatus('testing');
-      } else if (settings.stripe_publishable_key.startsWith('pk_live_')) {
-        setStripeStatus('configured');
+    if (
+      settings.stripe_publishable_key &&
+      settings.stripe_publishable_key.trim()
+    ) {
+      if (settings.stripe_publishable_key.startsWith("pk_test_")) {
+        setStripeStatus("testing");
+      } else if (settings.stripe_publishable_key.startsWith("pk_live_")) {
+        setStripeStatus("configured");
       } else {
-        setStripeStatus('unconfigured');
+        setStripeStatus("unconfigured");
       }
     } else {
-      setStripeStatus('unconfigured');
+      setStripeStatus("unconfigured");
     }
   };
 
   const validateStripeKey = (key: string) => {
     if (!key) return true; // Allow empty for now
-    return key.startsWith('pk_test_') || key.startsWith('pk_live_');
+    return key.startsWith("pk_test_") || key.startsWith("pk_live_");
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleGeneralSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (settings.enable_stripe && !validateStripeKey(settings.stripe_publishable_key)) {
+
+    if (
+      settings.enable_stripe &&
+      !validateStripeKey(settings.stripe_publishable_key)
+    ) {
       toast({
         title: "Invalid Stripe Key",
-        description: "Please enter a valid Stripe publishable key (starts with pk_test_ or pk_live_)",
+        description:
+          "Please enter a valid Stripe publishable key (starts with pk_test_ or pk_live_)",
         variant: "destructive",
       });
       return;
@@ -350,6 +355,7 @@ export default function Settings() {
       });
     }
   };
+
   const handleDeleteSubscriber = async (id: string) => {
     try {
       await api.emailSubscribers.deleteSubscriber(id);
@@ -364,15 +370,32 @@ export default function Settings() {
         description: "Failed to delete subscriber",
         variant: "destructive",
       });
+    }
+  };
 
   const getStripeStatusBadge = () => {
     switch (stripeStatus) {
-      case 'configured':
-        return <Badge variant="default" className="bg-green-500"><CheckCircle className="w-3 h-3 mr-1" />Live Mode</Badge>;
-      case 'testing':
-        return <Badge variant="secondary"><CheckCircle className="w-3 h-3 mr-1" />Test Mode</Badge>;
+      case "configured":
+        return (
+          <Badge variant="default" className="bg-green-500">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Live Mode
+          </Badge>
+        );
+      case "testing":
+        return (
+          <Badge variant="secondary">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Test Mode
+          </Badge>
+        );
       default:
-        return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1" />Not Configured</Badge>;
+        return (
+          <Badge variant="destructive">
+            <AlertCircle className="w-3 h-3 mr-1" />
+            Not Configured
+          </Badge>
+        );
     }
   };
 
@@ -861,251 +884,11 @@ export default function Settings() {
                     </div>
                   ))
                 )}
-    <form onSubmit={handleSubmit}>
-      <Tabs defaultValue="general" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="email">Email Settings</TabsTrigger>
-          <TabsTrigger value="payments">Payment Settings</TabsTrigger>
-          <TabsTrigger value="features">Features</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="general">
-          <Card>
-            <CardHeader>
-              <CardTitle>General Settings</CardTitle>
-              <CardDescription>Configure basic church information</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="churchName">Church Name</Label>
-                <Input
-                  id="churchName"
-                  value={settings.church_name}
-                  onChange={(e) => handleChange("church_name", e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
-                <Input
-                  id="address"
-                  value={settings.church_address}
-                  onChange={(e) => handleChange("church_address", e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  value={settings.phone_number}
-                  onChange={(e) => handleChange("phone_number", e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Public Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={settings.email}
-                  onChange={(e) => handleChange("email", e.target.value)}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="email">
-          <Card>
-            <CardHeader>
-              <CardTitle>Email Configuration</CardTitle>
-              <CardDescription>Configure email settings for notifications and newsletters</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="adminEmail">Admin Email</Label>
-                <Input
-                  id="adminEmail"
-                  type="email"
-                  value={settings.admin_email}
-                  onChange={(e) => handleChange("admin_email", e.target.value)}
-                  placeholder="admin@church.com"
-                />
-                <p className="text-sm text-gray-500">Email to receive admin notifications</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="fromEmail">From Email</Label>
-                <Input
-                  id="fromEmail"
-                  type="email"
-                  value={settings.from_email}
-                  onChange={(e) => handleChange("from_email", e.target.value)}
-                  placeholder="noreply@church.com"
-                />
-                <p className="text-sm text-gray-500">Email address used as sender</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="payments">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                Payment Settings
-                {getStripeStatusBadge()}
-              </CardTitle>
-              <CardDescription>Configure Stripe payment integration for donations and membership</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Enable Stripe Payments</Label>
-                  <p className="text-sm text-gray-500">Allow online donations and membership payments via Stripe</p>
-                </div>
-                <Switch
-                  checked={settings.enable_stripe}
-                  onCheckedChange={(checked) => handleChange("enable_stripe", checked)}
-                />
-              </div>
-              
-              {settings.enable_stripe && (
-                <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="space-y-2">
-                    <Label htmlFor="stripeKey">Stripe Publishable Key</Label>
-                    <Input
-                      id="stripeKey"
-                      value={settings.stripe_publishable_key}
-                      onChange={(e) => handleChange("stripe_publishable_key", e.target.value)}
-                      placeholder="pk_test_... or pk_live_..."
-                      className={!validateStripeKey(settings.stripe_publishable_key) && settings.stripe_publishable_key ? "border-red-500" : ""}
-                    />
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-gray-500">
-                        Your Stripe publishable key (starts with pk_test_ for testing or pk_live_ for production)
-                      </p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => window.open('https://dashboard.stripe.com/apikeys', '_blank')}
-                      >
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        Get Keys
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="bg-blue-50 p-3 rounded border border-blue-200">
-                    <h4 className="font-medium text-blue-900 mb-2">Stripe Configuration Status</h4>
-                    <ul className="space-y-1 text-sm text-blue-800">
-                      <li className="flex items-center">
-                        {settings.enable_stripe ? <CheckCircle className="w-4 h-4 mr-2 text-green-600" /> : <AlertCircle className="w-4 h-4 mr-2 text-red-600" />}
-                        Stripe integration {settings.enable_stripe ? 'enabled' : 'disabled'}
-                      </li>
-                      <li className="flex items-center">
-                        {settings.stripe_publishable_key && validateStripeKey(settings.stripe_publishable_key) ? 
-                          <CheckCircle className="w-4 h-4 mr-2 text-green-600" /> : 
-                          <AlertCircle className="w-4 h-4 mr-2 text-red-600" />
-                        }
-                        Publishable key {settings.stripe_publishable_key && validateStripeKey(settings.stripe_publishable_key) ? 'configured' : 'missing or invalid'}
-                      </li>
-                      <li className="flex items-center">
-                        <AlertCircle className="w-4 h-4 mr-2 text-orange-600" />
-                        Secret key must be configured in Supabase Edge Function secrets
-                      </li>
-                    </ul>
-                  </div>
-
-                  {stripeStatus === 'testing' && (
-                    <div className="bg-yellow-50 p-3 rounded border border-yellow-200">
-                      <p className="text-sm text-yellow-800">
-                        <strong>Test Mode:</strong> You're using test keys. No real payments will be processed.
-                        Use test card number 4242424242424242 for testing.
-                      </p>
-                    </div>
-                  )}
-
-                  {stripeStatus === 'configured' && (
-                    <div className="bg-green-50 p-3 rounded border border-green-200">
-                      <p className="text-sm text-green-800">
-                        <strong>Live Mode:</strong> Real payments will be processed. Make sure your webhook endpoints are configured.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="features">
-          <Card>
-            <CardHeader>
-              <CardTitle>Feature Settings</CardTitle>
-              <CardDescription>Enable or disable website features</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Enable Donations</Label>
-                  <p className="text-sm text-gray-500">Allow visitors to make donations</p>
-                </div>
-                <Switch
-                  checked={settings.enable_donations}
-                  onCheckedChange={(checked) => handleChange("enable_donations", checked)}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Enable Membership</Label>
-                  <p className="text-sm text-gray-500">Allow visitors to register for membership</p>
-                </div>
-                <Switch
-                  checked={settings.enable_membership}
-                  onCheckedChange={(checked) => handleChange("enable_membership", checked)}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Enable Email Notifications</Label>
-                  <p className="text-sm text-gray-500">Send email notifications to admin</p>
-                </div>
-                <Switch
-                  checked={settings.enable_email_notifications}
-                  onCheckedChange={(checked) => handleChange("enable_email_notifications", checked)}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Enable Newsletter</Label>
-                  <p className="text-sm text-gray-500">Allow newsletter subscriptions</p>
-                </div>
-                <Switch
-                  checked={settings.enable_newsletter}
-                  onCheckedChange={(checked) => handleChange("enable_newsletter", checked)}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Maintenance Mode</Label>
-                  <p className="text-sm text-gray-500">Put the website in maintenance mode</p>
-                </div>
-                <Switch
-                  checked={settings.maintenance_mode}
-                  onCheckedChange={(checked) => handleChange("maintenance_mode", checked)}
-                />
               </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
     </div>
-
-      <div className="mt-6">
-        <Button type="submit" disabled={saving}>
-          {saving ? "Saving..." : "Save Settings"}
-        </Button>
-      </div>
-    </form>
   );
 }

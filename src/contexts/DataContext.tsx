@@ -1,6 +1,3 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
-
 import React, {
   createContext,
   useContext,
@@ -8,6 +5,7 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DataContextType {
   connectionHealth: boolean;
@@ -47,6 +45,7 @@ export function DataProvider({ children }: DataProviderProps) {
   });
   const [lastRefresh, setLastRefresh] = useState<Date | null>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
+
   const refreshAllData = async () => {
     if (isRefreshing) {
       console.log("Refresh already in progress, skipping...");
