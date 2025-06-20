@@ -1,40 +1,13 @@
-
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { corsHeaders } from "@shared/cors.ts";
+import {
+  handleCorsOptions,
+  formatErrorResponse,
+  formatSuccessResponse,
+  sanitizeString,
+} from "@shared/utils.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-function handleCorsOptions(req: Request) {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
-  return null;
-}
-
-function formatErrorResponse(error: Error, status = 400) {
-  console.error(`Error: ${error.message}`);
-  return new Response(
-    JSON.stringify({
-      error: error.message,
-    }),
-    {
-      status,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    },
-  );
-}
-
-function formatSuccessResponse(data: any, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
-
-serve(async (req) => {
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
   const corsResponse = handleCorsOptions(req);
   if (corsResponse) return corsResponse;
@@ -92,21 +65,32 @@ serve(async (req) => {
         throw new Error("Unauthorized: Admin access required");
       }
 
-      const { title, scripture_reference, summary, sermon_date, audio_url, video_url } = await req.json();
+      const {
+        title,
+        scripture_reference,
+        description,
+        sermon_date,
+        audio_url,
+        preacher,
+        is_featured,
+      } = await req.json();
 
       if (!title || !scripture_reference || !sermon_date) {
-        throw new Error("Title, scripture reference, and sermon date are required");
+        throw new Error(
+          "Title, scripture reference, and sermon date are required",
+        );
       }
 
       const { data, error } = await supabaseClient
         .from("sermons")
         .insert({
-          title,
-          scripture_reference,
-          summary,
+          title: sanitizeString(title, 200),
+          scripture_reference: sanitizeString(scripture_reference, 200),
+          description: description ? sanitizeString(description, 1000) : null,
           sermon_date,
-          audio_url,
-          video_url,
+          audio_url: audio_url ? sanitizeString(audio_url, 500) : null,
+          preacher: preacher ? sanitizeString(preacher, 100) : null,
+          is_featured: is_featured || false,
         })
         .select()
         .single();
@@ -142,19 +126,42 @@ serve(async (req) => {
         throw new Error("Unauthorized: Admin access required");
       }
 
-      const { title, scripture_reference, summary, sermon_date, audio_url, video_url } = await req.json();
+      const {
+        title,
+        scripture_reference,
+        description,
+        sermon_date,
+        audio_url,
+        preacher,
+        is_featured,
+      } = await req.json();
+
+      const updateData: any = {
+        updated_at: new Date().toISOString(),
+      };
+
+      if (title) updateData.title = sanitizeString(title, 200);
+      if (scripture_reference)
+        updateData.scripture_reference = sanitizeString(
+          scripture_reference,
+          200,
+        );
+      if (description !== undefined)
+        updateData.description = description
+          ? sanitizeString(description, 1000)
+          : null;
+      if (sermon_date) updateData.sermon_date = sermon_date;
+      if (audio_url !== undefined)
+        updateData.audio_url = audio_url
+          ? sanitizeString(audio_url, 500)
+          : null;
+      if (preacher !== undefined)
+        updateData.preacher = preacher ? sanitizeString(preacher, 100) : null;
+      if (is_featured !== undefined) updateData.is_featured = is_featured;
 
       const { data, error } = await supabaseClient
         .from("sermons")
-        .update({
-          title,
-          scripture_reference,
-          summary,
-          sermon_date,
-          audio_url,
-          video_url,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq("id", sermonId)
         .select()
         .single();

@@ -1,40 +1,15 @@
-
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { corsHeaders } from "@shared/cors.ts";
+import {
+  handleCorsOptions,
+  formatErrorResponse,
+  formatSuccessResponse,
+  sanitizeString,
+  validateEmail,
+  checkRateLimit,
+} from "@shared/utils.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-function handleCorsOptions(req: Request) {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
-  return null;
-}
-
-function formatErrorResponse(error: Error, status = 400) {
-  console.error(`Error: ${error.message}`);
-  return new Response(
-    JSON.stringify({
-      error: error.message,
-    }),
-    {
-      status,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    },
-  );
-}
-
-function formatSuccessResponse(data: any, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
-
-serve(async (req) => {
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
   const corsResponse = handleCorsOptions(req);
   if (corsResponse) return corsResponse;
@@ -99,12 +74,29 @@ serve(async (req) => {
         throw new Error("Name and prayer request are required");
       }
 
+      // Rate limiting for prayer request submissions
+      const clientIP =
+        req.headers.get("x-forwarded-for") ||
+        req.headers.get("x-real-ip") ||
+        "unknown";
+      if (!checkRateLimit(`prayer_${clientIP}`, 5, 300000)) {
+        // 5 requests per 5 minutes
+        throw new Error(
+          "Too many prayer requests. Please wait before submitting another.",
+        );
+      }
+
+      // Validate email if provided
+      if (email && !validateEmail(email)) {
+        throw new Error("Invalid email format");
+      }
+
       const { data, error } = await supabaseClient
         .from("prayer_requests")
         .insert({
-          name,
-          email,
-          request,
+          name: sanitizeString(name, 100),
+          email: email ? sanitizeString(email, 100) : null,
+          request: sanitizeString(request, 1000),
           is_public: is_public || false,
         })
         .select()

@@ -121,18 +121,81 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
-  const [stripeStatus, setStripeStatus] = useState<'unconfigured' | 'configured' | 'testing'>('unconfigured');
+  const [stripeStatus, setStripeStatus] = useState<
+    "unconfigured" | "configured" | "testing"
+  >("unconfigured");
   const { toast } = useToast();
 
   useEffect(() => {
     loadAllSettings();
   }, []);
 
+  useEffect(() => {
+    checkStripeConfiguration();
+  }, [settings.enable_stripe, settings.stripe_publishable_key]);
+
   const loadAllSettings = async () => {
     try {
       setLoading(true);
-      await loadSettings();
-      checkStripeConfiguration();
+
+      // Load general settings
+      let { data, error } = await supabase
+        .from("site_settings")
+        .select("*")
+        .limit(1)
+        .single();
+
+      if (error && error.code === "PGRST116") {
+        const { data: newData, error: insertError } = await supabase
+          .from("site_settings")
+          .insert({
+            id: 1,
+            church_name: "St. Gabriel Ethiopian Orthodox Church",
+            church_address: "",
+            phone_number: "",
+            email: "",
+            admin_email: "",
+            from_email: "noreply@example.com",
+            enable_donations: true,
+            enable_membership: true,
+            enable_email_notifications: true,
+            enable_newsletter: true,
+            enable_stripe: false,
+            stripe_publishable_key: "",
+            maintenance_mode: false,
+          })
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        data = newData;
+      }
+
+      if (data) {
+        setSettings(data);
+      }
+
+      // Load Stripe settings
+      const stripeData = await api.stripeSettings.getSettings();
+      if (stripeData) {
+        setStripeSettings(stripeData);
+      }
+
+      // Load Email settings
+      const emailData = await api.emailSettings.getSettings();
+      if (emailData) {
+        setEmailSettings(emailData);
+      }
+
+      // Load subscribers and templates
+      const [subscribersData, templatesData] = await Promise.all([
+        api.emailSubscribers.getSubscribers(),
+        api.emailTemplates.getTemplates(),
+      ]);
+
+      setSubscribers(subscribersData || []);
+      setTemplates(templatesData || []);
+
     } catch (error) {
       console.error("Error loading settings:", error);
       toast({
@@ -145,97 +208,44 @@ export default function Settings() {
     }
   };
 
-  const loadSettings = async () => {
-    // Load general settings
-    let { data, error } = await supabase
-      .from("site_settings")
-      .select("*")
-      .limit(1)
-      .single();
-
-    if (error && error.code === "PGRST116") {
-      const { data: newData, error: insertError } = await supabase
-        .from("site_settings")
-        .insert({
-          id: 1,
-          church_name: "St. Gabriel Ethiopian Orthodox Church",
-          church_address: "",
-          phone_number: "",
-          email: "",
-          admin_email: "",
-          from_email: "noreply@example.com",
-          enable_donations: true,
-          enable_membership: true,
-          enable_email_notifications: true,
-          enable_newsletter: true,
-          enable_stripe: false,
-          stripe_publishable_key: "",
-          maintenance_mode: false,
-        })
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
-      data = newData;
-    }
-
-    if (data) {
-      setSettings(data);
-    }
-
-    // Load Stripe settings
-    const stripeData = await api.stripeSettings.getSettings();
-    if (stripeData) {
-      setStripeSettings(stripeData);
-    }
-
-    // Load Email settings
-    const emailData = await api.emailSettings.getSettings();
-    if (emailData) {
-      setEmailSettings(emailData);
-    }
-
-    // Load subscribers and templates
-    const [subscribersData, templatesData] = await Promise.all([
-      api.emailSubscribers.getSubscribers(),
-      api.emailTemplates.getTemplates(),
-    ]);
-
-    setSubscribers(subscribersData || []);
-    setTemplates(templatesData || []);
-  };
-
   const checkStripeConfiguration = () => {
     if (!settings.enable_stripe) {
-      setStripeStatus('unconfigured');
+      setStripeStatus("unconfigured");
       return;
     }
 
-    if (settings.stripe_publishable_key && settings.stripe_publishable_key.trim()) {
-      if (settings.stripe_publishable_key.startsWith('pk_test_')) {
-        setStripeStatus('testing');
-      } else if (settings.stripe_publishable_key.startsWith('pk_live_')) {
-        setStripeStatus('configured');
+    if (
+      settings.stripe_publishable_key &&
+      settings.stripe_publishable_key.trim()
+    ) {
+      if (settings.stripe_publishable_key.startsWith("pk_test_")) {
+        setStripeStatus("testing");
+      } else if (settings.stripe_publishable_key.startsWith("pk_live_")) {
+        setStripeStatus("configured");
       } else {
-        setStripeStatus('unconfigured');
+        setStripeStatus("unconfigured");
       }
     } else {
-      setStripeStatus('unconfigured');
+      setStripeStatus("unconfigured");
     }
   };
 
   const validateStripeKey = (key: string) => {
     if (!key) return true; // Allow empty for now
-    return key.startsWith('pk_test_') || key.startsWith('pk_live_');
+    return key.startsWith("pk_test_") || key.startsWith("pk_live_");
   };
 
   const handleGeneralSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (settings.enable_stripe && !validateStripeKey(settings.stripe_publishable_key)) {
+
+    if (
+      settings.enable_stripe &&
+      !validateStripeKey(settings.stripe_publishable_key)
+    ) {
       toast({
         title: "Invalid Stripe Key",
-        description: "Please enter a valid Stripe publishable key (starts with pk_test_ or pk_live_)",
+        description:
+          "Please enter a valid Stripe publishable key (starts with pk_test_ or pk_live_)",
         variant: "destructive",
       });
       return;
@@ -366,12 +376,27 @@ export default function Settings() {
 
   const getStripeStatusBadge = () => {
     switch (stripeStatus) {
-      case 'configured':
-        return <Badge variant="default" className="bg-green-500"><CheckCircle className="w-3 h-3 mr-1" />Live Mode</Badge>;
-      case 'testing':
-        return <Badge variant="secondary"><CheckCircle className="w-3 h-3 mr-1" />Test Mode</Badge>;
+      case "configured":
+        return (
+          <Badge variant="default" className="bg-green-500">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Live Mode
+          </Badge>
+        );
+      case "testing":
+        return (
+          <Badge variant="secondary">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Test Mode
+          </Badge>
+        );
       default:
-        return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1" />Not Configured</Badge>;
+        return (
+          <Badge variant="destructive">
+            <AlertCircle className="w-3 h-3 mr-1" />
+            Not Configured
+          </Badge>
+        );
     }
   };
 
@@ -610,210 +635,73 @@ export default function Settings() {
                 Configure email notifications and newsletter system
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between mb-4">
-                <div className="space-y-0.5">
-                  <Label>Enable Newsletter System</Label>
-                  <p className="text-sm text-gray-500">
-                    Allow newsletter subscriptions and campaigns
+            <CardContent>
+              <div className="space-y-4">
+                {subscribers.length === 0 ? (
+                  <p className="text-center text-gray-500 py-8">
+                    No subscribers yet. Start collecting email addresses!
                   </p>
-                </div>
-                <Switch
-                  checked={emailSettings.enable_newsletters}
-                  onCheckedChange={(checked) => handleEmailChange("enable_newsletters", checked)}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="fromEmail">From Email</Label>
-                  <Input
-                    id="fromEmail"
-                    type="email"
-                    value={emailSettings.from_email}
-                    onChange={(e) => handleEmailChange("from_email", e.target.value)}
-                    placeholder="noreply@church.org"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="fromName">From Name</Label>
-                  <Input
-                    id="fromName"
-                    value={emailSettings.from_name}
-                    onChange={(e) => handleEmailChange("from_name", e.target.value)}
-                    placeholder="St. Gabriel Church"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="newsletterFreq">Newsletter Frequency</Label>
-                <Select
-                  value={emailSettings.newsletter_frequency}
-                  onValueChange={(value: "daily" | "weekly" | "monthly") => handleEmailChange("newsletter_frequency", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Auto Welcome Email</Label>
-                  <p className="text-sm text-gray-500">
-                    Send welcome email to new subscribers
-                  </p>
-                </div>
-                <Switch
-                  checked={emailSettings.auto_welcome_email}
-                  onCheckedChange={(checked) => handleEmailChange("auto_welcome_email", checked)}
-                />
-              </div>
-
-              <div className="border-t pt-4">
-                <h4 className="font-medium mb-3">SMTP Configuration</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="smtpHost">SMTP Host</Label>
-                    <Input
-                      id="smtpHost"
-                      value={emailSettings.smtp_host}
-                      onChange={(e) => handleEmailChange("smtp_host", e.target.value)}
-                      placeholder="smtp.gmail.com"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="smtpPort">SMTP Port</Label>
-                    <Input
-                      id="smtpPort"
-                      type="number"
-                      value={emailSettings.smtp_port}
-                      onChange={(e) => handleEmailChange("smtp_port", parseInt(e.target.value))}
-                      placeholder="587"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="smtpUsername">SMTP Username</Label>
-                    <Input
-                      id="smtpUsername"
-                      value={emailSettings.smtp_username}
-                      onChange={(e) => handleEmailChange("smtp_username", e.target.value)}
-                      placeholder="your-email@gmail.com"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="smtpPassword">SMTP Password</Label>
-                    <Input
-                      id="smtpPassword"
-                      type="password"
-                      value={emailSettings.smtp_password}
-                      onChange={(e) => handleEmailChange("smtp_password", e.target.value)}
-                      placeholder="your-app-password"
-                    />
-                  </div>
-                </div>
+                ) : (
+                  subscribers.map((subscriber) => (
+                    <div
+                      key={subscriber.id}
+                      className="flex items-center justify-between p-4 border rounded-lg"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3">
+                          <div>
+                            <p className="font-medium">{subscriber.email}</p>
+                            {subscriber.name && (
+                              <p className="text-sm text-gray-500">
+                                {subscriber.name}
+                              </p>
+                            )}
+                          </div>
+                          <Badge
+                            variant={
+                              subscriber.status === "active"
+                                ? "default"
+                                : subscriber.status === "unsubscribed"
+                                  ? "secondary"
+                                  : "destructive"
+                            }
+                          >
+                            {subscriber.status}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">
+                          Subscribed:{" "}
+                          {new Date(
+                            subscriber.subscribed_at,
+                          ).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {subscriber.status === "active" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleUnsubscribe(subscriber.email)}
+                          >
+                            Unsubscribe
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDeleteSubscriber(subscriber.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
-
-          <Button type="submit" disabled={saving}>
-            {saving ? "Saving..." : "Save Email Settings"}
-          </Button>
-        </form>
-      </TabsContent>
-
-      <TabsContent value="subscribers">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span className="flex items-center">
-                <Users className="w-5 h-5 mr-2" />
-                Email Subscribers ({subscribers.length})
-              </span>
-              <Button size="sm" variant="outline">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Subscriber
-              </Button>
-            </CardTitle>
-            <CardDescription>
-              Manage your email newsletter subscribers
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {subscribers.length === 0 ? (
-                <p className="text-center text-gray-500 py-8">
-                  No subscribers yet. Start collecting email addresses!
-                </p>
-              ) : (
-                subscribers.map((subscriber) => (
-                  <div
-                    key={subscriber.id}
-                    className="flex items-center justify-between p-4 border rounded-lg"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3">
-                        <div>
-                          <p className="font-medium">{subscriber.email}</p>
-                          {subscriber.name && (
-                            <p className="text-sm text-gray-500">
-                              {subscriber.name}
-                            </p>
-                          )}
-                        </div>
-                        <Badge
-                          variant={
-                            subscriber.status === "active"
-                              ? "default"
-                              : subscriber.status === "unsubscribed"
-                              ? "secondary"
-                              : "destructive"
-                          }
-                        >
-                          {subscriber.status}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Subscribed:{" "}
-                        {new Date(
-                          subscriber.subscribed_at,
-                        ).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      {subscriber.status === "active" && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleUnsubscribe(subscriber.email)}
-                        >
-                          Unsubscribe
-                        </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDeleteSubscriber(subscriber.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
-    </Tabs>
-  </div>
-);
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
 }

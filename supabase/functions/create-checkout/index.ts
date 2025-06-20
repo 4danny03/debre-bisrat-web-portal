@@ -1,12 +1,14 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { corsHeaders } from "@shared/cors.ts";
+import {
+  handleCorsOptions,
+  formatErrorResponse,
+  formatSuccessResponse,
+  sanitizeString,
+  validateEmail,
+  checkRateLimit,
+} from "@shared/utils.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
 
 interface CheckoutRequest {
   amount: string;
@@ -50,26 +52,33 @@ function validateInput(data: CheckoutRequest): {
   }
 
   // Validate email format
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(data.email)) {
+  if (!validateEmail(data.email)) {
     errors.push("Invalid email format");
   }
 
   // Sanitize string inputs
-  if (data.name && data.name.length > 100) {
-    errors.push("Name must be less than 100 characters");
+  if (data.name && sanitizeString(data.name, 100) !== data.name) {
+    errors.push("Name contains invalid characters or is too long");
   }
 
-  if (data.address && data.address.length > 200) {
-    errors.push("Address must be less than 200 characters");
+  if (data.address && sanitizeString(data.address, 200) !== data.address) {
+    errors.push("Address contains invalid characters or is too long");
   }
 
   return { isValid: errors.length === 0, errors };
 }
 
-serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+Deno.serve(async (req: Request) => {
+  const corsResponse = handleCorsOptions(req);
+  if (corsResponse) return corsResponse;
+
+  // Rate limiting
+  const clientIP =
+    req.headers.get("x-forwarded-for") ||
+    req.headers.get("x-real-ip") ||
+    "unknown";
+  if (!checkRateLimit(clientIP, 10, 60000)) {
+    return formatErrorResponse(new Error("Rate limit exceeded"), 429);
   }
 
   try {
@@ -225,17 +234,11 @@ serve(async (req: Request) => {
       console.error("Exception storing donation record:", dbError);
     }
 
-    return new Response(JSON.stringify({ url: session.url }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+    return formatSuccessResponse({ url: session.url });
   } catch (error) {
     console.error("Error in create-checkout function:", error);
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    return formatErrorResponse(new Error(errorMessage), 500);
   }
 });

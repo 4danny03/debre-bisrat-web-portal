@@ -1,40 +1,15 @@
-
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { corsHeaders } from "@shared/cors.ts";
+import {
+  handleCorsOptions,
+  formatErrorResponse,
+  formatSuccessResponse,
+  sanitizeString,
+  validateEmail,
+  checkRateLimit,
+} from "@shared/utils.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-function handleCorsOptions(req: Request) {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
-  return null;
-}
-
-function formatErrorResponse(error: Error, status = 400) {
-  console.error(`Error: ${error.message}`);
-  return new Response(
-    JSON.stringify({
-      error: error.message,
-    }),
-    {
-      status,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    },
-  );
-}
-
-function formatSuccessResponse(data: any, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
-
-serve(async (req) => {
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
   const corsResponse = handleCorsOptions(req);
   if (corsResponse) return corsResponse;
@@ -66,19 +41,35 @@ serve(async (req) => {
       return formatSuccessResponse({ testimonials: data });
     } else if (req.method === "POST") {
       // Create a new testimonial
-      const { name, email, testimony, is_public } = await req.json();
+      const { name, email, content } = await req.json();
 
-      if (!name || !testimony) {
-        throw new Error("Name and testimony are required");
+      if (!name || !content) {
+        throw new Error("Name and testimonial content are required");
+      }
+
+      // Rate limiting for testimonial submissions
+      const clientIP =
+        req.headers.get("x-forwarded-for") ||
+        req.headers.get("x-real-ip") ||
+        "unknown";
+      if (!checkRateLimit(`testimonial_${clientIP}`, 3, 300000)) {
+        // 3 requests per 5 minutes
+        throw new Error(
+          "Too many testimonials. Please wait before submitting another.",
+        );
+      }
+
+      // Validate email if provided
+      if (email && !validateEmail(email)) {
+        throw new Error("Invalid email format");
       }
 
       const { data, error } = await supabaseClient
         .from("testimonials")
         .insert({
-          name,
-          email,
-          testimony,
-          is_public: is_public || false,
+          name: sanitizeString(name, 100),
+          content: sanitizeString(content, 1000),
+          is_approved: false, // All testimonials need approval
         })
         .select()
         .single();
@@ -114,13 +105,12 @@ serve(async (req) => {
         throw new Error("Unauthorized: Admin access required");
       }
 
-      const { is_approved, is_public } = await req.json();
+      const { is_approved } = await req.json();
 
       const { data, error } = await supabaseClient
         .from("testimonials")
         .update({
           is_approved,
-          is_public,
           updated_at: new Date().toISOString(),
         })
         .eq("id", testimonialId)
@@ -165,7 +155,9 @@ serve(async (req) => {
 
       if (error) throw error;
 
-      return formatSuccessResponse({ message: "Testimonial deleted successfully" });
+      return formatSuccessResponse({
+        message: "Testimonial deleted successfully",
+      });
     }
 
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
