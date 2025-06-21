@@ -205,6 +205,168 @@ const translations: Record<string, Record<Language, string>> = {
     en: "Register & Pay $100",
     am: "ይመዝገቡ እና $100 ይክፈሉ",
   },
+
+  // Membership Registration Form Fields
+  first_name: { en: "First Name", am: "መጠሪያ ስም" },
+  middle_name: { en: "Middle Name", am: "የአባት ስም" },
+  last_name: { en: "Last Name", am: "የአያት ስም" },
+  baptismal_name: { en: "Baptismal Name", am: "የጥምቀት ስም" },
+  date_of_birth: { en: "Date of Birth", am: "የትውልድ ቀን" },
+  gender: { en: "Gender", am: "ፆታ" },
+  male: { en: "Male", am: "ወንድ" },
+  female: { en: "Female", am: "ሴት" },
+  street_address: { en: "Street Address", am: "የመንገድ አድራሻ" },
+  apt_suite_bldg: {
+    en: "Apt, Suite, Bldg. (optional)",
+    am: "አፓርትመንት፣ ሱት፣ ህንፃ (አማራጭ)",
+  },
+  city: { en: "City", am: "ከተማ" },
+  state_province_region: { en: "State/Province/Region", am: "ግዛት/ክልል/ወረዳ" },
+  postal_zip_code: { en: "Postal/Zip Code", am: "ፖስታ/ዚፕ ኮድ" },
+  country: { en: "Country", am: "ሀገር" },
+  united_states: { en: "United States", am: "አሜሪካ" },
+  canada: { en: "Canada", am: "ካናዳ" },
+  ethiopia: { en: "Ethiopia", am: "ኢትዮጵያ" },
+  other: { en: "Other", am: "ሌላ" },
+  regular_member: {
+    en: "Regular Member ($100/year)",
+    am: "መደበኛ አባል ($100/አመት)",
+  },
+  student_member: { en: "Student Member ($50/year)", am: "የተማሪ አባል ($50/አመት)" },
+  senior_member: { en: "Senior Member ($75/year)", am: "የአዛውንት አባል ($75/አመት)" },
+  family_member: {
+    en: "Family Member ($200/year)",
+    am: "የቤተሰብ አባል ($200/አመት)",
+  },
+  previous_member_orthodox: {
+    en: "I was previously a member of another Orthodox church",
+    am: "ከዚህ በፊት የሌላ ኦርቶዶክስ ቤተክርስቲያን አባል ነበርኩ",
+  },
+  previous_church_name: { en: "Previous Church Name", am: "የቀድሞ ቤተክርስቲያን ስም" },
+  baptized: { en: "I have been baptized", am: "ተጠምቄአለሁ" },
+  baptism_date: { en: "Baptism Date", am: "የጥምቀት ቀን" },
+  marital_status: { en: "Marital Status", am: "የጋብቻ ሁኔታ" },
+  single: { en: "Single", am: "ያላገባ" },
+  married: { en: "Married", am: "ያገባ" },
+  divorced: { en: "Divorced", am: "የተፋታ" },
+  widowed: { en: "Widowed", am: "የትዳር አጋሩ የሞተበት" },
+  spouse_information: { en: "Spouse Information", am: "የትዳር አጋር መረጃ" },
+  spouse: { en: "Spouse", am: "የትዳር አጋር" },
+  spouse_baptismal_name: {
+    en: "Spouse Baptismal Name",
+    am: "የትዳር አጋር የጥምቀት ስም",
+  },
+  spouse_phone: { en: "Spouse Phone", am: "የትዳር አጋር ስልክ" },
+  spouse_email: { en: "Spouse Email", am: "የትዳር አጋር ኢሜል" },
+  children_information: { en: "Children Information", am: "የልጆች መረጃ" },
+  child_1: { en: "Child 1", am: "ልጅ 1" },
+  child_2: { en: "Child 2", am: "ልጅ 2" },
+  ministry_interests: {
+    en: "Ministry Interests (Select all that apply)",
+    am: "የአገልግሎት ፍላጎቶች (የሚመለከትዎትን ሁሉ ይምረጡ)",
+  },
+  volunteer_interests: {
+    en: "Volunteer Interests (Select all that apply)",
+    am: "የበጎ ፈቃድ ፍላጎቶች (የሚመለከትዎትን ሁሉ ይምረጡ)",
+  },
+  special_skills: {
+    en: "Special Skills or Talents",
+    am: "ልዩ ችሎታዎች ወይም ተሰጥኦዎች",
+  },
+  skills_placeholder: {
+    en: "Please describe any special skills, talents, or professional expertise you'd like to share...",
+    am: "እባክዎን ማካፈል የሚፈልጓቸውን ልዩ ችሎታዎች፣ ተሰጥኦዎች ወይም ሙያዊ ብቃቶች ይግለጹ...",
+  },
+  emergency_contact_info: {
+    en: "Emergency Contact Information",
+    am: "የአደጋ ጊዜ ተጠሪ መረጃ",
+  },
+  emergency_contact_name: {
+    en: "Emergency Contact Name",
+    am: "የአደጋ ጊዜ ተጠሪ ስም",
+  },
+  emergency_contact_phone: {
+    en: "Emergency Contact Phone",
+    am: "የአደጋ ጊዜ ተጠሪ ስልክ",
+  },
+  emergency_contact_relation: {
+    en: "Relationship to Emergency Contact",
+    am: "ከአደጋ ጊዜ ተጠሪ ጋር ያለዎት ግንኙነት",
+  },
+  emergency_relation_placeholder: {
+    en: "e.g., Spouse, Parent, Sibling, Friend",
+    am: "ለምሳሌ፣ ባል/ሚስት፣ ወላጅ፣ ወንድም/እህት፣ ጓደኛ",
+  },
+  final_details_review: {
+    en: "Final Details & Review",
+    am: "የመጨረሻ ዝርዝሮች እና ግምገማ",
+  },
+  email_updates_consent: {
+    en: "I would like to receive email updates about church events and news",
+    am: "ስለ ቤተክርስቲያን ዝግጅቶች እና ዜናዎች በኢሜይል መረጃዎችን መቀበል እፈልጋለሁ",
+  },
+  sms_updates_consent: {
+    en: "I would like to receive SMS updates for urgent announcements",
+    am: "ለአስቸኳይ ማስታወቂያዎች በኤስኤምኤስ መረጃዎችን መቀበል እፈልጋለሁ",
+  },
+  how_did_you_hear: {
+    en: "How did you hear about our church?",
+    am: "ስለ ቤተክርስቲያናችን እንዴት ሰሙ?",
+  },
+  please_select: { en: "Please select...", am: "እባክዎን ይምረጡ..." },
+  friend_family: { en: "Friend or Family Member", am: "ጓደኛ ወይም የቤተሰብ አባል" },
+  church_website: { en: "Church Website", am: "የቤተክርስቲያን ድህረ ገጽ" },
+  social_media: { en: "Social Media", am: "ማህበራዊ ሚዲያ" },
+  community_event: { en: "Community Event", am: "የማህበረሰብ ዝግጅት" },
+  drove_by: { en: "Drove by the Church", am: "ቤተክርስቲያኑን አልፌ ሳይ" },
+  additional_notes: {
+    en: "Additional Notes or Comments",
+    am: "ተጨማሪ ማስታወሻዎች ወይም አስተያየቶች",
+  },
+  notes_placeholder: {
+    en: "Please share anything else you'd like us to know...",
+    am: "እባክዎን እኛ እንድናውቅ የሚፈልጉትን ማንኛውንም ነገር ያካፍሉ...",
+  },
+  agree_terms: {
+    en: "I agree to the church's terms and conditions, and I understand that membership requires an annual fee. I commit to participating in church activities and supporting the church community.",
+    am: "የቤተክርስቲያኑን ውሎች እና ሁኔታዎች እስማማለሁ፣ እና አባልነት አመታዊ ክፍያ እንደሚጠይቅ ተረድቻለሁ። በቤተክርስቲያን እንቅስቃሴዎች ለመሳተፍ እና የቤተክርስቲያን ማህበረሰብን ለመደገፍ እቃጠራለሁ።",
+  },
+  photo_consent: {
+    en: "I consent to having my photo taken during church events and activities for use in church publications, website, and social media.",
+    am: "በቤተክርስቲያን ዝግጅቶች እና እንቅስቃሴዎች ወቅት ፎቶዬ እንዲነሳ እና በቤተክርስቲያን ህትመቶች፣ ድህረ ገጽ እና ማህበራዊ ሚዲያ ላይ እንዲውል ፈቃዴን እሰጣለሁ።",
+  },
+  membership_fee: { en: "Membership Fee", am: "የአባልነት ክፍያ" },
+  annual_membership_fee: {
+    en: "Annual membership fee:",
+    am: "አመታዊ የአባልነት ክፍያ:",
+  },
+  payment_redirect_notice: {
+    en: "After submitting this form, you will be redirected to a secure payment page to complete your membership registration.",
+    am: "ይህንን ቅጽ ካስገቡ በኋላ፣ የአባልነት ምዝገባዎን ለማጠናቀቅ ወደ ደህንነቱ የተጠበቀ የክፍያ ገጽ ይዞረዛሉ።",
+  },
+  previous: { en: "Previous", am: "ቀዳሚ" },
+  next: { en: "Next", am: "ቀጣይ" },
+  complete_registration: {
+    en: "Complete Registration & Pay",
+    am: "ምዝገባን አጠናቅቅ እና ክፈል",
+  },
+  personal_information: { en: "Personal Information", am: "የግል መረጃ" },
+  address_information: { en: "Address Information", am: "የአድራሻ መረጃ" },
+  membership_family_info: {
+    en: "Membership & Family Information",
+    am: "የአባልነት እና የቤተሰብ መረጃ",
+  },
+  ministry_emergency_contact: {
+    en: "Ministry Interests & Emergency Contact",
+    am: "የአገልግሎት ፍላጎቶች እና የአደጋ ጊዜ ተጠሪ",
+  },
+  step_personal: { en: "Personal", am: "የግል" },
+  step_address: { en: "Address", am: "አድራሻ" },
+  step_membership: { en: "Membership", am: "አባልነት" },
+  step_ministry: { en: "Ministry", am: "አገልግሎት" },
+  step_review: { en: "Review", am: "ግምገማ" },
+  date: { en: "Date", am: "ቀን" },
+  required: { en: "*", am: "*" },
 };
 
 // Language Provider component

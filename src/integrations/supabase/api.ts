@@ -1,5 +1,5 @@
 import { supabase } from "./client";
-import { DataSyncService } from "@/services/DataSyncService";
+import { DataSyncService, dataSyncService } from "@/services/DataSyncService";
 
 export const api = {
   sermons: {
