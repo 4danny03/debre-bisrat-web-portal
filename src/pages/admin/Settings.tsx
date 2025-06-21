@@ -195,6 +195,7 @@ export default function Settings() {
 
       setSubscribers(subscribersData || []);
       setTemplates(templatesData || []);
+
     } catch (error) {
       console.error("Error loading settings:", error);
       toast({
@@ -437,9 +438,7 @@ export default function Settings() {
                   <Input
                     id="churchName"
                     value={settings.church_name}
-                    onChange={(e) =>
-                      handleChange("church_name", e.target.value)
-                    }
+                    onChange={(e: any) => handleChange("church_name", e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -447,9 +446,7 @@ export default function Settings() {
                   <Input
                     id="address"
                     value={settings.church_address}
-                    onChange={(e) =>
-                      handleChange("church_address", e.target.value)
-                    }
+                    onChange={(e) => handleChange("church_address", e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -457,9 +454,7 @@ export default function Settings() {
                   <Input
                     id="phone"
                     value={settings.phone_number}
-                    onChange={(e) =>
-                      handleChange("phone_number", e.target.value)
-                    }
+                    onChange={(e) => handleChange("phone_number", e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -491,9 +486,7 @@ export default function Settings() {
                   </div>
                   <Switch
                     checked={settings.enable_donations}
-                    onCheckedChange={(checked) =>
-                      handleChange("enable_donations", checked)
-                    }
+                    onCheckedChange={(checked) => handleChange("enable_donations", checked)}
                   />
                 </div>
                 <div className="flex items-center justify-between">
@@ -505,9 +498,7 @@ export default function Settings() {
                   </div>
                   <Switch
                     checked={settings.enable_membership}
-                    onCheckedChange={(checked) =>
-                      handleChange("enable_membership", checked)
-                    }
+                    onCheckedChange={(checked) => handleChange("enable_membership", checked)}
                   />
                 </div>
                 <div className="flex items-center justify-between">
@@ -519,9 +510,7 @@ export default function Settings() {
                   </div>
                   <Switch
                     checked={settings.maintenance_mode}
-                    onCheckedChange={(checked) =>
-                      handleChange("maintenance_mode", checked)
-                    }
+                    onCheckedChange={(checked) => handleChange("maintenance_mode", checked)}
                   />
                 </div>
               </CardContent>
@@ -555,9 +544,7 @@ export default function Settings() {
                   </div>
                   <Switch
                     checked={stripeSettings.enable_stripe}
-                    onCheckedChange={(checked) =>
-                      handleStripeChange("enable_stripe", checked)
-                    }
+                    onCheckedChange={(checked) => handleStripeChange("enable_stripe", checked)}
                   />
                 </div>
 
@@ -565,9 +552,7 @@ export default function Settings() {
                   <Label htmlFor="stripeMode">Stripe Mode</Label>
                   <Select
                     value={stripeSettings.stripe_mode}
-                    onValueChange={(value: "test" | "live") =>
-                      handleStripeChange("stripe_mode", value)
-                    }
+                    onValueChange={(value: "test" | "live") => handleStripeChange("stripe_mode", value)}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -585,12 +570,7 @@ export default function Settings() {
                     id="publishableKey"
                     type="password"
                     value={stripeSettings.stripe_publishable_key}
-                    onChange={(e) =>
-                      handleStripeChange(
-                        "stripe_publishable_key",
-                        e.target.value,
-                      )
-                    }
+                    onChange={(e) => handleStripeChange("stripe_publishable_key", e.target.value)}
                     placeholder="pk_test_..."
                   />
                 </div>
@@ -601,9 +581,7 @@ export default function Settings() {
                     id="secretKey"
                     type="password"
                     value={stripeSettings.stripe_secret_key}
-                    onChange={(e) =>
-                      handleStripeChange("stripe_secret_key", e.target.value)
-                    }
+                    onChange={(e) => handleStripeChange("stripe_secret_key", e.target.value)}
                     placeholder="sk_test_..."
                   />
                 </div>
@@ -614,12 +592,7 @@ export default function Settings() {
                     id="webhookSecret"
                     type="password"
                     value={stripeSettings.stripe_webhook_secret}
-                    onChange={(e) =>
-                      handleStripeChange(
-                        "stripe_webhook_secret",
-                        e.target.value,
-                      )
-                    }
+                    onChange={(e) => handleStripeChange("stripe_webhook_secret", e.target.value)}
                     placeholder="whsec_..."
                   />
                 </div>
@@ -628,9 +601,7 @@ export default function Settings() {
                   <Label htmlFor="currency">Default Currency</Label>
                   <Select
                     value={stripeSettings.default_currency}
-                    onValueChange={(value) =>
-                      handleStripeChange("default_currency", value)
-                    }
+                    onValueChange={(value) => handleStripeChange("default_currency", value)}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -640,186 +611,28 @@ export default function Settings() {
                       <SelectItem value="EUR">EUR - Euro</SelectItem>
                       <SelectItem value="GBP">GBP - British Pound</SelectItem>
                       <SelectItem value="CAD">CAD - Canadian Dollar</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
 
-            <Button type="submit" disabled={saving}>
-              {saving ? "Saving..." : "Save Stripe Settings"}
-            </Button>
-          </form>
-        </TabsContent>
+          <Button type="submit" disabled={saving}>
+            {saving ? "Saving..." : "Save Stripe Settings"}
+          </Button>
+        </form>
+      </TabsContent>
 
-        <TabsContent value="email">
-          <form onSubmit={handleEmailSubmit}>
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Mail className="w-5 h-5 mr-2" />
-                  Email & Newsletter Settings
-                </CardTitle>
-                <CardDescription>
-                  Configure email notifications and newsletter system
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="space-y-0.5">
-                    <Label>Enable Newsletter System</Label>
-                    <p className="text-sm text-gray-500">
-                      Allow newsletter subscriptions and campaigns
-                    </p>
-                  </div>
-                  <Switch
-                    checked={emailSettings.enable_newsletters}
-                    onCheckedChange={(checked) =>
-                      handleEmailChange("enable_newsletters", checked)
-                    }
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="fromEmail">From Email</Label>
-                    <Input
-                      id="fromEmail"
-                      type="email"
-                      value={emailSettings.from_email}
-                      onChange={(e) =>
-                        handleEmailChange("from_email", e.target.value)
-                      }
-                      placeholder="noreply@church.org"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="fromName">From Name</Label>
-                    <Input
-                      id="fromName"
-                      value={emailSettings.from_name}
-                      onChange={(e) =>
-                        handleEmailChange("from_name", e.target.value)
-                      }
-                      placeholder="St. Gabriel Church"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="newsletterFreq">Newsletter Frequency</Label>
-                  <Select
-                    value={emailSettings.newsletter_frequency}
-                    onValueChange={(value: "daily" | "weekly" | "monthly") =>
-                      handleEmailChange("newsletter_frequency", value)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="daily">Daily</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Auto Welcome Email</Label>
-                    <p className="text-sm text-gray-500">
-                      Send welcome email to new subscribers
-                    </p>
-                  </div>
-                  <Switch
-                    checked={emailSettings.auto_welcome_email}
-                    onCheckedChange={(checked) =>
-                      handleEmailChange("auto_welcome_email", checked)
-                    }
-                  />
-                </div>
-
-                <div className="border-t pt-4">
-                  <h4 className="font-medium mb-3">SMTP Configuration</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="smtpHost">SMTP Host</Label>
-                      <Input
-                        id="smtpHost"
-                        value={emailSettings.smtp_host}
-                        onChange={(e) =>
-                          handleEmailChange("smtp_host", e.target.value)
-                        }
-                        placeholder="smtp.gmail.com"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="smtpPort">SMTP Port</Label>
-                      <Input
-                        id="smtpPort"
-                        type="number"
-                        value={emailSettings.smtp_port}
-                        onChange={(e) =>
-                          handleEmailChange(
-                            "smtp_port",
-                            parseInt(e.target.value),
-                          )
-                        }
-                        placeholder="587"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 mt-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="smtpUsername">SMTP Username</Label>
-                      <Input
-                        id="smtpUsername"
-                        value={emailSettings.smtp_username}
-                        onChange={(e) =>
-                          handleEmailChange("smtp_username", e.target.value)
-                        }
-                        placeholder="your-email@gmail.com"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="smtpPassword">SMTP Password</Label>
-                      <Input
-                        id="smtpPassword"
-                        type="password"
-                        value={emailSettings.smtp_password}
-                        onChange={(e) =>
-                          handleEmailChange("smtp_password", e.target.value)
-                        }
-                        placeholder="your-app-password"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Button type="submit" disabled={saving}>
-              {saving ? "Saving..." : "Save Email Settings"}
-            </Button>
-          </form>
-        </TabsContent>
-
-        <TabsContent value="subscribers">
-          <Card>
+      <TabsContent value="email">
+        <form onSubmit={handleEmailSubmit}>
+          <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center">
-                  <Users className="w-5 h-5 mr-2" />
-                  Email Subscribers ({subscribers.length})
-                </span>
-                <Button size="sm" variant="outline">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Subscriber
-                </Button>
+              <CardTitle className="flex items-center">
+                <Mail className="w-5 h-5 mr-2" />
+                Email & Newsletter Settings
               </CardTitle>
               <CardDescription>
-                Manage your email newsletter subscribers
+                Configure email notifications and newsletter system
               </CardDescription>
             </CardHeader>
             <CardContent>
