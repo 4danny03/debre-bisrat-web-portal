@@ -435,12 +435,16 @@ const MembershipRegistration: FC = () => {
           <div className="space-y-6">
             <div className="flex items-center gap-2 mb-4">
               <Calendar className="h-5 w-5 text-church-burgundy" />
-              <h3 className="text-lg font-semibold">Personal Information</h3>
+              <h3 className="text-lg font-semibold">
+                {t("personal_information")}
+              </h3>
             </div>
 
             {/* Registration Date */}
             <div className="space-y-2">
-              <Label htmlFor="registrationDate">Date *</Label>
+              <Label htmlFor="registrationDate">
+                {t("date")} {t("required")}
+              </Label>
               <Input
                 id="registrationDate"
                 type="date"
@@ -456,7 +460,9 @@ const MembershipRegistration: FC = () => {
             {/* Name Fields */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="firstName">First Name *</Label>
+                <Label htmlFor="firstName">
+                  {t("first_name")} {t("required")}
+                </Label>
                 <Input
                   id="firstName"
                   value={formData.firstName}
@@ -471,7 +477,7 @@ const MembershipRegistration: FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="middleName">Middle Name</Label>
+                <Label htmlFor="middleName">{t("middle_name")}</Label>
                 <Input
                   id="middleName"
                   value={formData.middleName}
@@ -482,7 +488,9 @@ const MembershipRegistration: FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name *</Label>
+                <Label htmlFor="lastName">
+                  {t("last_name")} {t("required")}
+                </Label>
                 <Input
                   id="lastName"
                   value={formData.lastName}
@@ -499,7 +507,7 @@ const MembershipRegistration: FC = () => {
 
             {/* Baptismal Name */}
             <div className="space-y-2">
-              <Label htmlFor="baptismalName">Baptismal Name</Label>
+              <Label htmlFor="baptismalName">{t("baptismal_name")}</Label>
               <Input
                 id="baptismalName"
                 value={formData.baptismalName}
@@ -512,7 +520,9 @@ const MembershipRegistration: FC = () => {
             {/* Contact Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone *</Label>
+                <Label htmlFor="phone">
+                  {t("phone")} {t("required")}
+                </Label>
                 <Input
                   id="phone"
                   type="tel"
@@ -526,7 +536,9 @@ const MembershipRegistration: FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email *</Label>
+                <Label htmlFor="email">
+                  {t("email")} {t("required")}
+                </Label>
                 <Input
                   id="email"
                   type="email"
@@ -542,7 +554,9 @@ const MembershipRegistration: FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="dateOfBirth">Date of Birth *</Label>
+                <Label htmlFor="dateOfBirth">
+                  {t("date_of_birth")} {t("required")}
+                </Label>
                 <Input
                   id="dateOfBirth"
                   type="date"
@@ -560,7 +574,9 @@ const MembershipRegistration: FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>Gender *</Label>
+                <Label>
+                  {t("gender")} {t("required")}
+                </Label>
                 <RadioGroup
                   value={formData.gender}
                   onValueChange={(value) => handleInputChange("gender", value)}
@@ -568,11 +584,11 @@ const MembershipRegistration: FC = () => {
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="male" id="male" />
-                    <Label htmlFor="male">Male</Label>
+                    <Label htmlFor="male">{t("male")}</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="female" id="female" />
-                    <Label htmlFor="female">Female</Label>
+                    <Label htmlFor="female">{t("female")}</Label>
                   </div>
                 </RadioGroup>
                 {formErrors.gender && (
@@ -588,11 +604,15 @@ const MembershipRegistration: FC = () => {
           <div className="space-y-6">
             <div className="flex items-center gap-2 mb-4">
               <MapPin className="h-5 w-5 text-church-burgundy" />
-              <h3 className="text-lg font-semibold">Address Information</h3>
+              <h3 className="text-lg font-semibold">
+                {t("address_information")}
+              </h3>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="streetAddress">Street Address *</Label>
+              <Label htmlFor="streetAddress">
+                {t("street_address")} {t("required")}
+              </Label>
               <Input
                 id="streetAddress"
                 value={formData.streetAddress}
@@ -609,7 +629,7 @@ const MembershipRegistration: FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="aptSuiteBldg">Apt, Suite, Bldg. (optional)</Label>
+              <Label htmlFor="aptSuiteBldg">{t("apt_suite_bldg")}</Label>
               <Input
                 id="aptSuiteBldg"
                 value={formData.aptSuiteBldg}
@@ -621,7 +641,9 @@ const MembershipRegistration: FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="city">City *</Label>
+                <Label htmlFor="city">
+                  {t("city")} {t("required")}
+                </Label>
                 <Input
                   id="city"
                   value={formData.city}
@@ -635,7 +657,7 @@ const MembershipRegistration: FC = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="stateProvinceRegion">
-                  State/Province/Region *
+                  {t("state_province_region")} {t("required")}
                 </Label>
                 <Input
                   id="stateProvinceRegion"
@@ -657,7 +679,9 @@ const MembershipRegistration: FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="postalZipCode">Postal/Zip Code *</Label>
+                <Label htmlFor="postalZipCode">
+                  {t("postal_zip_code")} {t("required")}
+                </Label>
                 <Input
                   id="postalZipCode"
                   value={formData.postalZipCode}
@@ -674,7 +698,7 @@ const MembershipRegistration: FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="country">Country</Label>
+                <Label htmlFor="country">{t("country")}</Label>
                 <Select
                   value={formData.country}
                   onValueChange={(value) => handleInputChange("country", value)}
@@ -683,10 +707,12 @@ const MembershipRegistration: FC = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="United States">United States</SelectItem>
-                    <SelectItem value="Canada">Canada</SelectItem>
-                    <SelectItem value="Ethiopia">Ethiopia</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    <SelectItem value="United States">
+                      {t("united_states")}
+                    </SelectItem>
+                    <SelectItem value="Canada">{t("canada")}</SelectItem>
+                    <SelectItem value="Ethiopia">{t("ethiopia")}</SelectItem>
+                    <SelectItem value="Other">{t("other")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1556,10 +1582,10 @@ const MembershipRegistration: FC = () => {
         <Card className="bg-white shadow-lg">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl text-church-burgundy">
-              {t("membership.title") || getTranslation("title")}
+              {t("membership_registration_title")}
             </CardTitle>
             <CardDescription className="text-lg">
-              {t("membership.description") || getTranslation("description")}
+              {t("membership_registration_description")}
             </CardDescription>
           </CardHeader>
 
@@ -1570,31 +1596,31 @@ const MembershipRegistration: FC = () => {
                 <div className="flex items-center gap-2">
                   {getStepIcon(1)}
                   <span className="text-sm font-medium">
-                    {getTranslation("personal_step")}
+                    {t("step_personal")}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   {getStepIcon(2)}
                   <span className="text-sm font-medium">
-                    {getTranslation("address_step")}
+                    {t("step_address")}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   {getStepIcon(3)}
                   <span className="text-sm font-medium">
-                    {getTranslation("membership_step")}
+                    {t("step_membership")}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   {getStepIcon(4)}
                   <span className="text-sm font-medium">
-                    {getTranslation("ministry_step")}
+                    {t("step_ministry")}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   {getStepIcon(5)}
                   <span className="text-sm font-medium">
-                    {getTranslation("review_step")}
+                    {t("step_review")}
                   </span>
                 </div>
               </div>
@@ -1615,7 +1641,7 @@ const MembershipRegistration: FC = () => {
                 onClick={handlePrevious}
                 disabled={currentStep === 1}
               >
-                {getTranslation("previous")}
+                {t("previous")}
               </Button>
 
               {currentStep < totalSteps ? (
@@ -1624,7 +1650,7 @@ const MembershipRegistration: FC = () => {
                   onClick={handleNext}
                   className="bg-church-burgundy hover:bg-church-burgundy/90"
                 >
-                  {getTranslation("next")}
+                  {t("next")}
                 </Button>
               ) : (
                 <Button
@@ -1636,12 +1662,12 @@ const MembershipRegistration: FC = () => {
                   {isSubmitting ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      {getTranslation("processing")}
+                      {t("processing")}
                     </>
                   ) : (
                     <>
                       <CreditCard className="h-4 w-4 mr-2" />
-                      Complete Registration & Pay $
+                      {t("complete_registration")} $
                       {formData.membershipType === "regular"
                         ? "100"
                         : formData.membershipType === "student"

@@ -52,6 +52,11 @@ class CoreDataSyncService {
       return () => {};
     }
 
+    // Ensure listeners array is initialized
+    if (!this.listeners || !Array.isArray(this.listeners)) {
+      this.listeners = [];
+    }
+
     const listener: EventListener = {
       id: `listener_${this.nextListenerId++}`,
       event,
@@ -62,7 +67,11 @@ class CoreDataSyncService {
 
     // Return cleanup function
     return () => {
-      this.listeners = this.listeners.filter((l) => l.id !== listener.id);
+      if (this.listeners && Array.isArray(this.listeners)) {
+        this.listeners = this.listeners.filter(
+          (l) => l && l.id !== listener.id,
+        );
+      }
     };
   }
 
@@ -84,7 +93,10 @@ class CoreDataSyncService {
     this.isProcessing = true;
 
     try {
-      const eventListeners = this.listeners.filter((l) => l.event === event);
+      const eventListeners =
+        this.listeners && Array.isArray(this.listeners)
+          ? this.listeners.filter((l) => l && l.event === event)
+          : [];
 
       eventListeners.forEach((listener) => {
         try {
@@ -115,7 +127,11 @@ class CoreDataSyncService {
    * Clear all listeners
    */
   clearAll(): void {
-    this.listeners = [];
+    if (this.listeners && Array.isArray(this.listeners)) {
+      this.listeners = [];
+    } else {
+      this.listeners = [];
+    }
     this.isProcessing = false;
   }
 
@@ -124,7 +140,10 @@ class CoreDataSyncService {
    */
   getStatus(): { listeners: number; isProcessing: boolean } {
     return {
-      listeners: this.listeners.length,
+      listeners:
+        this.listeners && Array.isArray(this.listeners)
+          ? this.listeners.length
+          : 0,
       isProcessing: this.isProcessing,
     };
   }
@@ -140,6 +159,13 @@ class AdminActionTracker {
   private maxErrors = 100;
   private nextActionId = 1;
   private nextErrorId = 1;
+
+  constructor() {
+    // Ensure arrays are always properly initialized
+    console.log("AdminActionTracker constructor called");
+    this.actions = [];
+    this.errors = [];
+  }
 
   /**
    * Record an admin action
@@ -157,6 +183,11 @@ class AdminActionTracker {
     }
 
     try {
+      // Ensure actions array is initialized
+      if (!this.actions || !Array.isArray(this.actions)) {
+        this.actions = [];
+      }
+
       const actionRecord: AdminAction = {
         id: `action_${this.nextActionId++}`,
         action,
@@ -170,14 +201,19 @@ class AdminActionTracker {
       this.actions.unshift(actionRecord);
 
       // Keep only the most recent actions
-      if (this.actions.length > this.maxActions) {
+      if (this.actions && this.actions.length > this.maxActions) {
         this.actions = this.actions.slice(0, this.maxActions);
       }
 
       console.log(`AdminActionTracker: Recorded ${action} on ${table}`);
     } catch (error) {
       console.error("AdminActionTracker: Error recording action:", error);
-      this.logError("Failed to record admin action", error as Error);
+      // Avoid recursive call if logError fails
+      try {
+        this.logError("Failed to record admin action", error as Error);
+      } catch (logErr) {
+        console.error("AdminActionTracker: Failed to log error:", logErr);
+      }
     }
   }
 
@@ -186,18 +222,23 @@ class AdminActionTracker {
    */
   logError(message: string, error: Error, context?: string): void {
     try {
+      // Ensure errors array is initialized
+      if (!this.errors || !Array.isArray(this.errors)) {
+        this.errors = [];
+      }
+
       const errorRecord: ErrorLog = {
         id: `error_${this.nextErrorId++}`,
-        error: `${message}: ${error.message}`,
+        error: `${message}: ${error?.message || "Unknown error"}`,
         timestamp: new Date(),
         context,
-        stack: error.stack,
+        stack: error?.stack,
       };
 
       this.errors.unshift(errorRecord);
 
       // Keep only the most recent errors
-      if (this.errors.length > this.maxErrors) {
+      if (this.errors && this.errors.length > this.maxErrors) {
         this.errors = this.errors.slice(0, this.maxErrors);
       }
 
@@ -212,10 +253,15 @@ class AdminActionTracker {
    */
   getRecentActions(limit = 10): AdminAction[] {
     try {
-      return this.actions.slice(
-        0,
-        Math.max(0, Math.min(limit, this.actions.length)),
-      );
+      if (!this.actions || !Array.isArray(this.actions)) {
+        console.warn("AdminActionTracker: Actions array is not initialized");
+        this.actions = [];
+        return [];
+      }
+      const actionsLength = Array.isArray(this.actions)
+        ? this.actions.length
+        : 0;
+      return this.actions.slice(0, Math.max(0, Math.min(limit, actionsLength)));
     } catch (error) {
       console.error("AdminActionTracker: Error getting recent actions:", error);
       return [];
@@ -227,10 +273,13 @@ class AdminActionTracker {
    */
   getRecentErrors(limit = 10): ErrorLog[] {
     try {
-      return this.errors.slice(
-        0,
-        Math.max(0, Math.min(limit, this.errors.length)),
-      );
+      if (!this.errors || !Array.isArray(this.errors)) {
+        console.warn("AdminActionTracker: Errors array is not initialized");
+        this.errors = [];
+        return [];
+      }
+      const errorsLength = Array.isArray(this.errors) ? this.errors.length : 0;
+      return this.errors.slice(0, Math.max(0, Math.min(limit, errorsLength)));
     } catch (error) {
       console.error("AdminActionTracker: Error getting recent errors:", error);
       return [];
@@ -242,10 +291,15 @@ class AdminActionTracker {
    */
   getActionsByUser(userId: string, limit = 20): AdminAction[] {
     try {
-      if (!userId) return [];
+      if (!userId || !this.actions || !Array.isArray(this.actions)) {
+        return [];
+      }
+      const actionsLength = Array.isArray(this.actions)
+        ? this.actions.length
+        : 0;
       return this.actions
-        .filter((action) => action.userId === userId)
-        .slice(0, Math.max(0, Math.min(limit, this.actions.length)));
+        .filter((action) => action && action.userId === userId)
+        .slice(0, Math.max(0, Math.min(limit, actionsLength)));
     } catch (error) {
       console.error(
         "AdminActionTracker: Error getting actions by user:",
@@ -260,10 +314,15 @@ class AdminActionTracker {
    */
   getActionsByTable(table: string, limit = 20): AdminAction[] {
     try {
-      if (!table) return [];
+      if (!table || !this.actions || !Array.isArray(this.actions)) {
+        return [];
+      }
+      const actionsLength = Array.isArray(this.actions)
+        ? this.actions.length
+        : 0;
       return this.actions
-        .filter((action) => action.table === table)
-        .slice(0, Math.max(0, Math.min(limit, this.actions.length)));
+        .filter((action) => action && action.table === table)
+        .slice(0, Math.max(0, Math.min(limit, actionsLength)));
     } catch (error) {
       console.error(
         "AdminActionTracker: Error getting actions by table:",
@@ -284,6 +343,14 @@ class AdminActionTracker {
     recentActivity: { today: number; thisWeek: number; thisMonth: number };
   } {
     try {
+      // Ensure arrays are initialized
+      if (!this.actions || !Array.isArray(this.actions)) {
+        this.actions = [];
+      }
+      if (!this.errors || !Array.isArray(this.errors)) {
+        this.errors = [];
+      }
+
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const thisWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -295,23 +362,37 @@ class AdminActionTracker {
       let thisWeekCount = 0;
       let thisMonthCount = 0;
 
-      this.actions.forEach((action) => {
-        // Count by table
-        actionsByTable[action.table] = (actionsByTable[action.table] || 0) + 1;
+      if (this.actions && Array.isArray(this.actions)) {
+        this.actions.forEach((action) => {
+          if (!action) return;
 
-        // Count by user
-        const user = action.userId || "unknown";
-        actionsByUser[user] = (actionsByUser[user] || 0) + 1;
+          // Count by table
+          if (action.table) {
+            actionsByTable[action.table] =
+              (actionsByTable[action.table] || 0) + 1;
+          }
 
-        // Count by time period
-        if (action.timestamp >= today) todayCount++;
-        if (action.timestamp >= thisWeek) thisWeekCount++;
-        if (action.timestamp >= thisMonth) thisMonthCount++;
-      });
+          // Count by user
+          const user = action.userId || "unknown";
+          actionsByUser[user] = (actionsByUser[user] || 0) + 1;
+
+          // Count by time period
+          if (action.timestamp) {
+            if (action.timestamp >= today) todayCount++;
+            if (action.timestamp >= thisWeek) thisWeekCount++;
+            if (action.timestamp >= thisMonth) thisMonthCount++;
+          }
+        });
+      }
+
+      const actionsLength = Array.isArray(this.actions)
+        ? this.actions.length
+        : 0;
+      const errorsLength = Array.isArray(this.errors) ? this.errors.length : 0;
 
       return {
-        totalActions: this.actions.length,
-        totalErrors: this.errors.length,
+        totalActions: actionsLength,
+        totalErrors: errorsLength,
         actionsByTable,
         actionsByUser,
         recentActivity: {
@@ -336,9 +417,16 @@ class AdminActionTracker {
    * Clear all data
    */
   clear(): void {
-    this.actions = [];
-    this.errors = [];
-    console.log("AdminActionTracker: All data cleared");
+    try {
+      this.actions = [];
+      this.errors = [];
+      console.log("AdminActionTracker: All data cleared");
+    } catch (error) {
+      console.error("AdminActionTracker: Error clearing data:", error);
+      // Force re-initialization
+      this.actions = [];
+      this.errors = [];
+    }
   }
 
   /**
@@ -349,11 +437,28 @@ class AdminActionTracker {
     errors: ErrorLog[];
     exportedAt: string;
   } {
-    return {
-      actions: [...this.actions],
-      errors: [...this.errors],
-      exportedAt: new Date().toISOString(),
-    };
+    try {
+      // Ensure arrays are initialized before spreading
+      if (!this.actions || !Array.isArray(this.actions)) {
+        this.actions = [];
+      }
+      if (!this.errors || !Array.isArray(this.errors)) {
+        this.errors = [];
+      }
+
+      return {
+        actions: [...this.actions],
+        errors: [...this.errors],
+        exportedAt: new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error("AdminActionTracker: Error exporting data:", error);
+      return {
+        actions: [],
+        errors: [],
+        exportedAt: new Date().toISOString(),
+      };
+    }
   }
 
   /**
@@ -447,6 +552,7 @@ class DataSyncServiceManager {
   private isInitialized = false;
 
   constructor() {
+    console.log("DataSyncServiceManager constructor called");
     this.coreService = new CoreDataSyncService();
     this.actionTracker = new AdminActionTracker();
     this.healthMonitor = new SystemHealthMonitor();
