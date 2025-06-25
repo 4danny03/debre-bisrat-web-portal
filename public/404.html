@@ -1,35 +1,19 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <title>St. Gabriel Ethiopian Orthodox Church</title>
-    <script type="text/javascript">
-      // Single Page Apps for GitHub Pages
-      // MIT License
-      // https://github.com/rafgraph/spa-github-pages
-      var pathSegmentsToKeep = 1;
-
-      var l = window.location;
-      l.replace(
-        l.protocol +
-          "//" +
-          l.hostname +
-          (l.port ? ":" + l.port : "") +
-          l.pathname
-            .split("/")
-            .slice(0, 1 + pathSegmentsToKeep)
-            .join("/") +
-          "/?/" +
-          l.pathname
-            .slice(1)
-            .split("/")
-            .slice(pathSegmentsToKeep)
-            .join("/")
-            .replace(/&/g, "~and~") +
-          (l.search ? "&" + l.search.slice(1).replace(/&/g, "~and~") : "") +
-          l.hash,
-      );
-    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>404 - Not Found</title>
+    <meta http-equiv="refresh" content="0; url=./" />
   </head>
-  <body></body>
+  <body>
+    <script>
+      // For GitHub Pages SPA fallback: redirect all 404s to index.html
+      window.location.replace('./');
+    </script>
+    <noscript>
+      <h1>404 - Not Found</h1>
+      <p>This page could not be found. Please return to the <a href="./">home page</a>.</p>
+    </noscript>
+  </body>
 </html>

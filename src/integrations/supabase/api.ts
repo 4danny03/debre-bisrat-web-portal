@@ -1,78 +1,7 @@
 import { supabase } from "./client";
-import { DataSyncService, dataSyncService } from "@/services/DataSyncService";
+import { dataSyncService } from "@/services/DataSyncService";
 
 export const api = {
-  sermons: {
-    getSermons: async () => {
-      const { data, error } = await supabase
-        .from("sermons")
-        .select("*")
-        .order("sermon_date", { ascending: false });
-
-      if (error) throw error;
-      return data;
-    },
-    getFeaturedSermons: async (limit = 3) => {
-      const { data, error } = await supabase
-        .from("sermons")
-        .select("*")
-        .eq("is_featured", true)
-        .order("sermon_date", { ascending: false })
-        .limit(limit);
-
-      if (error) throw error;
-      return data;
-    },
-    getSermonById: async (id: string) => {
-      const { data, error } = await supabase
-        .from("sermons")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    createSermon: async (sermon: any) => {
-      const { data, error } = await supabase
-        .from("sermons")
-        .insert([sermon])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Notify data sync service
-      DataSyncService.emitEvent("sermonsChanged", data);
-
-      return data;
-    },
-    updateSermon: async (id: string, updates: any) => {
-      const { data, error } = await supabase
-        .from("sermons")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Notify data sync service
-      DataSyncService.emitEvent("sermonsChanged", data);
-
-      return data;
-    },
-    deleteSermon: async (id: string) => {
-      const { error } = await supabase.from("sermons").delete().eq("id", id);
-
-      if (error) throw error;
-
-      // Notify data sync service
-      DataSyncService.emitEvent("sermonsChanged", { id });
-
-      return true;
-    },
-  },
   events: {
     getEvents: async () => {
       const { data, error } = await supabase
@@ -115,7 +44,7 @@ export const api = {
       if (error) throw error;
 
       // Notify data sync service
-      DataSyncService.emitEvent("eventsChanged", data);
+      dataSyncService.emitEvent("eventsChanged", data);
 
       return data;
     },
@@ -130,7 +59,7 @@ export const api = {
       if (error) throw error;
 
       // Notify data sync service
-      DataSyncService.emitEvent("eventsChanged", data);
+      dataSyncService.emitEvent("eventsChanged", data);
 
       return data;
     },
@@ -140,7 +69,7 @@ export const api = {
       if (error) throw error;
 
       // Notify data sync service
-      DataSyncService.emitEvent("eventsChanged", { id });
+      dataSyncService.emitEvent("eventsChanged", { id });
 
       return true;
     },
@@ -223,7 +152,7 @@ export const api = {
       if (error) throw error;
 
       // Notify data sync service
-      DataSyncService.emitEvent("galleryChanged", data);
+      dataSyncService.emitEvent("galleryChanged", data);
 
       return data;
     },
@@ -244,7 +173,7 @@ export const api = {
       if (error) throw error;
 
       // Notify data sync service
-      DataSyncService.emitEvent("galleryChanged", { id });
+      dataSyncService.emitEvent("galleryChanged", { id });
 
       return true;
     },
@@ -530,7 +459,7 @@ export const api = {
       const filePath = `${folder}/${fileName}`;
 
       // Upload the file to Supabase Storage
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from("images")
         .upload(filePath, file, {
           cacheControl: "3600",
@@ -831,7 +760,7 @@ export const api = {
       if (error) throw error;
 
       // Notify data sync service
-      dataSyncService.notifyAdminAction("update", "appointments", data);
+      dataSyncService.emitEvent("appointmentsChanged", data);
 
       return data;
     },
@@ -859,11 +788,7 @@ export const api = {
       if (error) throw error;
 
       // Notify data sync service
-      dataSyncService.notifyAdminAction(
-        "respond_appointment",
-        "appointments",
-        data,
-      );
+      dataSyncService.emitEvent("appointmentsChanged", data);
 
       return data;
     },
@@ -876,7 +801,7 @@ export const api = {
       if (error) throw error;
 
       // Notify data sync service
-      dataSyncService.notifyAdminAction("delete", "appointments", { id });
+      dataSyncService.emitEvent("appointmentsChanged", { id });
 
       return true;
     },
