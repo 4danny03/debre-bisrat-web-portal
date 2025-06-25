@@ -31,7 +31,7 @@ const Header: React.FC = () => {
           <div className="flex items-center mb-4 md:mb-0 group w-full md:w-auto">
             <div className="w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 mr-3 md:mr-4 rounded-full overflow-hidden border-4 border-church-gold shadow-xl transition-all duration-300 group-hover:scale-110 group-hover:shadow-2xl flex-shrink-0">
               <img
-                src="/images/church-icon.png"
+                src={import.meta.env.BASE_URL + "images/church-icon.png"}
                 alt="St. Gabriel Icon"
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 loading="lazy"
@@ -53,7 +53,7 @@ const Header: React.FC = () => {
                 </h1>
                 <div className="hidden lg:block w-8 h-5 ml-3 overflow-hidden rounded shadow-sm flex-shrink-0">
                   <img
-                    src="/images/church-flag.png"
+                    src={import.meta.env.BASE_URL + "images/church-flag.png"}
                     alt="Ethiopian Orthodox Church Flag"
                     className="w-full h-full object-cover"
                     loading="lazy"
