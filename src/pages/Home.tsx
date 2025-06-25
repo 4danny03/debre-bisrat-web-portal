@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Layout from "../components/Layout";
 import { Link } from "react-router-dom";
 import {
@@ -178,50 +178,56 @@ const Home: React.FC = () => {
   const [loadingEvents, setLoadingEvents] = useState(true);
 
   // Fallback events if no database events are available
-  const fallbackEvents = [
-    {
-      id: "fallback-1",
-      title:
-        language === "en"
-          ? "St. Gabriel Monthly Commemoration"
-          : "የቅዱስ ገብርኤል ወርሃዊ ተዝካር",
-      description: null,
-      event_date: "2025-05-19",
-      event_time: "10:00",
-      location: null,
-      image_url: "/images/religious/church-service.jpg",
-      is_featured: false,
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: "fallback-2",
-      title:
-        language === "en"
-          ? "Sunday School for Children"
-          : "የሰንበት ትምህርት ቤት ለልጆች",
-      description: null,
-      event_date: "2025-05-25",
-      event_time: "09:00",
-      location: null,
-      image_url: "/images/gallery/church-service.jpg",
-      is_featured: false,
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: "fallback-3",
-      title:
-        language === "en"
-          ? "Church Foundation Anniversary"
-          : "የቤተክርስቲያን መሰረት የተጣለበት ቀን",
-      description: null,
-      event_date: "2025-06-19",
-      event_time: "11:00",
-      location: null,
-      image_url: "/images/gallery/church-service.jpg",
-      is_featured: false,
-      created_at: new Date().toISOString(),
-    },
-  ];
+  const fallbackEvents = useMemo(
+    () => [
+      {
+        id: "fallback-1",
+        title:
+          language === "en"
+            ? "St. Gabriel Monthly Commemoration"
+            : "የቅዱስ ገብርኤል ወርሃዊ ተዝካር",
+        description: null,
+        event_date: "2025-05-19",
+        event_time: "10:00",
+        location: null,
+        image_url:
+          import.meta.env.BASE_URL + "images/religious/church-service.jpg",
+        is_featured: false,
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: "fallback-2",
+        title:
+          language === "en"
+            ? "Sunday School for Children"
+            : "የሰንበት ትምህርት ቤት ለልጆች",
+        description: null,
+        event_date: "2025-05-25",
+        event_time: "09:00",
+        location: null,
+        image_url:
+          import.meta.env.BASE_URL + "images/gallery/church-service.jpg",
+        is_featured: false,
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: "fallback-3",
+        title:
+          language === "en"
+            ? "Church Foundation Anniversary"
+            : "የቤተክርስቲያን መሰረት የተጣለበት ቀን",
+        description: null,
+        event_date: "2025-06-19",
+        event_time: "11:00",
+        location: null,
+        image_url:
+          import.meta.env.BASE_URL + "images/gallery/church-service.jpg",
+        is_featured: false,
+        created_at: new Date().toISOString(),
+      },
+    ],
+    [language],
+  );
 
   const fetchUpcomingEvents = useCallback(async () => {
     try {
@@ -241,7 +247,7 @@ const Home: React.FC = () => {
     } finally {
       setLoadingEvents(false);
     }
-  }, []);
+  }, [fallbackEvents]);
 
   useEffect(() => {
     fetchUpcomingEvents();
@@ -250,7 +256,8 @@ const Home: React.FC = () => {
   // Slides for the image slider with new church images
   const sliderContent = [
     {
-      image: "/images/gallery/church-procession-1.jpg",
+      image:
+        import.meta.env.BASE_URL + "images/gallery/church-procession-1.jpg",
       title:
         language === "en"
           ? "Welcome to Our Church"
@@ -261,7 +268,8 @@ const Home: React.FC = () => {
           : "ደብረ ብሥራት ዳግማዊ ቁልቢ ቅዱስ ገብርኤል ቤተክርስቲያን",
     },
     {
-      image: "/images/gallery/church-ceremony-new.jpg",
+      image:
+        import.meta.env.BASE_URL + "images/gallery/church-ceremony-new.jpg",
       title: language === "en" ? "Sacred Ceremony" : "ቅዱስ ሥርዓት",
       content:
         language === "en"
@@ -269,7 +277,8 @@ const Home: React.FC = () => {
           : "በባህላዊ ኦርቶዶክስ ሥርዓቶች እምነታችንን እናከብራለን",
     },
     {
-      image: "/images/gallery/church-celebration.jpg",
+      image:
+        import.meta.env.BASE_URL + "images/gallery/church-celebration.jpg",
       title: language === "en" ? "Community Celebration" : "የማህበረሰብ በዓል",
       content:
         language === "en"
@@ -277,7 +286,8 @@ const Home: React.FC = () => {
           : "በእምነት አንድ ሆነን የእግዚአብሔርን በረከት በአንድነት እናከብራለን",
     },
     {
-      image: "/images/gallery/church-gathering.jpg",
+      image:
+        import.meta.env.BASE_URL + "images/gallery/church-gathering.jpg",
       title: language === "en" ? "Faithful Gathering" : "የምእመናን ስብሰባ",
       content:
         language === "en"
@@ -285,7 +295,7 @@ const Home: React.FC = () => {
           : "ማህበረሰባችን በአምልኮ እና በህብረት ይሰበሰባል",
     },
     {
-      image: "/images/gallery/timket.jpg",
+      image: import.meta.env.BASE_URL + "images/gallery/timket.jpg",
       title: language === "en" ? "Timket Celebration" : "የጥምቀት በዓል",
       content:
         language === "en"
@@ -373,12 +383,12 @@ const Home: React.FC = () => {
                             )}
                           </div>
                           {(event.image_url ||
-                            "/images/gallery/church-service.jpg") && (
+                            import.meta.env.BASE_URL + "images/gallery/church-service.jpg") && (
                             <div className="w-20 h-20 rounded-md overflow-hidden ml-3 flex-shrink-0">
                               <img
                                 src={
                                   event.image_url ||
-                                  "/images/gallery/church-service.jpg"
+                                  import.meta.env.BASE_URL + "images/gallery/church-service.jpg"
                                 }
                                 alt={event.title}
                                 className="w-full h-full object-cover"
