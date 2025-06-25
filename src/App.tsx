@@ -95,6 +95,7 @@ function AppContent() {
         }
       >
         <Route index element={<AdminDashboard />} />
+        <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="events" element={<AdminEvents />} />
         <Route path="gallery" element={<AdminGallery />} />
         <Route path="settings" element={<AdminSettings />} />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
 import { Image, X, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
@@ -102,7 +102,8 @@ const Gallery: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Use actual images from public/images folder
-  const fallbackImages = [
+  const baseUrl = import.meta.env.BASE_URL;
+  const fallbackImages = React.useMemo(() => [
     {
       id: "gallery-1",
       title: language === "en" ? "Church Aerial View" : "የቤተክርስቲያን አየር ላይ እይታ",
@@ -110,7 +111,7 @@ const Gallery: React.FC = () => {
         language === "en"
           ? "Beautiful aerial view of our church grounds"
           : "የቤተክርስቲያናችን ግቢ ውብ የአየር ላይ እይታ",
-      image_url: "/images/gallery/church-aerial.jpg",
+      image_url: baseUrl + "images/gallery/church-aerial.jpg",
       created_at: new Date().toISOString(),
     },
     {
@@ -120,7 +121,7 @@ const Gallery: React.FC = () => {
         language === "en"
           ? "Sunday Divine Liturgy in progress"
           : "የእሁድ ቅዳሴ በሂደት ላይ",
-      image_url: "/images/gallery/church-service.jpg",
+      image_url: baseUrl + "images/gallery/church-service.jpg",
       created_at: new Date().toISOString(),
     },
     {
@@ -128,7 +129,7 @@ const Gallery: React.FC = () => {
       title: language === "en" ? "Timket Celebration" : "የጥምቀት በዓል",
       description:
         language === "en" ? "Annual Timket celebration" : "ዓመታዊ የጥምቀት በዓል",
-      image_url: "/images/gallery/timket.jpg",
+      image_url: baseUrl + "images/gallery/timket.jpg",
       created_at: new Date().toISOString(),
     },
     {
@@ -136,7 +137,7 @@ const Gallery: React.FC = () => {
       title: language === "en" ? "Church Ceremony" : "የቤተክርስቲያን ሥርዓት",
       description:
         language === "en" ? "Special church ceremony" : "ልዩ የቤተክርስቲያን ሥርዓት",
-      image_url: "/images/gallery/ceremony-1.jpg",
+      image_url: baseUrl + "images/gallery/ceremony-1.jpg",
       created_at: new Date().toISOString(),
     },
     {
@@ -146,7 +147,7 @@ const Gallery: React.FC = () => {
         language === "en"
           ? "Church community gathering"
           : "የቤተክርስቲያን ማህበረሰብ ስብሰባ",
-      image_url: "/images/gallery/ceremony-2.jpg",
+      image_url: baseUrl + "images/gallery/ceremony-2.jpg",
       created_at: new Date().toISOString(),
     },
     {
@@ -156,7 +157,7 @@ const Gallery: React.FC = () => {
         language === "en"
           ? "Traditional religious ceremony"
           : "ባህላዊ ሃይማኖታዊ ሥርዓት",
-      image_url: "/images/gallery/ceremony-3.jpg",
+      image_url: baseUrl + "images/gallery/ceremony-3.jpg",
       created_at: new Date().toISOString(),
     },
     {
@@ -166,7 +167,7 @@ const Gallery: React.FC = () => {
         language === "en"
           ? "Church building in winter"
           : "በክረምት ወቅት የቤተክርስቲያን ህንጻ",
-      image_url: "/images/gallery/church-winter.jpg",
+      image_url: baseUrl + "images/gallery/church-winter.jpg",
       created_at: new Date().toISOString(),
     },
     {
@@ -174,14 +175,14 @@ const Gallery: React.FC = () => {
       title: language === "en" ? "Church Sanctuary" : "የቤተክርስቲያን መቅደስ",
       description:
         language === "en" ? "Interior view of the sanctuary" : "የመቅደሱ ውስጣዊ እይታ",
-      image_url: "/images/gallery/church/sanctuary.jpg",
+      image_url: baseUrl + "images/gallery/church/sanctuary.jpg",
       created_at: new Date().toISOString(),
     },
     {
       id: "gallery-9",
       title: language === "en" ? "Church Altar" : "የቤተክርስቲያን መሠዊያ",
       description: language === "en" ? "Sacred altar area" : "ቅዱስ መሠዊያ አካባቢ",
-      image_url: "/images/gallery/church/altar.jpg",
+      image_url: baseUrl + "images/gallery/church/altar.jpg",
       created_at: new Date().toISOString(),
     },
     {
@@ -189,7 +190,7 @@ const Gallery: React.FC = () => {
       title: language === "en" ? "Timket Procession" : "የጥምቀት ሰልፍ",
       description:
         language === "en" ? "Traditional Timket procession" : "ባህላዊ የጥምቀት ሰልፍ",
-      image_url: "/images/gallery/nd14_timket_09-3x1500-1.jpg",
+      image_url: baseUrl + "images/gallery/nd14_timket_09-3x1500-1.jpg",
       created_at: new Date().toISOString(),
     },
     {
@@ -199,7 +200,7 @@ const Gallery: React.FC = () => {
         language === "en"
           ? "Church community members"
           : "የቤተክርስቲያን ማህበረሰብ አባላት",
-      image_url: "/images/gallery/photo_2023-09-22_18-56-49.jpg",
+      image_url: baseUrl + "images/gallery/photo_2023-09-22_18-56-49.jpg",
       created_at: new Date().toISOString(),
     },
     {
@@ -209,12 +210,12 @@ const Gallery: React.FC = () => {
         language === "en"
           ? "Various church activities"
           : "የተለያዩ የቤተክርስቲያን ስራዎች",
-      image_url: "/images/gallery/photo_2023-09-22_18-56-51.jpg",
+      image_url: baseUrl + "images/gallery/photo_2023-09-22_18-56-51.jpg",
       created_at: new Date().toISOString(),
     },
-  ];
+  ], [language, baseUrl]);
 
-  const fetchGalleryImages = async () => {
+  const fetchGalleryImages = useCallback(async () => {
     try {
       setLoading(true);
       const data = await api.gallery.getGalleryImages();
@@ -222,12 +223,10 @@ const Gallery: React.FC = () => {
       if (data && data.length > 0) {
         setGalleryImages(data);
       } else {
-        // Use fallback images if no database images
         setGalleryImages(fallbackImages);
       }
     } catch (err) {
       console.error("Error fetching gallery images:", err);
-      // Use fallback images on error
       setGalleryImages(fallbackImages);
       setError(
         language === "en"
@@ -237,13 +236,11 @@ const Gallery: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [language, fallbackImages]);
 
   useEffect(() => {
     fetchGalleryImages();
-  }, [language]);
-
-  // Removed data refresh hook to prevent circular dependencies
+  }, [language, fetchGalleryImages]);
 
   const handleManualRefresh = async () => {
     console.log("Manual refresh triggered for gallery");
