@@ -15,7 +15,6 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useDataRefresh } from "@/hooks/useDataRefresh";
 
 // Placeholder Events Component
 const PlaceholderEvents = () => {
@@ -251,8 +250,6 @@ export default function Events() {
   useEffect(() => {
     loadEvents();
   }, []);
-
-  // Removed data refresh hook to prevent circular dependencies
 
   const handleManualRefresh = async () => {
     console.log("Manual refresh triggered for events");

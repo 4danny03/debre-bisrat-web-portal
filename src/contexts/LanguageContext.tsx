@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode } from "react";
 
 type Language = "en" | "am";
 
@@ -20,7 +20,6 @@ const translations: Record<string, Record<Language, string>> = {
   about: { en: "About Us", am: "ስለ እኛ" },
   events: { en: "Events", am: "ዝግጅቶች" },
   services: { en: "Services", am: "አገልግሎቶች" },
-  sermons: { en: "Sermons", am: "ስብከቶች" },
   gallery: { en: "Gallery", am: "ፎቶዎች" },
   donation: { en: "Donation", am: "ልገሳ" },
   membership: { en: "Membership", am: "አባልነት" },
@@ -392,7 +391,7 @@ function LanguageProvider({ children }: { children: ReactNode }) {
 // Custom hook for using the language context
 function useLanguage(): LanguageContextType {
   const context = useContext(LanguageContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useLanguage must be used within a LanguageProvider");
   }
   return context;

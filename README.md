@@ -11,7 +11,6 @@ A comprehensive church management system built for the Ethiopian Orthodox Church
 - **Event Management**: Create, manage, and track church events
 - **Donation Portal**: Secure online giving with Stripe integration
 - **Gallery Management**: Photo galleries for church activities and events
-- **Sermon Archive**: Audio/video sermon management and streaming
 - **Prayer Requests**: Community prayer submission and management
 - **Testimonials**: Member testimony sharing and approval system
 - **Appointment Booking**: Service appointment request and management

@@ -73,16 +73,13 @@ Deno.serve(async (req) => {
         break;
 
       case "engagement":
-        const [prayerRequestsRes, testimonialsRes, sermonsRes, eventsRes] =
+        const [prayerRequestsRes, testimonialsRes, eventsRes] =
           await Promise.all([
             supabaseClient
               .from("prayer_requests")
               .select("*", { count: "exact", head: true }),
             supabaseClient
               .from("testimonials")
-              .select("*", { count: "exact", head: true }),
-            supabaseClient
-              .from("sermons")
               .select("*", { count: "exact", head: true }),
             supabaseClient
               .from("events")
@@ -92,7 +89,6 @@ Deno.serve(async (req) => {
         reportData = {
           prayerRequests: prayerRequestsRes.count || 0,
           testimonials: testimonialsRes.count || 0,
-          sermons: sermonsRes.count || 0,
           events: eventsRes.count || 0,
         };
         break;

@@ -16,7 +16,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import {
   Accordion,
@@ -24,7 +23,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -140,7 +138,7 @@ const ServiceItem: React.FC<ServiceItemProps> = ({
           <DialogTrigger asChild>
             <Button
               variant="outline"
-              size="xs"
+              size="sm"
               className="mt-2 bg-church-burgundy text-white hover:bg-church-burgundy/90 text-xs py-1 px-2"
             >
               <CalendarCheck className="mr-1 h-3 w-3" />
@@ -283,7 +281,7 @@ const religiousServiceImages = {
 
 // Function to get a religious image based on service title with fallback
 const getServiceImage = (title: string): string => {
-  return religiousServiceImages[title] || "/images/gallery/church-service.jpg";
+  return (religiousServiceImages as Record<string, string>)[title] || "/images/gallery/church-service.jpg";
 };
 
 const Services: React.FC = () => {

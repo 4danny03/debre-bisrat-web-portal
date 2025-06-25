@@ -13,7 +13,6 @@ interface HealthStatus {
     events: boolean;
     members: boolean;
     gallery: boolean;
-    sermons: boolean;
     testimonials: boolean;
     prayer_requests: boolean;
     donations: boolean;
@@ -26,7 +25,6 @@ type TableName =
   | "events"
   | "members"
   | "gallery"
-  | "sermons"
   | "testimonials"
   | "prayer_requests"
   | "donations"
@@ -42,7 +40,6 @@ export default function HealthCheck() {
       events: false,
       members: false,
       gallery: false,
-      sermons: false,
       testimonials: false,
       prayer_requests: false,
       donations: false,
@@ -67,7 +64,6 @@ export default function HealthCheck() {
         events: false,
         members: false,
         gallery: false,
-        sermons: false,
         testimonials: false,
         prayer_requests: false,
         donations: false,

@@ -75,7 +75,6 @@ interface AnalyticsData {
   engagement: {
     prayerRequests: number;
     testimonials: number;
-    sermons: number;
     galleryViews: number;
   };
 }
@@ -110,7 +109,6 @@ export default function Analytics() {
         eventsRes,
         prayerRequestsRes,
         testimonialsRes,
-        sermonsRes,
       ] = await Promise.all([
         supabase
           .from("donations")
@@ -130,7 +128,6 @@ export default function Analytics() {
         supabase
           .from("testimonials")
           .select("*", { count: "exact", head: true }),
-        supabase.from("sermons").select("*", { count: "exact", head: true }),
       ]);
 
       // Process donations data
@@ -178,7 +175,6 @@ export default function Analytics() {
         engagement: {
           prayerRequests: prayerRequestsRes.count || 0,
           testimonials: testimonialsRes.count || 0,
-          sermons: sermonsRes.count || 0,
           galleryViews: 0, // Would need view tracking
         },
       });
@@ -622,17 +618,6 @@ export default function Analytics() {
                   {data.engagement.testimonials}
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Community stories</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Sermons</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-church-burgundy">
-                  {data.engagement.sermons}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">Available content</p>
               </CardContent>
             </Card>
             <Card>

@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import Layout from "../components/Layout";
-import { useLanguage } from "../contexts/LanguageContext";
-import { CheckCircle, Loader2, ExternalLink } from "lucide-react";
+import { Loader2, ExternalLink } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +23,6 @@ type SessionData = {
 };
 
 const DonationSuccess: React.FC = () => {
-  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);

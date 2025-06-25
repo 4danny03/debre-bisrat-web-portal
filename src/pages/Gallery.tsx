@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { api } from "@/integrations/supabase/api";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useDataRefresh } from "@/hooks/useDataRefresh";
 
 interface GalleryImageProps {
   src: string;

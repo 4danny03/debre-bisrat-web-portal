@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import ImageSlider from "../components/ImageSlider";
 import { api } from "@/integrations/supabase/api";
 import { format } from "date-fns";
-import { useDataRefresh } from "@/hooks/useDataRefresh";
 
 // Wisdom Slider Component
 interface WisdomSliderProps {

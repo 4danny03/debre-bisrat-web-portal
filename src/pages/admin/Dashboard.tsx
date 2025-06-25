@@ -47,7 +47,6 @@ import AdminSyncStatus from "@/components/AdminSyncStatus";
 import AuditLog from "@/components/AuditLog";
 import ErrorDiagnostics from "@/components/ErrorDiagnostics";
 import { useDataContext } from "@/contexts/DataContext";
-import { dataSyncService } from "@/services/DataSyncService";
 import {
   AdminDiagnostics,
   type DiagnosticResult,
@@ -59,7 +58,6 @@ interface DashboardStats {
   totalDonations: number;
   totalTestimonials: number;
   totalPrayerRequests: number;
-  totalSermons: number;
   recentDonationAmount: number;
 }
 
@@ -70,8 +68,7 @@ interface RecentActivity {
     | "member"
     | "donation"
     | "testimonial"
-    | "prayer_request"
-    | "sermon";
+    | "prayer_request";
   title: string;
   description: string;
   created_at: string;
@@ -84,7 +81,6 @@ export default function Dashboard() {
     totalDonations: 0,
     totalTestimonials: 0,
     totalPrayerRequests: 0,
-    totalSermons: 0,
     recentDonationAmount: 0,
   });
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
@@ -134,7 +130,6 @@ export default function Dashboard() {
         supabase
           .from("prayer_requests")
           .select("*", { count: "exact", head: true }),
-        supabase.from("sermons").select("*", { count: "exact", head: true }),
       ]);
 
       // Extract results with fallbacks
@@ -144,7 +139,6 @@ export default function Dashboard() {
         donationsRes,
         testimonialsRes,
         prayerRequestsRes,
-        sermonsRes,
       ] = results.map((result, index) => {
         const tableNames = [
           "events",
@@ -152,7 +146,6 @@ export default function Dashboard() {
           "donations",
           "testimonials",
           "prayer_requests",
-          "sermons",
         ];
         if (result.status === "rejected") {
           console.error(
@@ -189,7 +182,6 @@ export default function Dashboard() {
         totalDonations: donationsRes?.data?.length || 0,
         totalTestimonials: testimonialsRes?.count || 0,
         totalPrayerRequests: prayerRequestsRes?.count || 0,
-        totalSermons: sermonsRes?.count || 0,
         recentDonationAmount,
       });
 
@@ -288,8 +280,6 @@ export default function Dashboard() {
         return <MessageSquare className="h-4 w-4" />;
       case "prayer_request":
         return <Heart className="h-4 w-4" />;
-      case "sermon":
-        return <Activity className="h-4 w-4" />;
       default:
         return <Activity className="h-4 w-4" />;
     }
@@ -336,9 +326,6 @@ export default function Dashboard() {
       setOpenDialog(null);
       form.reset();
       loadDashboardData();
-
-      // Notify data sync service
-      dataSyncService.notifyAdminAction("create", "events", data);
     } catch (error) {
       console.error("Error creating event:", error);
       const errorMessage =
@@ -404,9 +391,6 @@ export default function Dashboard() {
       setOpenDialog(null);
       form.reset();
       loadDashboardData();
-
-      // Notify data sync service
-      dataSyncService.notifyAdminAction("create", "members", data);
     } catch (error) {
       console.error("Error creating member:", error);
       const errorMessage =
@@ -472,9 +456,6 @@ export default function Dashboard() {
       setOpenDialog(null);
       form.reset();
       loadDashboardData();
-
-      // Notify data sync service
-      dataSyncService.notifyAdminAction("create", "profiles", data);
     } catch (error) {
       console.error("Error creating admin:", error);
       const errorMessage =
@@ -587,9 +568,6 @@ export default function Dashboard() {
       setOpenDialog(null);
       form.reset();
       loadDashboardData();
-
-      // Notify data sync service
-      dataSyncService.notifyAdminAction("create", "gallery", data);
     } catch (error) {
       console.error("Error uploading image:", error);
       const errorMessage =
@@ -597,65 +575,6 @@ export default function Dashboard() {
       toast({
         title: "Error",
         description: `Failed to upload image: ${errorMessage}`,
-        variant: "destructive",
-      });
-    } finally {
-      setDialogLoading(false);
-    }
-  };
-
-  const handleCreateSermon = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setDialogLoading(true);
-    const form = e.target as HTMLFormElement;
-    const formData = new FormData(form);
-
-    try {
-      const sermonData = {
-        title: formData.get("title") as string,
-        description: (formData.get("description") as string) || null,
-        scripture_reference:
-          (formData.get("scripture_reference") as string) || null,
-        audio_url: (formData.get("audio_url") as string) || null,
-        preacher: (formData.get("preacher") as string) || null,
-        sermon_date: formData.get("sermon_date") as string,
-        is_featured: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      console.log("Creating sermon with data:", sermonData);
-
-      const { data, error } = await supabase
-        .from("sermons")
-        .insert([sermonData])
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Supabase error:", error);
-        throw error;
-      }
-
-      console.log("Sermon created successfully:", data);
-
-      toast({
-        title: "Success",
-        description: "Sermon added successfully",
-      });
-      setOpenDialog(null);
-      form.reset();
-      loadDashboardData();
-
-      // Notify data sync service
-      dataSyncService.notifyAdminAction("create", "sermons", data);
-    } catch (error) {
-      console.error("Error creating sermon:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      toast({
-        title: "Error",
-        description: `Failed to add sermon: ${errorMessage}`,
         variant: "destructive",
       });
     } finally {
@@ -730,13 +649,6 @@ export default function Dashboard() {
 
       {/* Secondary Stats */}
       <div className="grid gap-4 md:grid-cols-3">
-        <StatsCard
-          title="Sermons"
-          value={stats.totalSermons.toString()}
-          description="Available sermons"
-          icon={<Activity className="h-6 w-6" />}
-          trend="1 new this week"
-        />
         <StatsCard
           title="Testimonials"
           value={stats.totalTestimonials.toString()}
@@ -1009,70 +921,6 @@ export default function Dashboard() {
                       disabled={dialogLoading}
                     >
                       {dialogLoading ? "Uploading..." : "Upload Image"}
-                    </Button>
-                  </form>
-                </DialogContent>
-              </Dialog>
-
-              {/* Add Sermon Dialog */}
-              <Dialog
-                open={openDialog === "sermon"}
-                onOpenChange={(open) => setOpenDialog(open ? "sermon" : null)}
-              >
-                <DialogTrigger asChild>
-                  <Button className="w-full justify-start" variant="outline">
-                    <Activity className="h-4 w-4 mr-2" />
-                    Add New Sermon
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Add New Sermon</DialogTitle>
-                    <DialogDescription>
-                      Add a sermon to the collection
-                    </DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={handleCreateSermon} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="sermon_title">Sermon Title</Label>
-                      <Input id="sermon_title" name="title" required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="sermon_description">Description</Label>
-                      <Textarea id="sermon_description" name="description" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="scripture_reference">
-                        Scripture Reference
-                      </Label>
-                      <Input
-                        id="scripture_reference"
-                        name="scripture_reference"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="preacher">Preacher</Label>
-                      <Input id="preacher" name="preacher" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="sermon_date">Sermon Date</Label>
-                      <Input
-                        id="sermon_date"
-                        name="sermon_date"
-                        type="date"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="audio_url">Audio URL (optional)</Label>
-                      <Input id="audio_url" name="audio_url" type="url" />
-                    </div>
-                    <Button
-                      type="submit"
-                      className="w-full"
-                      disabled={dialogLoading}
-                    >
-                      {dialogLoading ? "Adding..." : "Add Sermon"}
                     </Button>
                   </form>
                 </DialogContent>
