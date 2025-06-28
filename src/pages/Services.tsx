@@ -1,15 +1,7 @@
-import React, { useState } from "react";
+import React from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
-import {
-  Settings,
-  Calendar,
-  Clock,
-  User,
-  Mail,
-  Phone,
-  CalendarCheck,
-} from "lucide-react";
+import { Settings } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -24,15 +16,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,257 +23,32 @@ import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import { api } from "@/integrations/supabase/api";
 
-interface ServiceItemProps {
-  title: string;
-  description: string;
-  time: string;
-  imageUrl?: string;
-  requiresAppointment?: boolean;
-}
-
-const ServiceItem: React.FC<ServiceItemProps> = ({
-  title,
-  description,
-  time,
-  imageUrl,
-  requiresAppointment = false,
-}) => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { language } = useLanguage();
-  const { toast } = useToast();
-  const handleAppointmentSubmit = async (
-    e: React.FormEvent<HTMLFormElement>,
-  ) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const name = formData.get("name") as string;
-    const email = formData.get("email") as string;
-    const phone = formData.get("phone") as string;
-    const date = formData.get("date") as string;
-    const time = formData.get("time") as string;
-    const notes = formData.get("notes") as string;
-
-    try {
-      // Save appointment to database
-      await api.appointments.createAppointment({
-        name,
-        email,
-        phone,
-        service_title: title,
-        requested_date: date,
-        requested_time: time,
-        notes,
-        status: "pending",
-      });
-
-      // Show success message
-      toast({
-        title: language === "en" ? "Appointment Request Sent" : "የቀጠሮ ጥያቄ ተልኳል",
-        description:
-          language === "en"
-            ? `We've received your request for ${title}. We'll contact you soon to confirm.`
-            : `ለ${title} የቀጠሮ ጥያቄዎን ተቀብለናል። በቅርቡ ለማረጋገጥ እናገኝዎታለን።`,
-      });
-
-      setIsDialogOpen(false);
-      (e.target as HTMLFormElement).reset();
-    } catch (error) {
-      console.error("Error submitting appointment:", error);
-      toast({
-        title: language === "en" ? "Error" : "ስህተት",
-        description:
-          language === "en"
-            ? "Failed to submit appointment request. Please try again."
-            : "የቀጠሮ ጥያቄ ማስገባት አልተሳካም። እባክዎ እንደገና ይሞክሩ።",
-        variant: "destructive",
-      });
-    }
-  };
-
-  return (
-    <div className="border-l-2 border-church-gold pl-4 mb-6">
-      {imageUrl && (
-        <div className="mb-3 rounded-md overflow-hidden w-32 h-32 float-right ml-4">
-          <img
-            src={imageUrl}
-            alt={title}
-            className="object-cover w-full h-full transition-transform hover:scale-105 duration-300 rounded-md"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              // Try multiple fallback images in order
-              if (target.src.includes("church-service.jpg")) {
-                target.src = import.meta.env.BASE_URL + "images/gallery/church-gathering.jpg";
-              } else if (target.src.includes("church-gathering.jpg")) {
-                target.src = import.meta.env.BASE_URL + "images/gallery/ceremony-1.jpg";
-              } else {
-                target.src = import.meta.env.BASE_URL + "images/gallery/church-service.jpg";
-              }
-            }}
-          />
-        </div>
-      )}
-      <h3 className="text-xl font-serif text-church-burgundy">{title}</h3>
-      <p className="text-sm text-gray-500 mb-2">{time}</p>
-      <p className="text-gray-700">{description}</p>
-
-      {requiresAppointment && (
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-2 bg-church-burgundy text-white hover:bg-church-burgundy/90 text-xs py-1 px-2"
-            >
-              <CalendarCheck className="mr-1 h-3 w-3" />
-              {language === "en" ? "Request Appointment" : "ቀጠሮ ይጠይቁ"}
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>
-                {language === "en" ? "Request Appointment" : "ቀጠሮ ይጠይቁ"}
-              </DialogTitle>
-              <DialogDescription>
-                {language === "en"
-                  ? `Fill out this form to request an appointment for ${title}.`
-                  : `ለ${title} ቀጠሮ ለመጠየቅ ይህን ቅጽ ይሙሉ።`}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleAppointmentSubmit}>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="name" className="text-right">
-                    <User className="h-4 w-4 inline mr-1" />
-                    {language === "en" ? "Name" : "ስም"}
-                  </Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    className="col-span-3"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="email" className="text-right">
-                    <Mail className="h-4 w-4 inline mr-1" />
-                    {language === "en" ? "Email" : "ኢሜይል"}
-                  </Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    className="col-span-3"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="phone" className="text-right">
-                    <Phone className="h-4 w-4 inline mr-1" />
-                    {language === "en" ? "Phone" : "ስልክ"}
-                  </Label>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    className="col-span-3"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="date" className="text-right">
-                    <Calendar className="h-4 w-4 inline mr-1" />
-                    {language === "en" ? "Date" : "ቀን"}
-                  </Label>
-                  <Input
-                    id="date"
-                    name="date"
-                    type="date"
-                    className="col-span-3"
-                    min={format(new Date(), "yyyy-MM-dd")}
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="time" className="text-right">
-                    <Clock className="h-4 w-4 inline mr-1" />
-                    {language === "en" ? "Time" : "ሰዓት"}
-                  </Label>
-                  <Input
-                    id="time"
-                    name="time"
-                    type="time"
-                    className="col-span-3"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="notes" className="text-right">
-                    {language === "en" ? "Notes" : "ማስታወሻዎች"}
-                  </Label>
-                  <Textarea
-                    id="notes"
-                    name="notes"
-                    className="col-span-3"
-                    placeholder={
-                      language === "en"
-                        ? "Any additional information..."
-                        : "ማንኛውም ተጨማሪ መረጃ..."
-                    }
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  type="submit"
-                  className="bg-church-burgundy hover:bg-church-burgundy/90"
-                >
-                  {language === "en" ? "Submit Request" : "ጥያቄ አስገባ"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      )}
-    </div>
-  );
-};
-
 // Base URL for image paths
 const baseUrl = import.meta.env.BASE_URL;
-
-// Religious service images mapping with verified paths
-const religiousServiceImages = {
-  "Christian Initiation": baseUrl + "images/religious/palm-sunday.jpg",
-  "ክርስትና ማስነሳት": baseUrl + "images/religious/palm-sunday.jpg",
-  "Qendil Prayer": baseUrl + "images/gallery/church-service.jpg",
-  "ጸሎተ ቀንዲል": baseUrl + "images/gallery/church-service.jpg",
-  "Marriage and Communion Education": baseUrl + "images/gallery/ceremony-1.jpg",
-  "የጋብቻና የቁርባን ትምህርት": baseUrl + "images/gallery/ceremony-1.jpg",
-  "Counseling Services": baseUrl + "images/gallery/church-gathering.jpg",
-  "የምክር አገልግሎት": baseUrl + "images/gallery/church-gathering.jpg",
-  "Marriage Ceremony": baseUrl + "images/gallery/ceremony-2.jpg",
-  "ጋብቻ መፈፀም": baseUrl + "images/gallery/ceremony-2.jpg",
-  "Funeral Prayer": baseUrl + "images/religious/crucifixion.jpg",
-  "ጸሎተ ፍትሐት": baseUrl + "images/religious/crucifixion.jpg",
-  "Holy Water Baptism": baseUrl + "images/gallery/timket.jpg",
-  "ጸበል መጠመቅ": baseUrl + "images/gallery/timket.jpg",
-  "Entering Lent": baseUrl + "images/religious/procession.jpg",
-  "ሱባኤ መግባት": baseUrl + "images/religious/procession.jpg",
-  "Qeder Baptism": baseUrl + "images/gallery/timket.jpg",
-  "የቄደር ጥምቀት": baseUrl + "images/gallery/timket.jpg",
-  "Divine Liturgy (Kidase)": baseUrl + "images/gallery/church-service.jpg",
-  "ቅዳሴ": baseUrl + "images/gallery/church-service.jpg",
+const religiousServiceImages: Record<string, string> = {
+  // Add mappings for each service title to its corresponding image path
+  "Holy Water Baptism": baseUrl + "images/services/holy-water-baptism.jpg",
+  "Marriage Ceremony": baseUrl + "images/services/marriage-ceremony.jpg",
+  "Funeral Prayer": baseUrl + "images/services/funeral-prayer.jpg",
+  "Marriage and Communion Education":
+    baseUrl + "images/services/marriage-communion-education.jpg",
+  "Counseling Services": baseUrl + "images/services/counseling-services.jpg",
+  Qendil: baseUrl + "images/services/qendil.jpg",
+  "Qeder Baptism": baseUrl + "images/services/qeder-baptism.jpg",
+  "Christian Initiation": baseUrl + "images/services/christian-initiation.jpg",
+  "Entering Lent": baseUrl + "images/services/entering-lent.jpg",
+  "Divine Liturgy (Kidase)": baseUrl + "images/services/divine-liturgy.jpg",
 };
 
-// Function to get a religious image based on service title with fallback
 const getServiceImage = (title: string): string => {
   return (religiousServiceImages as Record<string, string>)[title] || baseUrl + "images/gallery/church-service.jpg";
 };
 
 const Services: React.FC = () => {
   const { t, language } = useLanguage();
+  const { toast } = useToast();
 
-  // Service data based on the provided church services
+  // Service data
   const regularServices = [
     {
       title: language === "en" ? "Holy Water Baptism" : "ጸበል መጠመቅ",
@@ -399,6 +157,54 @@ const Services: React.FC = () => {
     },
   ];
 
+  // Collect all services that require appointments
+  const appointmentServices = [
+    ...regularServices,
+    ...specialServices,
+  ].filter((s) => s.requiresAppointment);
+
+  // Single appointment request handler
+  const handleAppointmentSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get("name") as string;
+    const email = formData.get("email") as string;
+    const phone = formData.get("phone") as string;
+    const date = formData.get("date") as string;
+    const time = formData.get("time") as string;
+    const notes = formData.get("notes") as string;
+    try {
+      await api.appointments.createAppointment({
+        name,
+        email,
+        phone,
+        service_title: appointmentServices[0]?.title || "",
+        requested_date: date,
+        requested_time: time,
+        notes,
+        status: "pending",
+      });
+      toast({
+        title: language === "en" ? "Appointment Request Sent" : "የቀጠሮ ጥያቄ ተልኳል",
+        description:
+          language === "en"
+            ? `We've received your request for ${appointmentServices[0]?.title}. We'll contact you soon to confirm.`
+            : `ለ${appointmentServices[0]?.title} የቀጠሮ ጥያቄዎን ተቀብለናል። በቅርቡ ለማረጋገጥ እናገኝዎታለን።`,
+      });
+      (e.target as HTMLFormElement).reset();
+    } catch (error) {
+      console.error("Error submitting appointment:", error);
+      toast({
+        title: language === "en" ? "Error" : "ስህተት",
+        description:
+          language === "en"
+            ? "Failed to submit appointment request. Please try again."
+            : "የቀጠሮ ጥያቄ ማስገባት አልተሳካም። እባክዎ እንደገና ይሞክሩ።",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <Layout>
       <div className="py-12 px-6">
@@ -414,6 +220,67 @@ const Services: React.FC = () => {
             </p>
           </div>
 
+          {/* Single Appointment Request Section */}
+          <Card className="mb-10">
+            <CardHeader>
+              <CardTitle>{language === "en" ? "Request an Appointment" : "ቀጠሮ ይጠይቁ"}</CardTitle>
+              <CardDescription>
+                {language === "en"
+                  ? "Select a service and fill out the form to request an appointment."
+                  : "አገልግሎት ይምረጡ እና ቅጹን ይሙሉ ለቀጠሮ ለመጠየቅ።"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleAppointmentSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="serviceType">{language === "en" ? "Service Type" : "የአገልግሎት አይነት"}</Label>
+                  <select
+                    id="serviceType"
+                    name="serviceType"
+                    className="w-full border rounded px-3 py-2 mt-1"
+                    required
+                  >
+                    {appointmentServices.map((service, idx) => (
+                      <option key={service.title + idx} value={service.title}>
+                        {service.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="name">{language === "en" ? "Name" : "ስም"}</Label>
+                    <Input id="name" name="name" required />
+                  </div>
+                  <div>
+                    <Label htmlFor="email">{language === "en" ? "Email" : "ኢሜይል"}</Label>
+                    <Input id="email" name="email" type="email" required />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone">{language === "en" ? "Phone" : "ስልክ"}</Label>
+                    <Input id="phone" name="phone" type="tel" required />
+                  </div>
+                  <div>
+                    <Label htmlFor="date">{language === "en" ? "Date" : "ቀን"}</Label>
+                    <Input id="date" name="date" type="date" min={format(new Date(), "yyyy-MM-dd")}/>
+                  </div>
+                  <div>
+                    <Label htmlFor="time">{language === "en" ? "Time" : "ሰዓት"}</Label>
+                    <Input id="time" name="time" type="time" required />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="notes">{language === "en" ? "Notes" : "ማስታወሻዎች"}</Label>
+                  <Textarea id="notes" name="notes" placeholder={language === "en" ? "Any additional information..." : "ማንኛውም ተጨማሪ መረጃ..."} />
+                </div>
+                <Button type="submit" className="bg-church-burgundy hover:bg-church-burgundy/90">
+                  {language === "en" ? "Submit Request" : "ጥያቄ አስገባ"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Service lists (no appointment buttons) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
             <Card>
               <CardHeader className="bg-church-burgundy text-white">
@@ -428,18 +295,21 @@ const Services: React.FC = () => {
               </CardHeader>
               <CardContent className="pt-6">
                 {regularServices.map((service, index) => (
-                  <ServiceItem
-                    key={`regular-${index}`}
-                    title={service.title}
-                    description={service.description}
-                    time={service.time}
-                    imageUrl={getServiceImage(service.title)}
-                    requiresAppointment={service.requiresAppointment}
-                  />
+                  <div key={`regular-${index}`} className="border-l-2 border-church-gold pl-4 mb-6">
+                    <div className="mb-3 rounded-md overflow-hidden w-32 h-32 float-right ml-4">
+                      <img
+                        src={getServiceImage(service.title)}
+                        alt={service.title}
+                        className="object-cover w-full h-full transition-transform hover:scale-105 duration-300 rounded-md"
+                      />
+                    </div>
+                    <h3 className="text-xl font-serif text-church-burgundy">{service.title}</h3>
+                    <p className="text-sm text-gray-500 mb-2">{service.time}</p>
+                    <p className="text-gray-700">{service.description}</p>
+                  </div>
                 ))}
               </CardContent>
             </Card>
-
             <Card>
               <CardHeader className="bg-church-burgundy text-white">
                 <CardTitle className="text-church-gold">
@@ -453,14 +323,18 @@ const Services: React.FC = () => {
               </CardHeader>
               <CardContent className="pt-6">
                 {specialServices.map((service, index) => (
-                  <ServiceItem
-                    key={`special-${index}`}
-                    title={service.title}
-                    description={service.description}
-                    time={service.time}
-                    imageUrl={getServiceImage(service.title)}
-                    requiresAppointment={service.requiresAppointment}
-                  />
+                  <div key={`special-${index}`} className="border-l-2 border-church-gold pl-4 mb-6">
+                    <div className="mb-3 rounded-md overflow-hidden w-32 h-32 float-right ml-4">
+                      <img
+                        src={getServiceImage(service.title)}
+                        alt={service.title}
+                        className="object-cover w-full h-full transition-transform hover:scale-105 duration-300 rounded-md"
+                      />
+                    </div>
+                    <h3 className="text-xl font-serif text-church-burgundy">{service.title}</h3>
+                    <p className="text-sm text-gray-500 mb-2">{service.time}</p>
+                    <p className="text-gray-700">{service.description}</p>
+                  </div>
                 ))}
               </CardContent>
             </Card>

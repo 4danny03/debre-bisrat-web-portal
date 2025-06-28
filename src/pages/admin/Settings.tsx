@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardHeader,
@@ -86,11 +86,13 @@ export default function Settings() {
   // Load all settings on mount
   useEffect(() => {
     loadSettings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Check Stripe configuration on settings change
   useEffect(() => {
     checkStripeConfiguration();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.enable_stripe, settings.stripe_publishable_key]);
 
   const loadSettings = async () => {
@@ -128,7 +130,14 @@ export default function Settings() {
       }
 
       if (data) {
-        setSettings(data);
+        // Defensive: ensure data is SiteSettings shape
+        setSettings({
+          ...settings,
+          ...data,
+        });
+        if ((data as any).from_email) {
+          setEmailSettings((prev) => ({ ...prev, from_email: (data as any).from_email }));
+        }
       }
 
       // Load Stripe settings
@@ -182,8 +191,9 @@ export default function Settings() {
     setSaving(true);
 
     try {
-      // Update site settings
-      await supabase.from("site_settings").upsert(settings);
+      // Keep from_email in sync before saving
+      const settingsToSave = { ...settings, from_email: emailSettings.from_email || "" };
+      await supabase.from("site_settings").upsert(settingsToSave);
 
       // Update Stripe settings
       await api.stripeSettings.updateSettings(stripeSettings);
@@ -593,7 +603,7 @@ export default function Settings() {
                 <Users className="w-5 h-5 mr-2" />
                 Email Subscribers ({subscribers.length})
               </span>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" disabled title="Coming soon">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Subscriber
               </Button>
