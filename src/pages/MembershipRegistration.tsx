@@ -392,12 +392,20 @@ const MembershipRegistration: FC = () => {
       };
 
       console.log("Invoking create-checkout function with data:", checkoutData);
+      console.log(
+        "Membership fee for type",
+        formData.membershipType,
+        ":",
+        membershipFee,
+      );
 
       const response = await supabase.functions.invoke("create-checkout", {
         body: checkoutData,
       });
 
-      console.log("Function response:", response);
+      console.log("Checkout function response:", response);
+      console.log("Response data:", response.data);
+      console.log("Response error:", response.error);
 
       if (response.error) {
         console.error("Function error:", response.error);
