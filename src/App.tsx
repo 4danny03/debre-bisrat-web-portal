@@ -43,14 +43,12 @@ import DonationDemo from "./pages/DonationDemo";
 import MembershipSuccess from "./pages/MembershipSuccess";
 import Gallery from "./pages/Gallery";
 import Services from "./pages/Services";
-import Sermons from "./pages/Sermons";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminLogin from "./pages/admin/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminEvents from "./pages/admin/Events";
 import AdminGallery from "./pages/admin/Gallery";
 import AdminSettings from "./pages/admin/Settings";
-import AdminSermons from "./pages/admin/Sermons";
 import AdminMembers from "./pages/admin/Members";
 import AdminTestimonials from "./pages/admin/Testimonials";
 import AdminPrayerRequests from "./pages/admin/PrayerRequests";
@@ -76,7 +74,7 @@ function AppContent() {
       <Route path="/events" element={<Events />} />
       <Route path="/contact" element={<Contact />} />
       <Route
-        path="/membership-registration"
+        path="/membership"
         element={<MembershipRegistration />}
       />
       <Route path="/donation" element={<Donation />} />
@@ -85,7 +83,6 @@ function AppContent() {
       <Route path="/membership-success" element={<MembershipSuccess />} />
       <Route path="/gallery" element={<Gallery />} />
       <Route path="/services" element={<Services />} />
-      <Route path="/sermons" element={<Sermons />} />
 
       {/* Admin Routes */}
       <Route path="/admin/login" element={<AdminLogin />} />
@@ -98,10 +95,10 @@ function AppContent() {
         }
       >
         <Route index element={<AdminDashboard />} />
+        <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="events" element={<AdminEvents />} />
         <Route path="gallery" element={<AdminGallery />} />
         <Route path="settings" element={<AdminSettings />} />
-        <Route path="sermons" element={<AdminSermons />} />
         <Route path="members" element={<AdminMembers />} />
         <Route path="testimonials" element={<AdminTestimonials />} />
         <Route path="prayer-requests" element={<AdminPrayerRequests />} />

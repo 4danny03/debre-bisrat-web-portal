@@ -32,7 +32,6 @@ import {
   CreditCard,
   FileText,
   AlertCircle,
-  Phone,
   Mail,
   MapPin,
   Calendar,
@@ -1548,7 +1547,7 @@ const MembershipRegistration: FC = () => {
       english: "እንግሊዝኛ",
       amharic: "አማርኛ",
       contactMethod: "የመረጡት የመገናኛ ዘዴ",
-      emailUpdates: "ስለ ቤተክርስቲያን ዝግጅቶች እና ዜናዎች በኢሜይል መረጃዎችን መቀበል እፈልጋለሁ",
+      emailUpdates: "ስለ ቤተክርስቲያናችን እንዴት ሰሙ?",
       smsUpdates: "ለአስቸኳይ ማስታወቂያዎች በኤስኤምኤስ መረጃዎችን መቀበል እፈልጋለሁ",
       howDidYouHear: "ስለ ቤተክርስቲያናችን እንዴት ሰሙ?",
       additionalNotes: "ተጨማሪ ማስታወሻዎች ወይም አስተያየቶች",
@@ -1564,7 +1563,7 @@ const MembershipRegistration: FC = () => {
       previous: "ቀዳሚ",
       next: "ቀጣይ",
       processing: "በሂደት ላይ...",
-      completeRegistration: "ምዝገባን አጠናቅቅ እና $100 ክፈል",
+      completeRegistration: "ምዝገባን አጠናቅቅ እና $100 ክፍል",
       personal_step: "የግል",
       address_step: "አድራሻ",
       membership_step: "አባልነት",
@@ -1588,13 +1587,18 @@ const MembershipRegistration: FC = () => {
     <Layout>
       <div className="container mx-auto p-4 max-w-4xl">
         <Card className="bg-white shadow-lg">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl text-church-burgundy">
-              {t("membership_registration_title")}
-            </CardTitle>
-            <CardDescription className="text-lg">
-              {t("membership_registration_description")}
-            </CardDescription>
+          <CardHeader className="text-center bg-gradient-to-r from-church-gold/10 to-church-burgundy/10 rounded-t-lg py-8 mb-4">
+            <div className="flex flex-col items-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-church-gold/80 rounded-full mb-4 shadow-lg">
+                <Users size={36} className="text-church-burgundy" />
+              </div>
+              <CardTitle className="text-3xl md:text-4xl font-serif text-church-burgundy mb-2">
+                {t("membership_registration_title")}
+              </CardTitle>
+              <CardDescription className="text-lg text-gray-700 max-w-2xl mx-auto">
+                {t("membership_registration_description")}
+              </CardDescription>
+            </div>
           </CardHeader>
 
           <CardContent>

@@ -16,7 +16,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import {
   Accordion,
@@ -24,7 +23,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -121,11 +119,11 @@ const ServiceItem: React.FC<ServiceItemProps> = ({
               const target = e.target as HTMLImageElement;
               // Try multiple fallback images in order
               if (target.src.includes("church-service.jpg")) {
-                target.src = "/images/gallery/church-gathering.jpg";
+                target.src = import.meta.env.BASE_URL + "images/gallery/church-gathering.jpg";
               } else if (target.src.includes("church-gathering.jpg")) {
-                target.src = "/images/gallery/ceremony-1.jpg";
+                target.src = import.meta.env.BASE_URL + "images/gallery/ceremony-1.jpg";
               } else {
-                target.src = "/images/gallery/church-service.jpg";
+                target.src = import.meta.env.BASE_URL + "images/gallery/church-service.jpg";
               }
             }}
           />
@@ -140,7 +138,7 @@ const ServiceItem: React.FC<ServiceItemProps> = ({
           <DialogTrigger asChild>
             <Button
               variant="outline"
-              size="xs"
+              size="sm"
               className="mt-2 bg-church-burgundy text-white hover:bg-church-burgundy/90 text-xs py-1 px-2"
             >
               <CalendarCheck className="mr-1 h-3 w-3" />
@@ -257,33 +255,36 @@ const ServiceItem: React.FC<ServiceItemProps> = ({
   );
 };
 
+// Base URL for image paths
+const baseUrl = import.meta.env.BASE_URL;
+
 // Religious service images mapping with verified paths
 const religiousServiceImages = {
-  "Christian Initiation": "/images/religious/palm-sunday.jpg",
-  "ክርስትና ማስነሳት": "/images/religious/palm-sunday.jpg",
-  "Qendil Prayer": "/images/gallery/church-service.jpg",
-  "ጸሎተ ቀንዲል": "/images/gallery/church-service.jpg",
-  "Marriage and Communion Education": "/images/gallery/ceremony-1.jpg",
-  "የጋብቻና የቁርባን ትምህርት": "/images/gallery/ceremony-1.jpg",
-  "Counseling Services": "/images/gallery/church-gathering.jpg",
-  "የምክር አገልግሎት": "/images/gallery/church-gathering.jpg",
-  "Marriage Ceremony": "/images/gallery/ceremony-2.jpg",
-  "ጋብቻ መፈፀም": "/images/gallery/ceremony-2.jpg",
-  "Funeral Prayer": "/images/religious/crucifixion.jpg",
-  "ጸሎተ ፍትሐት": "/images/religious/crucifixion.jpg",
-  "Holy Water Baptism": "/images/gallery/timket.jpg",
-  "ጸበል መጠመቅ": "/images/gallery/timket.jpg",
-  "Entering Lent": "/images/religious/procession.jpg",
-  "ሱባኤ መግባት": "/images/religious/procession.jpg",
-  "Qeder Baptism": "/images/gallery/timket.jpg",
-  "የቄደር ጥምቀት": "/images/gallery/timket.jpg",
-  "Divine Liturgy (Kidase)": "/images/gallery/church-service.jpg",
-  ቅዳሴ: "/images/gallery/church-service.jpg",
+  "Christian Initiation": baseUrl + "images/religious/palm-sunday.jpg",
+  "ክርስትና ማስነሳት": baseUrl + "images/religious/palm-sunday.jpg",
+  "Qendil Prayer": baseUrl + "images/gallery/church-service.jpg",
+  "ጸሎተ ቀንዲል": baseUrl + "images/gallery/church-service.jpg",
+  "Marriage and Communion Education": baseUrl + "images/gallery/ceremony-1.jpg",
+  "የጋብቻና የቁርባን ትምህርት": baseUrl + "images/gallery/ceremony-1.jpg",
+  "Counseling Services": baseUrl + "images/gallery/church-gathering.jpg",
+  "የምክር አገልግሎት": baseUrl + "images/gallery/church-gathering.jpg",
+  "Marriage Ceremony": baseUrl + "images/gallery/ceremony-2.jpg",
+  "ጋብቻ መፈፀም": baseUrl + "images/gallery/ceremony-2.jpg",
+  "Funeral Prayer": baseUrl + "images/religious/crucifixion.jpg",
+  "ጸሎተ ፍትሐት": baseUrl + "images/religious/crucifixion.jpg",
+  "Holy Water Baptism": baseUrl + "images/gallery/timket.jpg",
+  "ጸበል መጠመቅ": baseUrl + "images/gallery/timket.jpg",
+  "Entering Lent": baseUrl + "images/religious/procession.jpg",
+  "ሱባኤ መግባት": baseUrl + "images/religious/procession.jpg",
+  "Qeder Baptism": baseUrl + "images/gallery/timket.jpg",
+  "የቄደር ጥምቀት": baseUrl + "images/gallery/timket.jpg",
+  "Divine Liturgy (Kidase)": baseUrl + "images/gallery/church-service.jpg",
+  "ቅዳሴ": baseUrl + "images/gallery/church-service.jpg",
 };
 
 // Function to get a religious image based on service title with fallback
 const getServiceImage = (title: string): string => {
-  return religiousServiceImages[title] || "/images/gallery/church-service.jpg";
+  return (religiousServiceImages as Record<string, string>)[title] || baseUrl + "images/gallery/church-service.jpg";
 };
 
 const Services: React.FC = () => {

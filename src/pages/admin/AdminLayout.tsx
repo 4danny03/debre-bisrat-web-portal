@@ -128,12 +128,6 @@ export default function AdminLayout() {
       description: "Manage church events",
     },
     {
-      to: "/admin/sermons",
-      icon: Activity,
-      label: "Sermons",
-      description: "Manage sermons and audio",
-    },
-    {
       to: "/admin/members",
       icon: Users,
       label: "Members",
