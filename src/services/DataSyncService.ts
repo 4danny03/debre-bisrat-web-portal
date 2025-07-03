@@ -217,12 +217,16 @@ class AdminActionTracker {
 
   getActionsByTable(table: string, limit = 10): AdminAction[] {
     this.ensureArraysInitialized();
-    return this.actions.filter((action) => action.table === table).slice(0, limit);
+    return this.actions
+      .filter((action) => action.table === table)
+      .slice(0, limit);
   }
 
   getActionsByUser(userId: string, limit = 10): AdminAction[] {
     this.ensureArraysInitialized();
-    return this.actions.filter((action) => action.userId === userId).slice(0, limit);
+    return this.actions
+      .filter((action) => action.userId === userId)
+      .slice(0, limit);
   }
 
   getStats() {
@@ -406,7 +410,13 @@ class DataSyncService {
     return this.callAdminFunction("exportData", { table, filters });
   }
 
-  async logActionToDb(action: string, table: string, data?: any, userId?: string, details?: string) {
+  async logActionToDb(
+    action: string,
+    table: string,
+    data?: any,
+    userId?: string,
+    details?: string,
+  ) {
     try {
       await supabase.from("admin_audit_log").insert({
         action,

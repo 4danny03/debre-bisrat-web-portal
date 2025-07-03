@@ -529,6 +529,16 @@ export const api = {
       if (error) throw error;
       return data;
     },
+    getNewsletterSubscribers: async () => {
+      const { data, error } = await supabase
+        .from("newsletter_subscribers")
+        .select("*")
+        .eq("subscribed", true)
+        .order("subscription_date", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
     addSubscriber: async (subscriber: any) => {
       const { data, error } = await supabase
         .from("email_subscribers")
@@ -594,6 +604,16 @@ export const api = {
       if (error) throw error;
       return data;
     },
+    getNewsletterTemplates: async () => {
+      const { data, error } = await supabase
+        .from("email_templates")
+        .select("*")
+        .eq("template_type", "newsletter")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
     createTemplate: async (template: any) => {
       const { data, error } = await supabase
         .from("email_templates")
@@ -625,6 +645,52 @@ export const api = {
 
       if (error) throw error;
       dataSyncService.notifyAdminAction("delete", "email_templates", { id });
+      return true;
+    },
+  },
+
+  // Email Campaigns API
+  emailCampaigns: {
+    getCampaigns: async () => {
+      const { data, error } = await supabase
+        .from("email_campaigns")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    createCampaign: async (campaign: any) => {
+      const { data, error } = await supabase
+        .from("email_campaigns")
+        .insert([campaign])
+        .select()
+        .single();
+
+      if (error) throw error;
+      dataSyncService.notifyAdminAction("create", "email_campaigns", data);
+      return data;
+    },
+    updateCampaign: async (id: string, updates: any) => {
+      const { data, error } = await supabase
+        .from("email_campaigns")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      dataSyncService.notifyAdminAction("update", "email_campaigns", data);
+      return data;
+    },
+    deleteCampaign: async (id: string) => {
+      const { error } = await supabase
+        .from("email_campaigns")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+      dataSyncService.notifyAdminAction("delete", "email_campaigns", { id });
       return true;
     },
   },

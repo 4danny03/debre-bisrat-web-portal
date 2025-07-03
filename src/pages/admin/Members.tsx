@@ -180,6 +180,16 @@ export default function AdminMembers() {
           membership_status: "active",
           join_date: new Date().toISOString().split("T")[0],
           membership_date: new Date().toISOString().split("T")[0],
+          registration_date: new Date().toISOString().split("T")[0],
+          // Support simplified registration form fields
+          first_name: (formData.get("full_name") as string).split(" ")[0] || "",
+          last_name:
+            (formData.get("full_name") as string)
+              .split(" ")
+              .slice(1)
+              .join(" ") || "",
+          preferred_language: "english",
+          email_updates: true,
         },
       ]);
 

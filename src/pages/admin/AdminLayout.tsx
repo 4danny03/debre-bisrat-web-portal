@@ -24,6 +24,7 @@ import {
   CalendarCheck,
   ChevronLeft,
   ChevronRight,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -162,6 +163,12 @@ export default function AdminLayout() {
       icon: CalendarCheck,
       label: "Appointments",
       description: "Manage appointment requests",
+    },
+    {
+      to: "/admin/email-marketing",
+      icon: Mail,
+      label: "Email Marketing",
+      description: "Newsletter campaigns",
     },
     {
       to: "/admin/users",

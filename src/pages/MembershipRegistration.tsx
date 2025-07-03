@@ -40,14 +40,9 @@ import {
 } from "lucide-react";
 
 interface FormData {
-  // Registration Date
-  registrationDate: string;
-
   // Personal Information
   firstName: string;
-  middleName: string;
   lastName: string;
-  baptismalName: string;
   email: string;
   phone: string;
   dateOfBirth: string;
@@ -55,60 +50,17 @@ interface FormData {
 
   // Address Information
   streetAddress: string;
-  aptSuiteBldg: string;
   city: string;
   stateProvinceRegion: string;
   postalZipCode: string;
   country: string;
 
-  // Spouse Information
-  spouse: string;
-  spouseBaptismalName: string;
-  spousePhone: string;
-  spouseEmail: string;
-
-  // Children Information
-  child1FirstName: string;
-  child1MiddleName: string;
-  child1LastName: string;
-  child1DateOfBirth: string;
-  child2FirstName: string;
-  child2MiddleName: string;
-  child2LastName: string;
-  child2DateOfBirth: string;
-
   // Membership Information
   membershipType: string;
-  previousMember: boolean;
-  previousChurch: string;
-  baptized: boolean;
-  baptismDate: string;
-
-  // Family Information
-  maritalStatus: string;
-  children: Array<{ name: string; age: string }>;
-
-  // Contact Preferences
+  ministryInterests: string;
   preferredLanguage: string;
-  contactMethod: string;
   emailUpdates: boolean;
-  smsUpdates: boolean;
-
-  // Ministry Interests
-  ministryInterests: string[];
-  volunteerInterests: string[];
-  skills: string;
-
-  // Emergency Contact
-  emergencyName: string;
-  emergencyPhone: string;
-  emergencyRelation: string;
-
-  // Additional Information
-  howDidYouHear: string;
-  additionalNotes: string;
   agreeToTerms: boolean;
-  agreeToPhotos: boolean;
 }
 
 const MembershipRegistration: FC = () => {
@@ -122,57 +74,25 @@ const MembershipRegistration: FC = () => {
   >([{ name: "", age: "" }]);
 
   const [formData, setFormData] = useState<FormData>({
-    registrationDate: new Date().toISOString().split("T")[0],
     firstName: "",
-    middleName: "",
     lastName: "",
-    baptismalName: "",
     email: "",
     phone: "",
     dateOfBirth: "",
     gender: "",
     streetAddress: "",
-    aptSuiteBldg: "",
     city: "",
     stateProvinceRegion: "",
     postalZipCode: "",
     country: "United States",
-    spouse: "",
-    spouseBaptismalName: "",
-    spousePhone: "",
-    spouseEmail: "",
-    child1FirstName: "",
-    child1MiddleName: "",
-    child1LastName: "",
-    child1DateOfBirth: "",
-    child2FirstName: "",
-    child2MiddleName: "",
-    child2LastName: "",
-    child2DateOfBirth: "",
     membershipType: "regular",
-    previousMember: false,
-    previousChurch: "",
-    baptized: false,
-    baptismDate: "",
-    maritalStatus: "single",
-    children: [],
+    ministryInterests: "",
     preferredLanguage: "english",
-    contactMethod: "email",
     emailUpdates: true,
-    smsUpdates: false,
-    ministryInterests: [],
-    volunteerInterests: [],
-    skills: "",
-    emergencyName: "",
-    emergencyPhone: "",
-    emergencyRelation: "",
-    howDidYouHear: "",
-    additionalNotes: "",
     agreeToTerms: false,
-    agreeToPhotos: false,
   });
 
-  const totalSteps = 5;
+  const totalSteps = 3;
   const progressPercentage = (currentStep / totalSteps) * 100;
 
   const ministryOptions = [
@@ -230,22 +150,6 @@ const MembershipRegistration: FC = () => {
       case 3:
         if (!formData.membershipType)
           errors.membershipType = "Membership type is required";
-        if (formData.previousMember && !formData.previousChurch.trim()) {
-          errors.previousChurch = "Previous church name is required";
-        }
-        if (formData.baptized && !formData.baptismDate) {
-          errors.baptismDate = "Baptism date is required";
-        }
-        break;
-      case 4:
-        if (!formData.emergencyName.trim())
-          errors.emergencyName = "Emergency contact name is required";
-        if (!formData.emergencyPhone.trim())
-          errors.emergencyPhone = "Emergency contact phone is required";
-        if (!formData.emergencyRelation.trim())
-          errors.emergencyRelation = "Emergency contact relation is required";
-        break;
-      case 5:
         if (!formData.agreeToTerms)
           errors.agreeToTerms = "You must agree to the terms and conditions";
         break;
@@ -308,56 +212,28 @@ const MembershipRegistration: FC = () => {
         .from("members")
         .insert([
           {
-            full_name: `${formData.firstName} ${formData.middleName ? formData.middleName + " " : ""}${formData.lastName}`,
+            full_name: `${formData.firstName} ${formData.lastName}`,
             email: formData.email,
             phone: formData.phone,
-            address: `${formData.streetAddress}${formData.aptSuiteBldg ? ", " + formData.aptSuiteBldg : ""}, ${formData.city}, ${formData.stateProvinceRegion} ${formData.postalZipCode}`,
+            address: `${formData.streetAddress}, ${formData.city}, ${formData.stateProvinceRegion} ${formData.postalZipCode}`,
             membership_type: formData.membershipType,
             membership_status: "pending",
             join_date: new Date().toISOString(),
-            registration_date: formData.registrationDate,
+            registration_date: new Date().toISOString().split("T")[0],
             first_name: formData.firstName,
-            middle_name: formData.middleName || null,
             last_name: formData.lastName,
-            baptismal_name: formData.baptismalName || null,
             street_address: formData.streetAddress,
-            apt_suite_bldg: formData.aptSuiteBldg || null,
             city: formData.city,
             state_province_region: formData.stateProvinceRegion,
             postal_zip_code: formData.postalZipCode,
             country: formData.country,
             date_of_birth: formData.dateOfBirth,
             gender: formData.gender,
-            marital_status: formData.maritalStatus,
-            spouse_name: formData.spouse || null,
-            spouse_baptismal_name: formData.spouseBaptismalName || null,
-            spouse_phone: formData.spousePhone || null,
-            spouse_email: formData.spouseEmail || null,
-            child1_first_name: formData.child1FirstName || null,
-            child1_middle_name: formData.child1MiddleName || null,
-            child1_last_name: formData.child1LastName || null,
-            child1_date_of_birth: formData.child1DateOfBirth || null,
-            child2_first_name: formData.child2FirstName || null,
-            child2_middle_name: formData.child2MiddleName || null,
-            child2_last_name: formData.child2LastName || null,
-            child2_date_of_birth: formData.child2DateOfBirth || null,
-            emergency_contact_name: formData.emergencyName,
-            emergency_contact_phone: formData.emergencyPhone,
-            emergency_contact_relation: formData.emergencyRelation,
             preferred_language: formData.preferredLanguage,
-            ministry_interests: formData.ministryInterests,
-            volunteer_interests: formData.volunteerInterests,
-            skills: formData.skills || null,
-            how_did_you_hear: formData.howDidYouHear || null,
-            additional_notes: formData.additionalNotes || null,
-            baptized: formData.baptized,
-            baptism_date: formData.baptismDate || null,
-            previous_member: formData.previousMember,
-            previous_church: formData.previousChurch || null,
-            children: formData.children.filter((child) => child.name.trim()),
+            ministry_interests: formData.ministryInterests
+              ? [formData.ministryInterests]
+              : [],
             email_updates: formData.emailUpdates,
-            sms_updates: formData.smsUpdates,
-            photo_consent: formData.agreeToPhotos,
           },
         ])
         .select()
@@ -385,8 +261,8 @@ const MembershipRegistration: FC = () => {
         donationType: "one_time",
         purpose: "membership_fee",
         email: formData.email,
-        name: `${formData.firstName} ${formData.middleName ? formData.middleName + " " : ""}${formData.lastName}`,
-        address: `${formData.streetAddress}${formData.aptSuiteBldg ? ", " + formData.aptSuiteBldg : ""}, ${formData.city}, ${formData.stateProvinceRegion} ${formData.postalZipCode}`,
+        name: `${formData.firstName} ${formData.lastName}`,
+        address: `${formData.streetAddress}, ${formData.city}, ${formData.stateProvinceRegion} ${formData.postalZipCode}`,
         memberId: memberData.id,
         membershipType: formData.membershipType,
       };
@@ -441,35 +317,14 @@ const MembershipRegistration: FC = () => {
         return (
           <div className="space-y-6">
             <div className="flex items-center gap-2 mb-4">
-              <Calendar className="h-5 w-5 text-church-burgundy" />
-              <h3 className="text-lg font-semibold">
-                {t("personal_information")}
-              </h3>
-            </div>
-
-            {/* Registration Date */}
-            <div className="space-y-2">
-              <Label htmlFor="registrationDate">
-                {t("date")} {t("required")}
-              </Label>
-              <Input
-                id="registrationDate"
-                type="date"
-                value={formData.registrationDate}
-                onChange={(e) =>
-                  handleInputChange("registrationDate", e.target.value)
-                }
-                className="bg-gray-50"
-                readOnly
-              />
+              <User className="h-5 w-5 text-church-burgundy" />
+              <h3 className="text-lg font-semibold">Personal Information</h3>
             </div>
 
             {/* Name Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="firstName">
-                  {t("first_name")} {t("required")}
-                </Label>
+                <Label htmlFor="firstName">First Name *</Label>
                 <Input
                   id="firstName"
                   value={formData.firstName}
@@ -484,20 +339,7 @@ const MembershipRegistration: FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="middleName">{t("middle_name")}</Label>
-                <Input
-                  id="middleName"
-                  value={formData.middleName}
-                  onChange={(e) =>
-                    handleInputChange("middleName", e.target.value)
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="lastName">
-                  {t("last_name")} {t("required")}
-                </Label>
+                <Label htmlFor="lastName">Last Name *</Label>
                 <Input
                   id="lastName"
                   value={formData.lastName}
@@ -512,40 +354,10 @@ const MembershipRegistration: FC = () => {
               </div>
             </div>
 
-            {/* Baptismal Name */}
-            <div className="space-y-2">
-              <Label htmlFor="baptismalName">{t("baptismal_name")}</Label>
-              <Input
-                id="baptismalName"
-                value={formData.baptismalName}
-                onChange={(e) =>
-                  handleInputChange("baptismalName", e.target.value)
-                }
-              />
-            </div>
-
             {/* Contact Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="phone">
-                  {t("phone")} {t("required")}
-                </Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange("phone", e.target.value)}
-                  className={formErrors.phone ? "border-red-500" : ""}
-                />
-                {formErrors.phone && (
-                  <p className="text-red-500 text-sm">{formErrors.phone}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">
-                  {t("email")} {t("required")}
-                </Label>
+                <Label htmlFor="email">Email Address *</Label>
                 <Input
                   id="email"
                   type="email"
@@ -557,13 +369,25 @@ const MembershipRegistration: FC = () => {
                   <p className="text-red-500 text-sm">{formErrors.email}</p>
                 )}
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number *</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                  className={formErrors.phone ? "border-red-500" : ""}
+                />
+                {formErrors.phone && (
+                  <p className="text-red-500 text-sm">{formErrors.phone}</p>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="dateOfBirth">
-                  {t("date_of_birth")} {t("required")}
-                </Label>
+                <Label htmlFor="dateOfBirth">Date of Birth *</Label>
                 <Input
                   id="dateOfBirth"
                   type="date"
@@ -581,9 +405,7 @@ const MembershipRegistration: FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>
-                  {t("gender")} {t("required")}
-                </Label>
+                <Label>Gender *</Label>
                 <RadioGroup
                   value={formData.gender}
                   onValueChange={(value) => handleInputChange("gender", value)}
@@ -591,11 +413,11 @@ const MembershipRegistration: FC = () => {
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="male" id="male" />
-                    <Label htmlFor="male">{t("male")}</Label>
+                    <Label htmlFor="male">Male</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="female" id="female" />
-                    <Label htmlFor="female">{t("female")}</Label>
+                    <Label htmlFor="female">Female</Label>
                   </div>
                 </RadioGroup>
                 {formErrors.gender && (
@@ -611,15 +433,11 @@ const MembershipRegistration: FC = () => {
           <div className="space-y-6">
             <div className="flex items-center gap-2 mb-4">
               <MapPin className="h-5 w-5 text-church-burgundy" />
-              <h3 className="text-lg font-semibold">
-                {t("address_information")}
-              </h3>
+              <h3 className="text-lg font-semibold">Address Information</h3>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="streetAddress">
-                {t("street_address")} {t("required")}
-              </Label>
+              <Label htmlFor="streetAddress">Street Address *</Label>
               <Input
                 id="streetAddress"
                 value={formData.streetAddress}
@@ -635,22 +453,9 @@ const MembershipRegistration: FC = () => {
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="aptSuiteBldg">{t("apt_suite_bldg")}</Label>
-              <Input
-                id="aptSuiteBldg"
-                value={formData.aptSuiteBldg}
-                onChange={(e) =>
-                  handleInputChange("aptSuiteBldg", e.target.value)
-                }
-              />
-            </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="city">
-                  {t("city")} {t("required")}
-                </Label>
+                <Label htmlFor="city">City *</Label>
                 <Input
                   id="city"
                   value={formData.city}
@@ -663,9 +468,7 @@ const MembershipRegistration: FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="stateProvinceRegion">
-                  {t("state_province_region")} {t("required")}
-                </Label>
+                <Label htmlFor="stateProvinceRegion">State/Province *</Label>
                 <Input
                   id="stateProvinceRegion"
                   value={formData.stateProvinceRegion}
@@ -686,9 +489,7 @@ const MembershipRegistration: FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="postalZipCode">
-                  {t("postal_zip_code")} {t("required")}
-                </Label>
+                <Label htmlFor="postalZipCode">ZIP/Postal Code *</Label>
                 <Input
                   id="postalZipCode"
                   value={formData.postalZipCode}
@@ -705,7 +506,7 @@ const MembershipRegistration: FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="country">{t("country")}</Label>
+                <Label htmlFor="country">Country</Label>
                 <Select
                   value={formData.country}
                   onValueChange={(value) => handleInputChange("country", value)}
@@ -714,12 +515,10 @@ const MembershipRegistration: FC = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="United States">
-                      {t("united_states")}
-                    </SelectItem>
-                    <SelectItem value="Canada">{t("canada")}</SelectItem>
-                    <SelectItem value="Ethiopia">{t("ethiopia")}</SelectItem>
-                    <SelectItem value="Other">{t("other")}</SelectItem>
+                    <SelectItem value="United States">United States</SelectItem>
+                    <SelectItem value="Canada">Canada</SelectItem>
+                    <SelectItem value="Ethiopia">Ethiopia</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -731,9 +530,9 @@ const MembershipRegistration: FC = () => {
         return (
           <div className="space-y-6">
             <div className="flex items-center gap-2 mb-4">
-              <FileText className="h-5 w-5 text-church-burgundy" />
+              <CheckCircle className="h-5 w-5 text-church-burgundy" />
               <h3 className="text-lg font-semibold">
-                Membership & Family Information
+                Membership Details & Preferences
               </h3>
             </div>
 
@@ -772,545 +571,53 @@ const MembershipRegistration: FC = () => {
               )}
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="previousMember"
-                  checked={formData.previousMember}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("previousMember", checked)
-                  }
-                />
-                <Label htmlFor="previousMember">
-                  I was previously a member of another Orthodox church
-                </Label>
-              </div>
-
-              {formData.previousMember && (
-                <div className="space-y-2">
-                  <Label htmlFor="previousChurch">Previous Church Name *</Label>
-                  <Input
-                    id="previousChurch"
-                    value={formData.previousChurch}
-                    onChange={(e) =>
-                      handleInputChange("previousChurch", e.target.value)
-                    }
-                    className={
-                      formErrors.previousChurch ? "border-red-500" : ""
-                    }
-                  />
-                  {formErrors.previousChurch && (
-                    <p className="text-red-500 text-sm">
-                      {formErrors.previousChurch}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="baptized"
-                  checked={formData.baptized}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("baptized", checked)
-                  }
-                />
-                <Label htmlFor="baptized">I have been baptized</Label>
-              </div>
-
-              {formData.baptized && (
-                <div className="space-y-2">
-                  <Label htmlFor="baptismDate">Baptism Date *</Label>
-                  <Input
-                    id="baptismDate"
-                    type="date"
-                    value={formData.baptismDate}
-                    onChange={(e) =>
-                      handleInputChange("baptismDate", e.target.value)
-                    }
-                    className={formErrors.baptismDate ? "border-red-500" : ""}
-                  />
-                  {formErrors.baptismDate && (
-                    <p className="text-red-500 text-sm">
-                      {formErrors.baptismDate}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-4">
-              <Label>Marital Status</Label>
-              <RadioGroup
-                value={formData.maritalStatus}
-                onValueChange={(value) =>
-                  handleInputChange("maritalStatus", value)
+            <div className="space-y-2">
+              <Label htmlFor="ministryInterests">Ministry Interests</Label>
+              <Textarea
+                id="ministryInterests"
+                value={formData.ministryInterests}
+                onChange={(e) =>
+                  handleInputChange("ministryInterests", e.target.value)
                 }
-                className="grid grid-cols-2 gap-4"
+                placeholder="Please describe any ministries or volunteer activities you're interested in..."
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Preferred Language</Label>
+              <RadioGroup
+                value={formData.preferredLanguage}
+                onValueChange={(value) =>
+                  handleInputChange("preferredLanguage", value)
+                }
+                className="flex gap-6"
               >
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="single" id="single" />
-                  <Label htmlFor="single">Single</Label>
+                  <RadioGroupItem value="english" id="english" />
+                  <Label htmlFor="english">English</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="married" id="married" />
-                  <Label htmlFor="married">Married</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="divorced" id="divorced" />
-                  <Label htmlFor="divorced">Divorced</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="widowed" id="widowed" />
-                  <Label htmlFor="widowed">Widowed</Label>
+                  <RadioGroupItem value="amharic" id="amharic" />
+                  <Label htmlFor="amharic">Amharic</Label>
                 </div>
               </RadioGroup>
             </div>
 
-            {formData.maritalStatus === "married" && (
-              <div className="space-y-4">
-                <h4 className="font-semibold text-church-burgundy">
-                  Spouse Information
-                </h4>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="spouse">Spouse</Label>
-                    <Input
-                      id="spouse"
-                      value={formData.spouse}
-                      onChange={(e) =>
-                        handleInputChange("spouse", e.target.value)
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="spouseBaptismalName">
-                      Spouse Baptismal Name
-                    </Label>
-                    <Input
-                      id="spouseBaptismalName"
-                      value={formData.spouseBaptismalName}
-                      onChange={(e) =>
-                        handleInputChange("spouseBaptismalName", e.target.value)
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="spousePhone">Spouse Phone</Label>
-                    <Input
-                      id="spousePhone"
-                      type="tel"
-                      value={formData.spousePhone}
-                      onChange={(e) =>
-                        handleInputChange("spousePhone", e.target.value)
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="spouseEmail">Spouse Email</Label>
-                    <Input
-                      id="spouseEmail"
-                      type="email"
-                      value={formData.spouseEmail}
-                      onChange={(e) =>
-                        handleInputChange("spouseEmail", e.target.value)
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
             <div className="space-y-4">
-              <h4 className="font-semibold text-church-burgundy">
-                Children Information
-              </h4>
-
-              {/* Child 1 */}
-              <div className="space-y-4 p-4 border rounded-lg">
-                <h5 className="font-medium text-gray-700">Child 1</h5>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="child1FirstName">First Name</Label>
-                    <Input
-                      id="child1FirstName"
-                      value={formData.child1FirstName}
-                      onChange={(e) =>
-                        handleInputChange("child1FirstName", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="child1MiddleName">Middle Name</Label>
-                    <Input
-                      id="child1MiddleName"
-                      value={formData.child1MiddleName}
-                      onChange={(e) =>
-                        handleInputChange("child1MiddleName", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="child1LastName">Last Name</Label>
-                    <Input
-                      id="child1LastName"
-                      value={formData.child1LastName}
-                      onChange={(e) =>
-                        handleInputChange("child1LastName", e.target.value)
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="child1DateOfBirth">Date of Birth</Label>
-                  <Input
-                    id="child1DateOfBirth"
-                    type="date"
-                    value={formData.child1DateOfBirth}
-                    onChange={(e) =>
-                      handleInputChange("child1DateOfBirth", e.target.value)
-                    }
-                  />
-                </div>
-              </div>
-
-              {/* Child 2 */}
-              <div className="space-y-4 p-4 border rounded-lg">
-                <h5 className="font-medium text-gray-700">Child 2</h5>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="child2FirstName">First Name</Label>
-                    <Input
-                      id="child2FirstName"
-                      value={formData.child2FirstName}
-                      onChange={(e) =>
-                        handleInputChange("child2FirstName", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="child2MiddleName">Middle Name</Label>
-                    <Input
-                      id="child2MiddleName"
-                      value={formData.child2MiddleName}
-                      onChange={(e) =>
-                        handleInputChange("child2MiddleName", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="child2LastName">Last Name</Label>
-                    <Input
-                      id="child2LastName"
-                      value={formData.child2LastName}
-                      onChange={(e) =>
-                        handleInputChange("child2LastName", e.target.value)
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="child2DateOfBirth">Date of Birth</Label>
-                  <Input
-                    id="child2DateOfBirth"
-                    type="date"
-                    value={formData.child2DateOfBirth}
-                    onChange={(e) =>
-                      handleInputChange("child2DateOfBirth", e.target.value)
-                    }
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 4:
-        return (
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Heart className="h-5 w-5 text-church-burgundy" />
-              <h3 className="text-lg font-semibold">
-                Ministry Interests & Emergency Contact
-              </h3>
-            </div>
-
-            <div className="space-y-4">
-              <Label>Ministry Interests (Select all that apply)</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {ministryOptions.map((ministry) => (
-                  <div key={ministry} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={ministry}
-                      checked={formData.ministryInterests.includes(ministry)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          handleArrayChange("ministryInterests", [
-                            ...formData.ministryInterests,
-                            ministry,
-                          ]);
-                        } else {
-                          handleArrayChange(
-                            "ministryInterests",
-                            formData.ministryInterests.filter(
-                              (m) => m !== ministry,
-                            ),
-                          );
-                        }
-                      }}
-                    />
-                    <Label htmlFor={ministry} className="text-sm">
-                      {ministry}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <Label>Volunteer Interests (Select all that apply)</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {volunteerOptions.map((volunteer) => (
-                  <div key={volunteer} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={volunteer}
-                      checked={formData.volunteerInterests.includes(volunteer)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          handleArrayChange("volunteerInterests", [
-                            ...formData.volunteerInterests,
-                            volunteer,
-                          ]);
-                        } else {
-                          handleArrayChange(
-                            "volunteerInterests",
-                            formData.volunteerInterests.filter(
-                              (v) => v !== volunteer,
-                            ),
-                          );
-                        }
-                      }}
-                    />
-                    <Label htmlFor={volunteer} className="text-sm">
-                      {volunteer}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="skills">Special Skills or Talents</Label>
-              <Textarea
-                id="skills"
-                value={formData.skills}
-                onChange={(e) => handleInputChange("skills", e.target.value)}
-                placeholder="Please describe any special skills, talents, or professional expertise you'd like to share..."
-              />
-            </div>
-
-            <Separator />
-
-            <div className="space-y-4">
-              <h4 className="font-semibold text-church-burgundy">
-                Emergency Contact Information
-              </h4>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="emergencyName">
-                    Emergency Contact Name *
-                  </Label>
-                  <Input
-                    id="emergencyName"
-                    value={formData.emergencyName}
-                    onChange={(e) =>
-                      handleInputChange("emergencyName", e.target.value)
-                    }
-                    className={formErrors.emergencyName ? "border-red-500" : ""}
-                  />
-                  {formErrors.emergencyName && (
-                    <p className="text-red-500 text-sm">
-                      {formErrors.emergencyName}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="emergencyPhone">
-                    Emergency Contact Phone *
-                  </Label>
-                  <Input
-                    id="emergencyPhone"
-                    type="tel"
-                    value={formData.emergencyPhone}
-                    onChange={(e) =>
-                      handleInputChange("emergencyPhone", e.target.value)
-                    }
-                    className={
-                      formErrors.emergencyPhone ? "border-red-500" : ""
-                    }
-                  />
-                  {formErrors.emergencyPhone && (
-                    <p className="text-red-500 text-sm">
-                      {formErrors.emergencyPhone}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="emergencyRelation">
-                  Relationship to Emergency Contact *
-                </Label>
-                <Input
-                  id="emergencyRelation"
-                  value={formData.emergencyRelation}
-                  onChange={(e) =>
-                    handleInputChange("emergencyRelation", e.target.value)
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="emailUpdates"
+                  checked={formData.emailUpdates}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("emailUpdates", checked)
                   }
-                  className={
-                    formErrors.emergencyRelation ? "border-red-500" : ""
-                  }
-                  placeholder="e.g., Spouse, Parent, Sibling, Friend"
                 />
-                {formErrors.emergencyRelation && (
-                  <p className="text-red-500 text-sm">
-                    {formErrors.emergencyRelation}
-                  </p>
-                )}
+                <Label htmlFor="emailUpdates">
+                  I would like to receive email updates about church events and
+                  news
+                </Label>
               </div>
-            </div>
-          </div>
-        );
-
-      case 5:
-        return (
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 mb-4">
-              <CheckCircle className="h-5 w-5 text-church-burgundy" />
-              <h3 className="text-lg font-semibold">Final Details & Review</h3>
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Preferred Language</Label>
-                <RadioGroup
-                  value={formData.preferredLanguage}
-                  onValueChange={(value) =>
-                    handleInputChange("preferredLanguage", value)
-                  }
-                  className="flex gap-6"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="english" id="english" />
-                    <Label htmlFor="english">English</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="amharic" id="amharic" />
-                    <Label htmlFor="amharic">Amharic</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Preferred Contact Method</Label>
-                <RadioGroup
-                  value={formData.contactMethod}
-                  onValueChange={(value) =>
-                    handleInputChange("contactMethod", value)
-                  }
-                  className="flex gap-6"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="email" id="contact-email" />
-                    <Label htmlFor="contact-email">Email</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="phone" id="contact-phone" />
-                    <Label htmlFor="contact-phone">Phone</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="emailUpdates"
-                    checked={formData.emailUpdates}
-                    onCheckedChange={(checked) =>
-                      handleInputChange("emailUpdates", checked)
-                    }
-                  />
-                  <Label htmlFor="emailUpdates">
-                    I would like to receive email updates about church events
-                    and news
-                  </Label>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="smsUpdates"
-                    checked={formData.smsUpdates}
-                    onCheckedChange={(checked) =>
-                      handleInputChange("smsUpdates", checked)
-                    }
-                  />
-                  <Label htmlFor="smsUpdates">
-                    I would like to receive SMS updates for urgent announcements
-                  </Label>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="howDidYouHear">
-                How did you hear about our church?
-              </Label>
-              <Select
-                value={formData.howDidYouHear}
-                onValueChange={(value) =>
-                  handleInputChange("howDidYouHear", value)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Please select..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="friend">
-                    Friend or Family Member
-                  </SelectItem>
-                  <SelectItem value="website">Church Website</SelectItem>
-                  <SelectItem value="social-media">Social Media</SelectItem>
-                  <SelectItem value="community-event">
-                    Community Event
-                  </SelectItem>
-                  <SelectItem value="drove-by">Drove by the Church</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="additionalNotes">
-                Additional Notes or Comments
-              </Label>
-              <Textarea
-                id="additionalNotes"
-                value={formData.additionalNotes}
-                onChange={(e) =>
-                  handleInputChange("additionalNotes", e.target.value)
-                }
-                placeholder="Please share anything else you'd like us to know..."
-              />
             </div>
 
             <Separator />
@@ -1340,24 +647,6 @@ const MembershipRegistration: FC = () => {
                   {formErrors.agreeToTerms}
                 </p>
               )}
-
-              <div className="flex items-start space-x-2">
-                <Checkbox
-                  id="agreeToPhotos"
-                  checked={formData.agreeToPhotos}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("agreeToPhotos", checked)
-                  }
-                />
-                <Label
-                  htmlFor="agreeToPhotos"
-                  className="text-sm leading-relaxed"
-                >
-                  I consent to having my photo taken during church events and
-                  activities for use in church publications, website, and social
-                  media.
-                </Label>
-              </div>
             </div>
 
             <div className="bg-church-cream p-4 rounded-lg">
@@ -1607,33 +896,15 @@ const MembershipRegistration: FC = () => {
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-2">
                   {getStepIcon(1)}
-                  <span className="text-sm font-medium">
-                    {t("step_personal")}
-                  </span>
+                  <span className="text-sm font-medium">Personal</span>
                 </div>
                 <div className="flex items-center gap-2">
                   {getStepIcon(2)}
-                  <span className="text-sm font-medium">
-                    {t("step_address")}
-                  </span>
+                  <span className="text-sm font-medium">Address</span>
                 </div>
                 <div className="flex items-center gap-2">
                   {getStepIcon(3)}
-                  <span className="text-sm font-medium">
-                    {t("step_membership")}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {getStepIcon(4)}
-                  <span className="text-sm font-medium">
-                    {t("step_ministry")}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {getStepIcon(5)}
-                  <span className="text-sm font-medium">
-                    {t("step_review")}
-                  </span>
+                  <span className="text-sm font-medium">Membership</span>
                 </div>
               </div>
               <Progress value={progressPercentage} className="h-2" />
