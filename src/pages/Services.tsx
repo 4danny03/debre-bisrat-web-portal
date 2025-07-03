@@ -1,7 +1,17 @@
 import React, { useState } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
-import { Settings } from "lucide-react";
+import { Settings, CalendarCheck } from "lucide-react";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+const baseUrl = import.meta.env.BASE_URL;
 import {
   Card,
   CardContent,
@@ -104,6 +114,7 @@ const Services: React.FC = () => {
   const { t, language } = useLanguage();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
+  const [showModal, setShowModal] = useState(false);
 
   const handleAppointmentSubmit = async (
     e: React.FormEvent<HTMLFormElement>,
@@ -269,50 +280,6 @@ const Services: React.FC = () => {
     ...regularServices,
     ...specialServices,
   ].filter((s) => s.requiresAppointment);
-
-  // Single appointment request handler
-  const handleAppointmentSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const name = formData.get("name") as string;
-    const email = formData.get("email") as string;
-    const phone = formData.get("phone") as string;
-    const date = formData.get("date") as string;
-    const time = formData.get("time") as string;
-    const notes = formData.get("notes") as string;
-    const serviceType = formData.get("serviceType") as string;
-    try {
-      await api.appointments.createAppointment({
-        name,
-        email,
-        phone,
-        service_title: serviceType || appointmentServices[0]?.title || "",
-        requested_date: date,
-        requested_time: time,
-        notes,
-        status: "pending",
-      });
-      toast({
-        title: language === "en" ? "Appointment Request Sent" : "የቀጠሮ ጥያቄ ተልኳል",
-        description:
-          language === "en"
-            ? `We've received your request for ${serviceType || appointmentServices[0]?.title}. We'll contact you soon to confirm.`
-            : `ለ${serviceType || appointmentServices[0]?.title} የቀጠሮ ጥያቄዎን ተቀብለናል። በቅርቡ ለማረጋገጥ እናገኝዎታለን።`,
-      });
-      (e.target as HTMLFormElement).reset();
-      setShowModal(false);
-    } catch (error) {
-      console.error("Error submitting appointment:", error);
-      toast({
-        title: language === "en" ? "Error" : "ስህተት",
-        description:
-          language === "en"
-            ? "Failed to submit appointment request. Please try again."
-            : "የቀጠሮ ጥያቄ ማስገባት አልተሳካም። እባክዎ እንደገና ይሞክሩ።",
-        variant: "destructive",
-      });
-    }
-  };
 
   return (
     <Layout>
@@ -648,7 +615,7 @@ const Services: React.FC = () => {
                   <AccordionContent>
                     {language === "en"
                       ? "Our youth program for teenagers (13-18) provides spiritual guidance, church service training, community service opportunities, and cultural activities every Saturday from 3:00 PM to 6:00 PM. Youth also participate in choir and traditional Ethiopian Orthodox church music training."
-                      : "ለወጣቶች (13-18) የሚሰጠው የወጣቶች ፕሮግራማችን መንፈሳዊ መመሪያ፣ የቤተክርስቲያን አገልግሎት ስልጠና፣ የማህበረሰብ አገልግሎት እድሎች እና በየሳምንቱ ቅዳሜ ከ3፡00 ምሽት እስከ 6፡00 ምሽት የባህል ስራዎችን ይሰጣል። ወጣቶች በዘማሪ ቡድን እና በባህላዊ የኢትዮጵያ ኦርቶዶክስ ቤተክርስቲያን ሙዚቃ ስልጠናም ይሳተፋሉ።"}
+                      : "ለወጣቶች (13-18) የሚሰጠው የወጣቶች ፕሮግራም መንፈሳዊ መመሪያ፣ የቤተክርስቲያን አገልግሎት ስልጠና፣ የማህበረሰብ አገልግሎት እድሎች እና በየሳምንቱ ቅዳሜ ከ3፡00 ምሽት እስከ 6፡00 ምሽት የባህል ስራዎችን ይሰጣል። ወጣቶች በዘማሪ ቡድን እና በባህላዊ የኢትዮጵያ ኦርቶዶክስ ቤተክርስቲያን ሙዚቃ ስልጠናም ይሳተፋሉ።"}
                   </AccordionContent>
                 </AccordionItem>
 
