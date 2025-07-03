@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -16,10 +16,36 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Mail, Users, Send, Eye } from "lucide-react";
 
+// Add types for state arrays
+interface Subscriber {
+  id: string;
+  email: string;
+  name?: string;
+  subscribed: boolean;
+  subscription_date: string;
+}
+interface Campaign {
+  id: string;
+  name: string;
+  subject: string;
+  content: string;
+  status: string;
+  recipient_count: number;
+  sent_count?: number;
+  sent_at?: string;
+  created_at: string;
+}
+interface Template {
+  id: string;
+  name: string;
+  template_type: string;
+  content: string;
+}
+
 export default function EmailMarketing() {
-  const [subscribers, setSubscribers] = useState([]);
-  const [campaigns, setCampaigns] = useState([]);
-  const [templates, setTemplates] = useState([]);
+  const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const { toast } = useToast();
@@ -30,11 +56,8 @@ export default function EmailMarketing() {
     content: "",
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  // useCallback for stable function reference
+  const loadData = useCallback(async () => {
     try {
       const [subscribersData, campaignsData, templatesData] = await Promise.all(
         [
@@ -52,7 +75,6 @@ export default function EmailMarketing() {
             .eq("template_type", "newsletter"),
         ],
       );
-
       if (subscribersData.data) setSubscribers(subscribersData.data);
       if (campaignsData.data) setCampaigns(campaignsData.data);
       if (templatesData.data) setTemplates(templatesData.data);
@@ -66,9 +88,14 @@ export default function EmailMarketing() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-  const sendCampaign = async () => {
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // useCallback for sendCampaign
+  const sendCampaign = useCallback(async () => {
     if (!newCampaign.name || !newCampaign.subject || !newCampaign.content) {
       toast({
         title: "Error",
@@ -138,7 +165,7 @@ export default function EmailMarketing() {
     } finally {
       setSending(false);
     }
-  };
+  }, [newCampaign, subscribers, toast, loadData]);
 
   if (loading) return <div>Loading...</div>;
 

@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import Layout from "../components/Layout";
-import { useLanguage } from "../contexts/LanguageContext";
-import { CheckCircle, Loader2, ExternalLink } from "lucide-react";
+import { Loader2, ExternalLink } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +23,6 @@ type SessionData = {
 };
 
 const DonationSuccess: React.FC = () => {
-  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
@@ -189,7 +187,10 @@ const DonationSuccess: React.FC = () => {
             <div className="bg-white text-center py-8">
               <div className="w-32 h-32 mx-auto mb-6 rounded-full overflow-hidden border-4 border-church-gold shadow-lg">
                 <img
-                  src="/images/religious/crucifixion.jpg"
+                  src={
+                    import.meta.env.BASE_URL +
+                    "images/religious/crucifixion.jpg"
+                  }
                   alt="Ethiopian Orthodox Icon"
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -323,7 +324,7 @@ const DonationSuccess: React.FC = () => {
                 <div className="flex justify-center pt-6">
                   <div className="w-48 h-32 bg-church-burgundy rounded-lg overflow-hidden shadow-md">
                     <img
-                      src="/images/church-front.jpg"
+                      src={import.meta.env.BASE_URL + "images/church-front.jpg"}
                       alt="Church Building"
                       className="w-full h-full object-cover"
                       onError={(e) => {

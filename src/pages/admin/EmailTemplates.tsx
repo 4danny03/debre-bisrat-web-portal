@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -22,10 +22,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Edit, Save, Trash2 } from "lucide-react";
 
+export interface EmailTemplate {
+  id?: string;
+  name: string;
+  subject: string;
+  content: string;
+  template_type: string;
+  is_active: boolean;
+}
+
 export default function EmailTemplates() {
-  const [templates, setTemplates] = useState([]);
-  const [editingTemplate, setEditingTemplate] = useState(null);
-  const [newTemplate, setNewTemplate] = useState({
+  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
+  const [newTemplate, setNewTemplate] = useState<EmailTemplate>({
     name: "",
     subject: "",
     content: "",
@@ -35,11 +44,7 @@ export default function EmailTemplates() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    loadTemplates();
-  }, []);
-
-  const loadTemplates = async () => {
+  const loadTemplates = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("email_templates")
@@ -47,7 +52,7 @@ export default function EmailTemplates() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setTemplates(data || []);
+      setTemplates((data as EmailTemplate[]) || []);
     } catch (error) {
       console.error("Error loading templates:", error);
       toast({
@@ -58,9 +63,13 @@ export default function EmailTemplates() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-  const saveTemplate = async (template) => {
+  useEffect(() => {
+    loadTemplates();
+  }, [loadTemplates]);
+
+  const saveTemplate = async (template: EmailTemplate) => {
     try {
       if (template.id) {
         const { error } = await supabase
@@ -99,7 +108,7 @@ export default function EmailTemplates() {
     }
   };
 
-  const deleteTemplate = async (id) => {
+  const deleteTemplate = async (id: string) => {
     try {
       const { error } = await supabase
         .from("email_templates")
@@ -215,15 +224,14 @@ export default function EmailTemplates() {
       </Card>
 
       <div className="space-y-4">
-        {templates.map((template: any) => (
+        {templates.map((template) => (
           <Card key={template.id}>
             <CardHeader>
               <div className="flex justify-between items-center">
                 <div>
                   <CardTitle className="text-lg">{template.name}</CardTitle>
                   <CardDescription>
-                    Type: {template.template_type} | Status:{" "}
-                    {template.is_active ? "Active" : "Inactive"}
+                    Type: {template.template_type} | Status: {template.is_active ? "Active" : "Inactive"}
                   </CardDescription>
                 </div>
                 <div className="flex space-x-2">
@@ -237,24 +245,23 @@ export default function EmailTemplates() {
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => deleteTemplate(template.id)}
+                    onClick={() => deleteTemplate(template.id!)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
             </CardHeader>
-            {editingTemplate?.id === template.id && (
+            {editingTemplate && editingTemplate.id === template.id && (
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>Subject</Label>
                   <Input
                     value={editingTemplate.subject}
                     onChange={(e) =>
-                      setEditingTemplate((prev) => ({
-                        ...prev,
-                        subject: e.target.value,
-                      }))
+                      setEditingTemplate((prev) =>
+                        prev ? { ...prev, subject: e.target.value, name: prev.name ?? "", content: prev.content ?? "", template_type: prev.template_type ?? "newsletter", is_active: prev.is_active ?? true } : prev
+                      )
                     }
                   />
                 </div>
@@ -264,15 +271,14 @@ export default function EmailTemplates() {
                     rows={6}
                     value={editingTemplate.content}
                     onChange={(e) =>
-                      setEditingTemplate((prev) => ({
-                        ...prev,
-                        content: e.target.value,
-                      }))
+                      setEditingTemplate((prev) =>
+                        prev ? { ...prev, content: e.target.value, name: prev.name ?? "", subject: prev.subject ?? "", template_type: prev.template_type ?? "newsletter", is_active: prev.is_active ?? true } : prev
+                      )
                     }
                   />
                 </div>
                 <div className="flex space-x-2">
-                  <Button onClick={() => saveTemplate(editingTemplate)}>
+                  <Button onClick={() => editingTemplate && saveTemplate(editingTemplate)}>
                     <Save className="h-4 w-4 mr-2" />
                     Save Changes
                   </Button>

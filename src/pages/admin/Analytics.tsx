@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -75,7 +75,6 @@ interface AnalyticsData {
   engagement: {
     prayerRequests: number;
     testimonials: number;
-    sermons: number;
     galleryViews: number;
   };
 }
@@ -89,11 +88,7 @@ export default function Analytics() {
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
 
-  useEffect(() => {
-    loadAnalyticsData();
-  }, [timeRange]);
-
-  const loadAnalyticsData = async () => {
+  const loadAnalyticsData = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -110,7 +105,6 @@ export default function Analytics() {
         eventsRes,
         prayerRequestsRes,
         testimonialsRes,
-        sermonsRes,
       ] = await Promise.all([
         supabase
           .from("donations")
@@ -130,7 +124,6 @@ export default function Analytics() {
         supabase
           .from("testimonials")
           .select("*", { count: "exact", head: true }),
-        supabase.from("sermons").select("*", { count: "exact", head: true }),
       ]);
 
       // Process donations data
@@ -178,7 +171,6 @@ export default function Analytics() {
         engagement: {
           prayerRequests: prayerRequestsRes.count || 0,
           testimonials: testimonialsRes.count || 0,
-          sermons: sermonsRes.count || 0,
           galleryViews: 0, // Would need view tracking
         },
       });
@@ -192,7 +184,11 @@ export default function Analytics() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [timeRange, toast]);
+
+  useEffect(() => {
+    loadAnalyticsData();
+  }, [loadAnalyticsData]);
 
   const processMonthlyData = (
     items: any[],
@@ -497,7 +493,7 @@ export default function Analytics() {
                       fill="#8884d8"
                       dataKey="amount"
                     >
-                      {data.donations.byPurpose.map((entry, index) => (
+                      {data.donations.byPurpose.map((_, index) => (
                         <Cell
                           key={`cell-${index}`}
                           fill={COLORS[index % COLORS.length]}
@@ -557,7 +553,7 @@ export default function Analytics() {
                       fill="#8884d8"
                       dataKey="count"
                     >
-                      {data.members.byType.map((entry, index) => (
+                      {data.members.byType.map((_, index) => (
                         <Cell
                           key={`cell-${index}`}
                           fill={COLORS[index % COLORS.length]}
@@ -622,17 +618,6 @@ export default function Analytics() {
                   {data.engagement.testimonials}
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Community stories</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Sermons</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-church-burgundy">
-                  {data.engagement.sermons}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">Available content</p>
               </CardContent>
             </Card>
             <Card>

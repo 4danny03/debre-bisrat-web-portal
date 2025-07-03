@@ -3,10 +3,6 @@ import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { validateEnv } from "./lib/env";
-import { TempoDevtools } from "tempo-devtools";
-
-// Initialize Tempo Devtools
-TempoDevtools.init();
 
 // Validate environment variables before starting the app
 validateEnv();
