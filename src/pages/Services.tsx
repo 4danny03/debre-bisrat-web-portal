@@ -57,58 +57,6 @@ const ServiceItem: React.FC<ServiceItemProps> = ({
   imageUrl,
   requiresAppointment = false,
 }) => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { language } = useLanguage();
-  const { toast } = useToast();
-  const handleAppointmentSubmit = async (
-    e: React.FormEvent<HTMLFormElement>,
-  ) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const name = formData.get("name") as string;
-    const email = formData.get("email") as string;
-    const phone = formData.get("phone") as string;
-    const date = formData.get("date") as string;
-    const time = formData.get("time") as string;
-    const notes = formData.get("notes") as string;
-
-    try {
-      // Save appointment to database
-      await api.appointments.createAppointment({
-        name,
-        email,
-        phone,
-        service_title: title,
-        requested_date: date,
-        requested_time: time,
-        notes,
-        status: "pending",
-      });
-
-      // Show success message
-      toast({
-        title: language === "en" ? "Appointment Request Sent" : "የቀጠሮ ጥያቄ ተልኳል",
-        description:
-          language === "en"
-            ? `We've received your request for ${title}. We'll contact you soon to confirm.`
-            : `ለ${title} የቀጠሮ ጥያቄዎን ተቀብለናል። በቅርቡ ለማረጋገጥ እናገኝዎታለን።`,
-      });
-
-      setIsDialogOpen(false);
-      (e.target as HTMLFormElement).reset();
-    } catch (error) {
-      console.error("Error submitting appointment:", error);
-      toast({
-        title: language === "en" ? "Error" : "ስህተት",
-        description:
-          language === "en"
-            ? "Failed to submit appointment request. Please try again."
-            : "የቀጠሮ ጥያቄ ማስገባት አልተሳካም። እባክዎ እንደገና ይሞክሩ።",
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
     <div className="border-l-2 border-church-gold pl-4 mb-6">
       {imageUrl && (
@@ -134,124 +82,10 @@ const ServiceItem: React.FC<ServiceItemProps> = ({
       <h3 className="text-xl font-serif text-church-burgundy">{title}</h3>
       <p className="text-sm text-gray-500 mb-2">{time}</p>
       <p className="text-gray-700">{description}</p>
-
       {requiresAppointment && (
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button
-              variant="outline"
-              size="xs"
-              className="mt-2 bg-church-burgundy text-white hover:bg-church-burgundy/90 text-xs py-1 px-2"
-            >
-              <CalendarCheck className="mr-1 h-3 w-3" />
-              {language === "en" ? "Request Appointment" : "ቀጠሮ ይጠይቁ"}
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>
-                {language === "en" ? "Request Appointment" : "ቀጠሮ ይጠይቁ"}
-              </DialogTitle>
-              <DialogDescription>
-                {language === "en"
-                  ? `Fill out this form to request an appointment for ${title}.`
-                  : `ለ${title} ቀጠሮ ለመጠየቅ ይህን ቅጽ ይሙሉ።`}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleAppointmentSubmit}>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="name" className="text-right">
-                    <User className="h-4 w-4 inline mr-1" />
-                    {language === "en" ? "Name" : "ስም"}
-                  </Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    className="col-span-3"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="email" className="text-right">
-                    <Mail className="h-4 w-4 inline mr-1" />
-                    {language === "en" ? "Email" : "ኢሜይል"}
-                  </Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    className="col-span-3"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="phone" className="text-right">
-                    <Phone className="h-4 w-4 inline mr-1" />
-                    {language === "en" ? "Phone" : "ስልክ"}
-                  </Label>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    className="col-span-3"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="date" className="text-right">
-                    <Calendar className="h-4 w-4 inline mr-1" />
-                    {language === "en" ? "Date" : "ቀን"}
-                  </Label>
-                  <Input
-                    id="date"
-                    name="date"
-                    type="date"
-                    className="col-span-3"
-                    min={format(new Date(), "yyyy-MM-dd")}
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="time" className="text-right">
-                    <Clock className="h-4 w-4 inline mr-1" />
-                    {language === "en" ? "Time" : "ሰዓት"}
-                  </Label>
-                  <Input
-                    id="time"
-                    name="time"
-                    type="time"
-                    className="col-span-3"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="notes" className="text-right">
-                    {language === "en" ? "Notes" : "ማስታወሻዎች"}
-                  </Label>
-                  <Textarea
-                    id="notes"
-                    name="notes"
-                    className="col-span-3"
-                    placeholder={
-                      language === "en"
-                        ? "Any additional information..."
-                        : "ማንኛውም ተጨማሪ መረጃ..."
-                    }
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  type="submit"
-                  className="bg-church-burgundy hover:bg-church-burgundy/90"
-                >
-                  {language === "en" ? "Submit Request" : "ጥያቄ አስገባ"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <p className="text-xs text-church-burgundy mt-2 font-medium">
+          * Appointment required
+        </p>
       )}
     </div>
   );
@@ -288,6 +122,58 @@ const getServiceImage = (title: string): string => {
 
 const Services: React.FC = () => {
   const { t, language } = useLanguage();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
+
+  const handleAppointmentSubmit = async (
+    e: React.FormEvent<HTMLFormElement>,
+  ) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get("name") as string;
+    const email = formData.get("email") as string;
+    const phone = formData.get("phone") as string;
+    const date = formData.get("date") as string;
+    const time = formData.get("time") as string;
+    const service = formData.get("service") as string;
+    const notes = formData.get("notes") as string;
+
+    try {
+      // Save appointment to database
+      await api.appointments.createAppointment({
+        name,
+        email,
+        phone,
+        service_title: service,
+        requested_date: date,
+        requested_time: time,
+        notes,
+        status: "pending",
+      });
+
+      // Show success message
+      toast({
+        title: language === "en" ? "Appointment Request Sent" : "የቀጠሮ ጥያቄ ተልኳል",
+        description:
+          language === "en"
+            ? `We've received your appointment request. We'll contact you soon to confirm.`
+            : `የቀጠሮ ጥያቄዎን ተቀብለናል። በቅርቡ ለማረጋገጥ እናገኝዎታለን።`,
+      });
+
+      setIsDialogOpen(false);
+      (e.target as HTMLFormElement).reset();
+    } catch (error) {
+      console.error("Error submitting appointment:", error);
+      toast({
+        title: language === "en" ? "Error" : "ስህተት",
+        description:
+          language === "en"
+            ? "Failed to submit appointment request. Please try again."
+            : "የቀጠሮ ጥያቄ ማስገባት አልተሳካም። እባክዎ እንደገና ይሞክሩ።",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Service data based on the provided church services
   const regularServices = [
@@ -407,10 +293,166 @@ const Services: React.FC = () => {
             <h1 className="text-4xl font-serif text-church-burgundy mb-4">
               {t("services_title") || "Church Services"}
             </h1>
-            <p className="max-w-2xl mx-auto text-lg">
+            <p className="max-w-2xl mx-auto text-lg mb-6">
               {t("services_description") ||
                 "Join us for worship and spiritual growth through our regular and special services. Our church follows the ancient traditions of the Ethiopian Orthodox Tewahedo Church."}
             </p>
+
+            {/* Single Request Appointment Button */}
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-church-burgundy hover:bg-church-burgundy/90 text-white px-8 py-3 text-lg">
+                  <CalendarCheck className="h-5 w-5 mr-2" />
+                  {language === "en" ? "Request Appointment" : "ቀጠሮ ይጠይቁ"}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle>
+                    {language === "en"
+                      ? "Request Service Appointment"
+                      : "የአገልግሎት ቀጠሮ ይጠይቁ"}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {language === "en"
+                      ? "Please fill out the form below to request an appointment for any of our services that require scheduling."
+                      : "ቀጠሮ የሚያስፈልጋቸው ማንኛውም አገልግሎቶች ለመጠየቅ ከታች ያለውን ቅጽ ይሙሉ።"}
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleAppointmentSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">
+                        {language === "en" ? "Full Name" : "ሙሉ ስም"} *
+                      </Label>
+                      <Input id="name" name="name" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">
+                        {language === "en" ? "Email" : "ኢሜል"} *
+                      </Label>
+                      <Input id="email" name="email" type="email" required />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">
+                      {language === "en" ? "Phone Number" : "ስልክ ቁጥር"} *
+                    </Label>
+                    <Input id="phone" name="phone" type="tel" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="service">
+                      {language === "en" ? "Service Requested" : "የተጠየቀ አገልግሎት"}{" "}
+                      *
+                    </Label>
+                    <select
+                      id="service"
+                      name="service"
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-church-burgundy"
+                    >
+                      <option value="">
+                        {language === "en"
+                          ? "Select a service..."
+                          : "አገልግሎት ይምረጡ..."}
+                      </option>
+                      <option
+                        value={
+                          language === "en" ? "Marriage Ceremony" : "ጋብቻ መፈፀም"
+                        }
+                      >
+                        {language === "en" ? "Marriage Ceremony" : "ጋብቻ መፈፀም"}
+                      </option>
+                      <option
+                        value={
+                          language === "en" ? "Funeral Prayer" : "ጸሎተ ፍትሐት"
+                        }
+                      >
+                        {language === "en" ? "Funeral Prayer" : "ጸሎተ ፍትሐት"}
+                      </option>
+                      <option
+                        value={
+                          language === "en"
+                            ? "Counseling Services"
+                            : "የምክር አገልግሎት"
+                        }
+                      >
+                        {language === "en"
+                          ? "Counseling Services"
+                          : "የምክር አገልግሎት"}
+                      </option>
+                      <option
+                        value={language === "en" ? "Qendil Prayer" : "ጸሎተ ቀንዲል"}
+                      >
+                        {language === "en" ? "Qendil Prayer" : "ጸሎተ ቀንዲል"}
+                      </option>
+                      <option
+                        value={
+                          language === "en" ? "Qeder Baptism" : "የቄደር ጥምቀት"
+                        }
+                      >
+                        {language === "en" ? "Qeder Baptism" : "የቄደር ጥምቀት"}
+                      </option>
+                      <option
+                        value={
+                          language === "en"
+                            ? "Christian Initiation"
+                            : "ክርስትና ማስነሳት"
+                        }
+                      >
+                        {language === "en"
+                          ? "Christian Initiation"
+                          : "ክርስትና ማስነሳት"}
+                      </option>
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="date">
+                        {language === "en" ? "Preferred Date" : "የተመረጠ ቀን"} *
+                      </Label>
+                      <Input id="date" name="date" type="date" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="time">
+                        {language === "en" ? "Preferred Time" : "የተመረጠ ሰዓት"} *
+                      </Label>
+                      <Input id="time" name="time" type="time" required />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">
+                      {language === "en" ? "Additional Notes" : "ተጨማሪ ማስታወሻዎች"}
+                    </Label>
+                    <Textarea
+                      id="notes"
+                      name="notes"
+                      placeholder={
+                        language === "en"
+                          ? "Please provide any additional details or special requests..."
+                          : "እባክዎን ማንኛውም ተጨማሪ ዝርዝሮች ወይም ልዩ ጥያቄዎች ያቅርቡ..."
+                      }
+                      rows={3}
+                    />
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsDialogOpen(false)}
+                    >
+                      {language === "en" ? "Cancel" : "ሰርዝ"}
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="bg-church-burgundy hover:bg-church-burgundy/90"
+                    >
+                      {language === "en" ? "Submit Request" : "ጥያቄ አስገባ"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">

@@ -309,6 +309,18 @@ export default function Appointments() {
                             <Clock className="w-3 h-3 mr-1" />
                             {appointment.requested_time}
                           </div>
+                          {appointment.confirmed_date &&
+                            appointment.confirmed_date !==
+                              appointment.requested_date && (
+                              <div className="flex items-center text-sm text-green-600">
+                                <Calendar className="w-3 h-3 mr-1" />
+                                Confirmed:{" "}
+                                {format(
+                                  new Date(appointment.confirmed_date),
+                                  "MMM d, yyyy",
+                                )}
+                              </div>
+                            )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -328,6 +340,11 @@ export default function Appointments() {
                               new Date(appointment.responded_at),
                               "MMM d, HH:mm",
                             )}
+                          </div>
+                        )}
+                        {appointment.responded_by_profile?.email && (
+                          <div className="text-xs text-gray-400 mt-1">
+                            By: {appointment.responded_by_profile.email}
                           </div>
                         )}
                       </TableCell>

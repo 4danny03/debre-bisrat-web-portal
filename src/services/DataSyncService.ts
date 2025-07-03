@@ -50,7 +50,7 @@ class CoreDataSyncService {
     return { ...this.syncStatus };
   }
 
-  addSubscription(table: string, callback: (payload: any) => void): void {
+  addSubscription(table: string, callback: () => void): void {
     if (this.subscriptions.has(table)) {
       console.warn(`Subscription for table ${table} already exists`);
       return;
@@ -140,10 +140,6 @@ class AdminActionTracker {
   private maxActions = 1000;
   private maxErrors = 500;
 
-  constructor() {
-    this.ensureArraysInitialized();
-  }
-
   private ensureArraysInitialized(): void {
     if (!Array.isArray(this.actions)) {
       this.actions = [];
@@ -211,18 +207,16 @@ class AdminActionTracker {
 
   getRecentActions(limit = 10): AdminAction[] {
     this.ensureArraysInitialized();
-    return Array.isArray(this.actions) ? this.actions.slice(0, limit) : [];
+    return this.actions.slice(0, limit);
   }
 
   getRecentErrors(limit = 10): ErrorLog[] {
     this.ensureArraysInitialized();
-    return Array.isArray(this.errors) ? this.errors.slice(0, limit) : [];
+    return this.errors.slice(0, limit);
   }
 
   getActionsByTable(table: string, limit = 10): AdminAction[] {
     this.ensureArraysInitialized();
-    if (!Array.isArray(this.actions)) return [];
-
     return this.actions
       .filter((action) => action.table === table)
       .slice(0, limit);
@@ -230,55 +224,35 @@ class AdminActionTracker {
 
   getActionsByUser(userId: string, limit = 10): AdminAction[] {
     this.ensureArraysInitialized();
-    if (!Array.isArray(this.actions)) return [];
-
     return this.actions
       .filter((action) => action.userId === userId)
       .slice(0, limit);
   }
 
-  getStats(): {
-    totalActions: number;
-    totalErrors: number;
-    actionsByTable: Record<string, number>;
-    errorsByContext: Record<string, number>;
-  } {
+  getStats() {
     this.ensureArraysInitialized();
-
     const actionsByTable: Record<string, number> = {};
     const errorsByContext: Record<string, number> = {};
-
-    if (Array.isArray(this.actions)) {
-      this.actions.forEach((action) => {
-        actionsByTable[action.table] = (actionsByTable[action.table] || 0) + 1;
-      });
-    }
-
-    if (Array.isArray(this.errors)) {
-      this.errors.forEach((error) => {
-        const context = error.context || "unknown";
-        errorsByContext[context] = (errorsByContext[context] || 0) + 1;
-      });
-    }
-
+    this.actions.forEach((action) => {
+      actionsByTable[action.table] = (actionsByTable[action.table] || 0) + 1;
+    });
+    this.errors.forEach((error) => {
+      const context = error.context || "unknown";
+      errorsByContext[context] = (errorsByContext[context] || 0) + 1;
+    });
     return {
-      totalActions: Array.isArray(this.actions) ? this.actions.length : 0,
-      totalErrors: Array.isArray(this.errors) ? this.errors.length : 0,
+      totalActions: this.actions.length,
+      totalErrors: this.errors.length,
       actionsByTable,
       errorsByContext,
     };
   }
 
-  exportData(): {
-    actions: AdminAction[];
-    errors: ErrorLog[];
-    exportedAt: string;
-  } {
+  exportData() {
     this.ensureArraysInitialized();
-
     return {
-      actions: Array.isArray(this.actions) ? [...this.actions] : [],
-      errors: Array.isArray(this.errors) ? [...this.errors] : [],
+      actions: [...this.actions],
+      errors: [...this.errors],
       exportedAt: new Date().toISOString(),
     };
   }
@@ -297,15 +271,8 @@ class DataSyncService {
   private isInitialized = false;
 
   constructor() {
-    try {
-      this.coreService = new CoreDataSyncService();
-      this.actionTracker = new AdminActionTracker();
-    } catch (error) {
-      console.error("Failed to initialize DataSyncService:", error);
-      // Create fallback instances
-      this.coreService = new CoreDataSyncService();
-      this.actionTracker = new AdminActionTracker();
-    }
+    this.coreService = new CoreDataSyncService();
+    this.actionTracker = new AdminActionTracker();
   }
 
   initialize(): void {
@@ -313,7 +280,6 @@ class DataSyncService {
       console.warn("DataSyncService: Already initialized");
       return;
     }
-
     try {
       this.coreService.initialize();
       this.isInitialized = true;
@@ -333,7 +299,7 @@ class DataSyncService {
     return this.coreService.getStatus();
   }
 
-  addSubscription(table: string, callback: (payload: any) => void): void {
+  addSubscription(table: string, callback: () => void): void {
     this.coreService.addSubscription(table, callback);
   }
 
@@ -354,6 +320,7 @@ class DataSyncService {
     details?: string,
   ): void {
     this.actionTracker.logAction(action, table, data, userId, details);
+    this.logActionToDb(action, table, data, userId, details);
   }
 
   logError(
@@ -381,21 +348,12 @@ class DataSyncService {
     return this.actionTracker.getActionsByUser(userId, limit);
   }
 
-  getAdminStats(): {
-    totalActions: number;
-    totalErrors: number;
-    actionsByTable: Record<string, number>;
-    errorsByContext: Record<string, number>;
-  } {
+  getAdminStats() {
     return this.actionTracker.getStats();
   }
 
   // Utility methods
-  exportLogs(): {
-    actions: AdminAction[];
-    errors: ErrorLog[];
-    exportedAt: string;
-  } {
+  exportLogs() {
     return this.actionTracker.exportData();
   }
 
@@ -414,16 +372,13 @@ class DataSyncService {
   async callAdminFunction(operation: string, data?: any): Promise<any> {
     try {
       const { supabase } = await import("@/integrations/supabase/client");
-
       const { data: result, error } = await supabase.functions.invoke(
         "supabase-functions-admin-operations",
         {
           body: { operation, data },
         },
       );
-
       if (error) throw error;
-
       this.notifyAdminAction("admin_function_call", operation, {
         operation,
         success: true,
@@ -454,13 +409,44 @@ class DataSyncService {
   async exportData(table: string, filters?: any): Promise<any> {
     return this.callAdminFunction("exportData", { table, filters });
   }
+
+  async logActionToDb(
+    action: string,
+    table: string,
+    data?: any,
+    userId?: string,
+    details?: string,
+  ) {
+    try {
+      await supabase.from("admin_audit_log").insert({
+        action,
+        table_name: table,
+        data,
+        user_id: userId,
+        details,
+      });
+    } catch (error) {
+      console.error("Failed to log admin action to DB:", error);
+    }
+  }
+
+  async getRecentAdminActionsFromDb(limit = 50) {
+    const { data, error } = await supabase
+      .from("admin_audit_log")
+      .select("*")
+      .order("timestamp", { ascending: false })
+      .limit(limit);
+    if (error) {
+      console.error("Failed to fetch audit log from DB:", error);
+      return [];
+    }
+    return data;
+  }
 }
 
 // Export singleton instance
 export const dataSyncService = new DataSyncService();
 
-// Initialize on import
 dataSyncService.initialize();
 
-// Export types for use in other modules
 export type { AdminAction, ErrorLog, DataSyncStatus };
