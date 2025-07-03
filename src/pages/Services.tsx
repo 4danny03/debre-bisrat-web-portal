@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
 import { Settings } from "lucide-react";
@@ -47,6 +47,7 @@ const getServiceImage = (title: string): string => {
 const Services: React.FC = () => {
   const { t, language } = useLanguage();
   const { toast } = useToast();
+  const [showModal, setShowModal] = useState(false);
 
   // Service data
   const regularServices = [
@@ -173,12 +174,13 @@ const Services: React.FC = () => {
     const date = formData.get("date") as string;
     const time = formData.get("time") as string;
     const notes = formData.get("notes") as string;
+    const serviceType = formData.get("serviceType") as string;
     try {
       await api.appointments.createAppointment({
         name,
         email,
         phone,
-        service_title: appointmentServices[0]?.title || "",
+        service_title: serviceType || appointmentServices[0]?.title || "",
         requested_date: date,
         requested_time: time,
         notes,
@@ -188,10 +190,11 @@ const Services: React.FC = () => {
         title: language === "en" ? "Appointment Request Sent" : "የቀጠሮ ጥያቄ ተልኳል",
         description:
           language === "en"
-            ? `We've received your request for ${appointmentServices[0]?.title}. We'll contact you soon to confirm.`
-            : `ለ${appointmentServices[0]?.title} የቀጠሮ ጥያቄዎን ተቀብለናል። በቅርቡ ለማረጋገጥ እናገኝዎታለን።`,
+            ? `We've received your request for ${serviceType || appointmentServices[0]?.title}. We'll contact you soon to confirm.`
+            : `ለ${serviceType || appointmentServices[0]?.title} የቀጠሮ ጥያቄዎን ተቀብለናል። በቅርቡ ለማረጋገጥ እናገኝዎታለን።`,
       });
       (e.target as HTMLFormElement).reset();
+      setShowModal(false);
     } catch (error) {
       console.error("Error submitting appointment:", error);
       toast({
@@ -220,65 +223,84 @@ const Services: React.FC = () => {
             </p>
           </div>
 
-          {/* Single Appointment Request Section */}
-          <Card className="mb-10">
-            <CardHeader>
-              <CardTitle>{language === "en" ? "Request an Appointment" : "ቀጠሮ ይጠይቁ"}</CardTitle>
-              <CardDescription>
-                {language === "en"
-                  ? "Select a service and fill out the form to request an appointment."
-                  : "አገልግሎት ይምረጡ እና ቅጹን ይሙሉ ለቀጠሮ ለመጠየቅ።"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleAppointmentSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="serviceType">{language === "en" ? "Service Type" : "የአገልግሎት አይነት"}</Label>
-                  <select
-                    id="serviceType"
-                    name="serviceType"
-                    className="w-full border rounded px-3 py-2 mt-1"
-                    required
-                  >
-                    {appointmentServices.map((service, idx) => (
-                      <option key={service.title + idx} value={service.title}>
-                        {service.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Single Appointment Request Button */}
+          <div className="flex justify-center mb-10">
+            <Button
+              className="bg-church-burgundy hover:bg-church-burgundy/90 text-lg px-8 py-3"
+              onClick={() => setShowModal(true)}
+            >
+              {language === "en" ? "Request Appointment" : "ቀጠሮ ይጠይቁ"}
+            </Button>
+          </div>
+
+          {/* Modal Dialog for Appointment Form */}
+          {showModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+              <div className="bg-white rounded-lg shadow-lg max-w-lg w-full p-6 relative animate-fade-in">
+                <button
+                  className="absolute top-2 right-2 text-gray-500 hover:text-church-burgundy text-2xl font-bold"
+                  onClick={() => setShowModal(false)}
+                  aria-label="Close"
+                >
+                  ×
+                </button>
+                <CardTitle className="mb-2">
+                  {language === "en" ? "Request an Appointment" : "ቀጠሮ ይጠይቁ"}
+                </CardTitle>
+                <CardDescription className="mb-4">
+                  {language === "en"
+                    ? "Select a service and fill out the form to request an appointment."
+                    : "አገልግሎት ይምረጡ እና ቅጹን ይሙሉ ለቀጠሮ ለመጠየቅ።"}
+                </CardDescription>
+                <form onSubmit={handleAppointmentSubmit} className="space-y-4">
                   <div>
-                    <Label htmlFor="name">{language === "en" ? "Name" : "ስም"}</Label>
-                    <Input id="name" name="name" required />
+                    <Label htmlFor="serviceType">{language === "en" ? "Service Type" : "የአገልግሎት አይነት"}</Label>
+                    <select
+                      id="serviceType"
+                      name="serviceType"
+                      className="w-full border rounded px-3 py-2 mt-1"
+                      required
+                    >
+                      {appointmentServices.map((service, idx) => (
+                        <option key={service.title + idx} value={service.title}>
+                          {service.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="name">{language === "en" ? "Name" : "ስም"}</Label>
+                      <Input id="name" name="name" required />
+                    </div>
+                    <div>
+                      <Label htmlFor="email">{language === "en" ? "Email" : "ኢሜይል"}</Label>
+                      <Input id="email" name="email" type="email" required />
+                    </div>
+                    <div>
+                      <Label htmlFor="phone">{language === "en" ? "Phone" : "ስልክ"}</Label>
+                      <Input id="phone" name="phone" type="tel" required />
+                    </div>
+                    <div>
+                      <Label htmlFor="date">{language === "en" ? "Date" : "ቀን"}</Label>
+                      <Input id="date" name="date" type="date" min={format(new Date(), "yyyy-MM-dd")}/>
+                    </div>
+                    <div>
+                      <Label htmlFor="time">{language === "en" ? "Time" : "ሰዓት"}</Label>
+                      <Input id="time" name="time" type="time" required />
+                    </div>
                   </div>
                   <div>
-                    <Label htmlFor="email">{language === "en" ? "Email" : "ኢሜይል"}</Label>
-                    <Input id="email" name="email" type="email" required />
+                    <Label htmlFor="notes">{language === "en" ? "Notes" : "ማስታወሻዎች"}</Label>
+                    <Textarea id="notes" name="notes" placeholder={language === "en" ? "Any additional information..." : "ማንኛውም ተጨማሪ መረጃ..."} />
                   </div>
-                  <div>
-                    <Label htmlFor="phone">{language === "en" ? "Phone" : "ስልክ"}</Label>
-                    <Input id="phone" name="phone" type="tel" required />
-                  </div>
-                  <div>
-                    <Label htmlFor="date">{language === "en" ? "Date" : "ቀን"}</Label>
-                    <Input id="date" name="date" type="date" min={format(new Date(), "yyyy-MM-dd")}/>
-                  </div>
-                  <div>
-                    <Label htmlFor="time">{language === "en" ? "Time" : "ሰዓት"}</Label>
-                    <Input id="time" name="time" type="time" required />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="notes">{language === "en" ? "Notes" : "ማስታወሻዎች"}</Label>
-                  <Textarea id="notes" name="notes" placeholder={language === "en" ? "Any additional information..." : "ማንኛውም ተጨማሪ መረጃ..."} />
-                </div>
-                <Button type="submit" className="bg-church-burgundy hover:bg-church-burgundy/90">
-                  {language === "en" ? "Submit Request" : "ጥያቄ አስገባ"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+                  <Button type="submit" className="bg-church-burgundy hover:bg-church-burgundy/90">
+                    {language === "en" ? "Submit Request" : "ጥያቄ አስገባ"}
+                  </Button>
+                </form>
+              </div>
+            </div>
+          )}
 
           {/* Service lists (no appointment buttons) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">

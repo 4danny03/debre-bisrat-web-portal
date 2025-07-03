@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -9,7 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { ImagePlus, Trash2, Edit } from "lucide-react";
+import { ImagePlus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -27,11 +27,8 @@ export default function GalleryManager() {
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    loadImages();
-  }, []);
-
-  const loadImages = async () => {
+  // useCallback for stable function references
+  const loadImages = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("gallery")
@@ -51,99 +48,100 @@ export default function GalleryManager() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-  const handleUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const form = e.target as HTMLFormElement;
-    const formData = new FormData(form);
-    const file = formData.get("file") as File;
-    const title = formData.get("title") as string;
-    const description = formData.get("description") as string;
+  useEffect(() => {
+    loadImages();
+  }, [loadImages]);
 
-    if (!file) return;
-
-    setUploading(true);
-    try {
-      // Upload file to storage bucket
-      const fileExt = file.name.split(".").pop();
-      const filePath = `gallery/${Date.now()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage
-        .from("images")
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      // Get the public URL
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("images").getPublicUrl(filePath);
-
-      // Create database entry
-      const { error: dbError } = await supabase.from("gallery").insert([
-        {
-          title,
-          description,
-          image_url: publicUrl,
-        },
-      ]);
-
-      if (dbError) throw dbError;
-
-      toast({
-        title: "Success",
-        description: "Image uploaded successfully",
-      });
-      loadImages();
-      form.reset();
-    } catch (error) {
-      console.error("Error uploading image:", error);
-      toast({
-        title: "Error",
-        description: "Failed to upload image",
-        variant: "destructive",
-      });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleDelete = async (image: GalleryImage) => {
-    try {
-      // Delete from storage
-      const urlParts = image.image_url.split("/");
-      const filePath = `gallery/${urlParts[urlParts.length - 1]}`;
-      if (filePath) {
-        const { error: storageError } = await supabase.storage
+  // Fix: Remove stray bracket and ensure correct function closure
+  const handleUpload = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      const form = e.target as HTMLFormElement;
+      const formData = new FormData(form);
+      const file = formData.get("file") as File;
+      const title = formData.get("title") as string;
+      const description = formData.get("description") as string;
+      if (!file) return;
+      setUploading(true);
+      try {
+        const fileExt = file.name.split(".").pop();
+        const filePath = `gallery/${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
           .from("images")
-          .remove([filePath]);
-
-        if (storageError)
-          console.warn("Storage deletion failed:", storageError);
+          .upload(filePath, file);
+        if (uploadError) throw uploadError;
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("images").getPublicUrl(filePath);
+        const { error: dbError } = await supabase.from("gallery").insert([
+          {
+            title,
+            description,
+            image_url: publicUrl,
+          },
+        ]);
+        if (dbError) throw dbError;
+        toast({
+          title: "Success",
+          description: "Image uploaded successfully",
+        });
+        loadImages();
+        form.reset();
+      } catch (error) {
+        console.error("Error uploading image:", error);
+        toast({
+          title: "Error",
+          description: "Failed to upload image",
+          variant: "destructive",
+        });
+      } finally {
+        setUploading(false);
       }
+    },
+    [toast, loadImages]
+  );
 
-      // Delete from database
-      const { error: dbError } = await supabase
-        .from("gallery")
-        .delete()
-        .eq("id", image.id);
+  const handleDelete = useCallback(
+    async (image: GalleryImage) => {
+      try {
+        // Delete from storage
+        const urlParts = image.image_url.split("/");
+        const filePath = `gallery/${urlParts[urlParts.length - 1]}`;
+        if (filePath) {
+          const { error: storageError } = await supabase.storage
+            .from("images")
+            .remove([filePath]);
 
-      if (dbError) throw dbError;
+          if (storageError)
+            console.warn("Storage deletion failed:", storageError);
+        }
 
-      toast({
-        title: "Success",
-        description: "Image deleted successfully",
-      });
-      loadImages();
-    } catch (error) {
-      console.error("Error deleting image:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete image",
-        variant: "destructive",
-      });
-    }
-  };
+        // Delete from database
+        const { error: dbError } = await supabase
+          .from("gallery")
+          .delete()
+          .eq("id", image.id);
+
+        if (dbError) throw dbError;
+
+        toast({
+          title: "Success",
+          description: "Image deleted successfully",
+        });
+        loadImages();
+      } catch (error) {
+        console.error("Error deleting image:", error);
+        toast({
+          title: "Error",
+          description: "Failed to delete image",
+          variant: "destructive",
+        });
+      }
+    },
+    [toast, loadImages]
+  );
 
   if (loading) {
     return <div>Loading...</div>;

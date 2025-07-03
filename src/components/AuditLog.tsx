@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -23,66 +23,72 @@ import {
   Database,
   Download,
   RefreshCw,
-  Filter,
   Eye,
 } from "lucide-react";
 import { dataSyncService } from "@/services/DataSyncService";
-import { format, subDays, subWeeks, subMonths } from "date-fns";
+import { format } from "date-fns";
 import { useToast } from "@/components/ui/use-toast";
+
+interface AuditLogEntry {
+  id: string;
+  action: string;
+  table: string;
+  data?: any;
+  user_id?: string;
+  userId?: string;
+  timestamp: string;
+  details?: string;
+}
+
+interface AuditLogStatistics {
+  today: number;
+  thisWeek: number;
+  criticalCount: number;
+  total: number;
+  byAction: Record<string, number>;
+  byUser: Record<string, number>;
+}
 
 interface AuditLogProps {
   className?: string;
 }
 
 const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
-  const [actions, setActions] = useState<any[]>([]);
-  const [criticalActions, setCriticalActions] = useState<any[]>([]);
-  const [statistics, setStatistics] = useState<any>(null);
+  const [actions, setActions] = useState<AuditLogEntry[]>([]);
+  const [criticalActions, setCriticalActions] = useState<AuditLogEntry[]>([]);
+  const [statistics, setStatistics] = useState<AuditLogStatistics | null>(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("all");
   const [timeRange, setTimeRange] = useState("week");
   const [activeTab, setActiveTab] = useState("recent");
   const { toast } = useToast();
 
-  useEffect(() => {
-    loadAuditData();
-    const interval = setInterval(loadAuditData, 30000); // Refresh every 30 seconds
-    return () => clearInterval(interval);
-  }, [filter, timeRange]);
-
-  const loadAuditData = async () => {
+  const loadAuditData = useCallback(async () => {
     try {
       setLoading(true);
-
-      // Get filtered actions based on time range
-      const now = new Date();
-      let startDate: Date;
-
-      switch (timeRange) {
-        case "day":
-          startDate = subDays(now, 1);
-          break;
-        case "week":
-          startDate = subWeeks(now, 1);
-          break;
-        case "month":
-          startDate = subMonths(now, 1);
-          break;
-        default:
-          startDate = subWeeks(now, 1);
-      }
-
-      const filteredActions = dataSyncService.getActionsByDateRange(
-        startDate,
-        now,
-      );
-      const recentActions = dataSyncService.getRecentAdminActions(50);
-      const critical = dataSyncService.getCriticalActions(20);
-      const stats = dataSyncService.getActionStatistics();
-
-      setActions(filter === "all" ? recentActions : filteredActions);
-      setCriticalActions(critical);
-      setStatistics(stats);
+      // Fetch recent actions from Supabase
+      const actionsFromDb = await dataSyncService.getRecentAdminActionsFromDb(50);
+      setActions(actionsFromDb);
+      setCriticalActions(actionsFromDb.filter(a => a.action && a.action.toLowerCase().includes('delete')));
+      setStatistics({
+        today: actionsFromDb.filter(a => new Date(a.timestamp).toDateString() === new Date().toDateString()).length,
+        thisWeek: actionsFromDb.filter(a => {
+          const now = new Date();
+          const weekAgo = new Date(now);
+          weekAgo.setDate(now.getDate() - 7);
+          return new Date(a.timestamp) >= weekAgo;
+        }).length,
+        criticalCount: actionsFromDb.filter(a => a.action && a.action.toLowerCase().includes('delete')).length,
+        total: actionsFromDb.length,
+        byAction: actionsFromDb.reduce((acc, a) => {
+          acc[a.action] = (acc[a.action] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>),
+        byUser: actionsFromDb.reduce((acc, a) => {
+          const uid = a.user_id || a.userId || 'unknown';
+          acc[uid] = (acc[uid] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>),
+      });
     } catch (error) {
       console.error("Error loading audit data:", error);
       toast({
@@ -93,13 +99,18 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    loadAuditData();
+    const interval = setInterval(loadAuditData, 30000); // Refresh every 30 seconds
+    return () => clearInterval(interval);
+  }, [loadAuditData]);
 
   const exportAuditLog = () => {
     const exportData = {
       exportedAt: new Date().toISOString(),
       timeRange,
-      filter,
       statistics,
       actions: actions.slice(0, 1000), // Limit export size
       criticalActions,
@@ -124,21 +135,23 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
   };
 
   const getActionIcon = (action: string) => {
-    if (action.includes("delete"))
+    const lower = action.toLowerCase();
+    if (lower.includes("delete"))
       return <AlertTriangle className="h-4 w-4 text-red-600" />;
-    if (action.includes("create"))
+    if (lower.includes("create"))
       return <Database className="h-4 w-4 text-green-600" />;
-    if (action.includes("update"))
+    if (lower.includes("update"))
       return <Eye className="h-4 w-4 text-blue-600" />;
     return <Clock className="h-4 w-4 text-gray-600" />;
   };
 
   const getActionBadge = (action: string) => {
-    if (action.includes("delete"))
+    const lower = action.toLowerCase();
+    if (lower.includes("delete"))
       return <Badge variant="destructive">Delete</Badge>;
-    if (action.includes("create"))
+    if (lower.includes("create"))
       return <Badge className="bg-green-100 text-green-800">Create</Badge>;
-    if (action.includes("update"))
+    if (lower.includes("update"))
       return <Badge className="bg-blue-100 text-blue-800">Update</Badge>;
     return <Badge variant="secondary">{action}</Badge>;
   };
@@ -289,10 +302,7 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
                             </p>
                           )}
                           <div className="flex items-center space-x-4 text-xs text-gray-400 mt-1">
-                            <span>User: {action.userId}</span>
-                            <span>
-                              Session: {action.sessionId?.substring(0, 8)}...
-                            </span>
+                            <span>User: {action.user_id || action.userId || "unknown"}</span>
                             <span>
                               {format(
                                 new Date(action.timestamp),
@@ -342,10 +352,7 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
                             </p>
                           )}
                           <div className="flex items-center space-x-4 text-xs text-gray-400 mt-1">
-                            <span>User: {action.userId}</span>
-                            <span>
-                              Session: {action.sessionId?.substring(0, 8)}...
-                            </span>
+                            <span>User: {action.user_id || action.userId || "unknown"}</span>
                             <span>
                               {format(
                                 new Date(action.timestamp),
@@ -363,59 +370,41 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
           )}
         </TabsContent>
 
-        <TabsContent value="statistics" className="space-y-6">
-          {statistics && (
-            <>
-              <div className="grid gap-6 md:grid-cols-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Actions by Type</CardTitle>
-                    <CardDescription>
-                      Breakdown of administrative actions
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {Object.entries(statistics.byAction).map(
-                        ([action, count]) => (
-                          <div
-                            key={action}
-                            className="flex items-center justify-between"
-                          >
-                            <span className="text-sm capitalize">
-                              {action.replace("_", " ")}
-                            </span>
-                            <Badge variant="outline">{count as number}</Badge>
-                          </div>
-                        ),
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Actions by User</CardTitle>
-                    <CardDescription>User activity breakdown</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {Object.entries(statistics.byUser).map(
-                        ([user, count]) => (
-                          <div
-                            key={user}
-                            className="flex items-center justify-between"
-                          >
-                            <span className="text-sm">{user}</span>
-                            <Badge variant="outline">{count as number}</Badge>
-                          </div>
-                        ),
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </>
+        <TabsContent value="statistics" className="space-y-4">
+          {statistics ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Summary</CardTitle>
+                  <CardDescription>Key audit log statistics</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-1 text-sm">
+                    <li>Today: <span className="font-semibold">{statistics.today}</span></li>
+                    <li>This week: <span className="font-semibold">{statistics.thisWeek}</span></li>
+                    <li>Critical actions: <span className="font-semibold text-red-700">{statistics.criticalCount}</span></li>
+                    <li>Total actions: <span className="font-semibold">{statistics.total}</span></li>
+                  </ul>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Actions by User</CardTitle>
+                  <CardDescription>User activity breakdown</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-1 text-sm">
+                    {Object.entries(statistics.byUser).map(([user, count]) => (
+                      <li key={user}>
+                        <span className="font-semibold">{user}</span>: {count}
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <div className="text-center text-gray-500">No statistics available</div>
           )}
         </TabsContent>
       </Tabs>

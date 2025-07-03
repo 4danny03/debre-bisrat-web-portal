@@ -161,12 +161,12 @@ export default function ContentScheduler() {
           success = true;
           break;
         case "email":
-          await api.emailCampaigns.createCampaign({
-            ...content.content,
-            status: "sent",
-            sent_at: new Date().toISOString(),
+          toast({
+            title: "Email Campaigns Not Supported",
+            description: "Email campaign API is not available in this deployment.",
+            variant: "destructive",
           });
-          success = true;
+          success = false;
           break;
         default:
           success = false;

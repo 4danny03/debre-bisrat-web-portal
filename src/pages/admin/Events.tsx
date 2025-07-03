@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Table,
   TableBody,
@@ -46,7 +46,6 @@ import {
   Calendar,
   MapPin,
   Clock,
-  Image as ImageIcon,
   Upload,
   Loader2,
 } from "lucide-react";
@@ -69,7 +68,7 @@ interface Event {
 }
 
 interface FileUploadProps {
-  onFileUpload: (url: string) => void;
+  onFileUpload: (_url: string) => void;
   defaultImageUrl?: string | null;
 }
 
@@ -117,7 +116,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
       const filePath = `events/${fileName}`;
 
       // Upload the file to Supabase Storage - removed onUploadProgress
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from("images")
         .upload(filePath, file, {
           cacheControl: "3600",
@@ -213,15 +212,8 @@ export default function AdminEvents() {
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    loadEvents();
-  }, []);
-
-  useEffect(() => {
-    filterEvents();
-  }, [events, searchTerm]);
-
-  const loadEvents = async () => {
+  // useCallback for stable function references
+  const loadEvents = useCallback(async () => {
     try {
       const data = await api.events.getEvents();
       setEvents(data || []);
@@ -235,11 +227,10 @@ export default function AdminEvents() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-  const filterEvents = () => {
+  const filterEvents = useCallback(() => {
     let filtered = events;
-
     if (searchTerm) {
       filtered = filtered.filter(
         (event) =>
@@ -248,15 +239,21 @@ export default function AdminEvents() {
           event.location?.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
-
     setFilteredEvents(filtered);
-  };
+  }, [events, searchTerm]);
 
-  const handleAddEvent = async (e: React.FormEvent) => {
+  useEffect(() => {
+    loadEvents();
+  }, [loadEvents]);
+
+  useEffect(() => {
+    filterEvents();
+  }, [filterEvents]);
+
+  const handleAddEvent = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
-
     try {
       await api.events.createEvent({
         title: formData.get("title") as string,
@@ -267,7 +264,6 @@ export default function AdminEvents() {
         image_url: uploadedImageUrl || null,
         is_featured: formData.get("is_featured") === "on",
       });
-
       toast({
         title: "Success",
         description: "Event added successfully",
@@ -284,15 +280,13 @@ export default function AdminEvents() {
         variant: "destructive",
       });
     }
-  };
+  }, [uploadedImageUrl, toast, loadEvents]);
 
-  const handleUpdateEvent = async (e: React.FormEvent) => {
+  const handleUpdateEvent = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingEvent) return;
-
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
-
     try {
       await api.events.updateEvent(editingEvent.id, {
         title: formData.get("title") as string,
@@ -303,7 +297,6 @@ export default function AdminEvents() {
         image_url: uploadedImageUrl || editingEvent.image_url,
         is_featured: formData.get("is_featured") === "on",
       });
-
       toast({
         title: "Success",
         description: "Event updated successfully",
@@ -319,9 +312,9 @@ export default function AdminEvents() {
         variant: "destructive",
       });
     }
-  };
+  }, [editingEvent, uploadedImageUrl, toast, loadEvents]);
 
-  const handleDeleteEvent = async (id: string) => {
+  const handleDeleteEvent = useCallback(async (id: string) => {
     try {
       await api.events.deleteEvent(id);
       toast({
@@ -337,7 +330,7 @@ export default function AdminEvents() {
         variant: "destructive",
       });
     }
-  };
+  }, [toast, loadEvents]);
 
   if (loading) {
     return (

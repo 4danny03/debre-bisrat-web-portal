@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   Card,
   CardContent,
@@ -10,23 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,9 +25,7 @@ import {
 import {
   Upload,
   Download,
-  Trash2,
   Mail,
-  Users,
   FileText,
   AlertTriangle,
   CheckCircle,
@@ -64,7 +46,6 @@ interface BulkOperation {
 
 export default function BulkOperations() {
   const [operations, setOperations] = useState<BulkOperation[]>([]);
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [bulkEmailContent, setBulkEmailContent] = useState({
     subject: "",
     content: "",
@@ -74,8 +55,7 @@ export default function BulkOperations() {
   const { toast } = useToast();
 
   const handleFileUpload = (
-    event: React.ChangeEvent<HTMLInputElement>,
-    type: string,
+    event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -224,37 +204,6 @@ export default function BulkOperations() {
     }
   };
 
-  const handleBulkDelete = async (table: string, ids: string[]) => {
-    if (ids.length === 0) {
-      toast({
-        title: "Error",
-        description: "No items selected for deletion",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const { error } = await supabase.from(table).delete().in("id", ids);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: `Deleted ${ids.length} ${table} records`,
-      });
-
-      setSelectedItems([]);
-    } catch (error) {
-      console.error("Delete error:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete selected items",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleBulkEmail = async () => {
     if (!bulkEmailContent.subject || !bulkEmailContent.content) {
       toast({
@@ -280,8 +229,17 @@ export default function BulkOperations() {
         return;
       }
 
-      // Create email campaign
-      const campaign = await api.emailCampaigns.createCampaign({
+      // If emailCampaigns is not available, show a warning and skip
+      if (!('emailCampaigns' in api) || typeof (api as any).emailCampaigns?.createCampaign !== 'function') {
+        toast({
+          title: "Not Supported",
+          description: "Bulk email campaigns are not supported in this deployment.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      await (api as any).emailCampaigns.createCampaign({
         name: `Bulk Email - ${new Date().toLocaleDateString()}`,
         subject: bulkEmailContent.subject,
         content: bulkEmailContent.content,
@@ -347,7 +305,7 @@ export default function BulkOperations() {
                     id="member-file"
                     type="file"
                     accept=".json,.csv"
-                    onChange={(e) => handleFileUpload(e, "members")}
+                    onChange={handleFileUpload}
                   />
                 </div>
                 <div className="space-y-2">
@@ -417,7 +375,7 @@ export default function BulkOperations() {
                     id="event-file"
                     type="file"
                     accept=".json,.csv"
-                    onChange={(e) => handleFileUpload(e, "events")}
+                    onChange={handleFileUpload}
                   />
                 </div>
                 <div className="space-y-2">

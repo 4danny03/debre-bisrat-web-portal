@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -25,7 +25,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Table,
@@ -86,19 +85,7 @@ export default function Appointments() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    loadAppointments();
-    getCurrentUser();
-  }, [statusFilter]);
-
-  const getCurrentUser = async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    setCurrentUser(session?.user);
-  };
-
-  const loadAppointments = async () => {
+  const loadAppointments = useCallback(async () => {
     try {
       setLoading(true);
       let data;
@@ -118,6 +105,18 @@ export default function Appointments() {
     } finally {
       setLoading(false);
     }
+  }, [statusFilter, toast]);
+
+  useEffect(() => {
+    loadAppointments();
+    getCurrentUser();
+  }, [loadAppointments]);
+
+  const getCurrentUser = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    setCurrentUser(session?.user);
   };
 
   const handleResponse = async (e: React.FormEvent<HTMLFormElement>) => {

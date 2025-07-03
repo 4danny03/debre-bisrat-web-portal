@@ -50,7 +50,7 @@ class CoreDataSyncService {
     return { ...this.syncStatus };
   }
 
-  addSubscription(table: string, callback: (payload: any) => void): void {
+  addSubscription(table: string, callback: () => void): void {
     if (this.subscriptions.has(table)) {
       console.warn(`Subscription for table ${table} already exists`);
       return;
@@ -333,7 +333,7 @@ class DataSyncService {
     return this.coreService.getStatus();
   }
 
-  addSubscription(table: string, callback: (payload: any) => void): void {
+  addSubscription(table: string, callback: () => void): void {
     this.coreService.addSubscription(table, callback);
   }
 
@@ -354,6 +354,7 @@ class DataSyncService {
     details?: string,
   ): void {
     this.actionTracker.logAction(action, table, data, userId, details);
+    this.logActionToDb(action, table, data, userId, details); // <-- log to DB
   }
 
   logError(
@@ -453,6 +454,33 @@ class DataSyncService {
 
   async exportData(table: string, filters?: any): Promise<any> {
     return this.callAdminFunction("exportData", { table, filters });
+  }
+
+  async logActionToDb(action: string, table: string, data?: any, userId?: string, details?: string) {
+    try {
+      await supabase.from("admin_audit_log").insert({
+        action,
+        table_name: table,
+        data,
+        user_id: userId,
+        details,
+      });
+    } catch (error) {
+      console.error("Failed to log admin action to DB:", error);
+    }
+  }
+
+  async getRecentAdminActionsFromDb(limit = 50) {
+    const { data, error } = await supabase
+      .from("admin_audit_log")
+      .select("*")
+      .order("timestamp", { ascending: false })
+      .limit(limit);
+    if (error) {
+      console.error("Failed to fetch audit log from DB:", error);
+      return [];
+    }
+    return data;
   }
 }
 

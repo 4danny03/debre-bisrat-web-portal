@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, AlertCircle, RefreshCw } from "lucide-react";
@@ -13,6 +13,7 @@ interface HealthStatus {
     events: boolean;
     members: boolean;
     gallery: boolean;
+    sermons: boolean;
     testimonials: boolean;
     prayer_requests: boolean;
     donations: boolean;
@@ -25,6 +26,7 @@ type TableName =
   | "events"
   | "members"
   | "gallery"
+  | "sermons"
   | "testimonials"
   | "prayer_requests"
   | "donations"
@@ -40,6 +42,7 @@ export default function HealthCheck() {
       events: false,
       members: false,
       gallery: false,
+      sermons: false,
       testimonials: false,
       prayer_requests: false,
       donations: false,
@@ -50,11 +53,8 @@ export default function HealthCheck() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    runHealthCheck();
-  }, []);
-
-  const runHealthCheck = async () => {
+  // useCallback for stable function reference
+  const runHealthCheck = useCallback(async () => {
     setLoading(true);
     const newStatus: HealthStatus = {
       database: "checking",
@@ -64,6 +64,7 @@ export default function HealthCheck() {
         events: false,
         members: false,
         gallery: false,
+        sermons: false,
         testimonials: false,
         prayer_requests: false,
         donations: false,
@@ -71,27 +72,23 @@ export default function HealthCheck() {
         site_settings: false,
       },
     };
-
     try {
       const { error: dbError } = await supabase
         .from("profiles")
         .select("count", { count: "exact", head: true });
       newStatus.database = dbError ? "error" : "healthy";
-
       const {
         data: { session },
       } = await supabase.auth.getSession();
       newStatus.auth = session ? "healthy" : "error";
-
       try {
-        const { data: buckets, error: storageError } =
-          await supabase.storage.listBuckets();
+        // Only destructure error, remove unused buckets
+        const { error: storageError } = await supabase.storage.listBuckets();
         newStatus.storage = storageError ? "error" : "healthy";
       } catch (storageErr) {
         console.warn("Storage check failed:", storageErr);
         newStatus.storage = "error";
       }
-
       const tables: TableName[] = Object.keys(newStatus.tables) as TableName[];
       for (const table of tables) {
         try {
@@ -111,11 +108,13 @@ export default function HealthCheck() {
         variant: "destructive",
       });
     }
-
     setStatus(newStatus);
     setLoading(false);
-  };
+  }, [toast]);
 
+  useEffect(() => {
+    runHealthCheck();
+  }, [runHealthCheck]);
   const getStatusIcon = (status: "healthy" | "error" | "checking") => {
     switch (status) {
       case "healthy":
@@ -141,13 +140,17 @@ export default function HealthCheck() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-church-burgundy">
-            System Health Check
-          </h1>
-          <p className="text-gray-600">
-            Monitor the status of all admin system components
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <div>
+              <h1 className="text-3xl font-bold text-church-burgundy">
+                System Health Check
+              </h1>
+              <p className="text-gray-600">
+                Monitor the status of all admin system components
+              </p>
+            </div>
+          </div>
         </div>
         <Button onClick={runHealthCheck} disabled={loading}>
           <RefreshCw
@@ -156,99 +159,104 @@ export default function HealthCheck() {
           Refresh
         </Button>
       </div>
-
       <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center justify-between">
+                Database Connection
+                {getStatusIcon(status.database)}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-lg font-semibold">
+                {getStatusText(status.database)}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center justify-between">
+                Authentication
+                {getStatusIcon(status.auth)}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-lg font-semibold">
+                {getStatusText(status.auth)}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center justify-between">
+                File Storage
+                {getStatusIcon(status.storage)}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-lg font-semibold">
+                {getStatusText(status.storage)}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center justify-between">
-              Database Connection
-              {getStatusIcon(status.database)}
-            </CardTitle>
+          <CardHeader>
+            <CardTitle>Database Tables Status</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-lg font-semibold">
-              {getStatusText(status.database)}
+            <div className="grid gap-3 md:grid-cols-3">
+              {Object.entries(status.tables).map(([table, isHealthy]) => (
+                <div
+                  key={table}
+                  className="flex items-center justify-between p-3 border rounded-lg"
+                >
+                  <span className="font-medium capitalize">
+                    {table.replace("_", " ")}
+                  </span>
+                  {isHealthy ? (
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                  ) : (
+                    <XCircle className="w-5 h-5 text-red-600" />
+                  )}
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center justify-between">
-              Authentication
-              {getStatusIcon(status.auth)}
-            </CardTitle>
+          <CardHeader>
+            <CardTitle>System Information</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-lg font-semibold">
-              {getStatusText(status.auth)}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center justify-between">
-              File Storage
-              {getStatusIcon(status.storage)}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-lg font-semibold">
-              {getStatusText(status.storage)}
+            <div className="space-y-2 text-sm">
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <div className="flex justify-between">
+                    <span>Environment:</span>
+                    <span className="font-mono">{import.meta.env.MODE}</span>
+                  </div>
+                </div>
+                <div className="flex justify-between">
+                  <span>Supabase URL:</span>
+                  <span className="font-mono text-xs">
+                    {import.meta.env.VITE_SUPABASE_URL || "Not configured"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Last Check:</span>
+                  <span>{new Date().toLocaleString()}</span>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Database Tables Status</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 md:grid-cols-3">
-            {Object.entries(status.tables).map(([table, isHealthy]) => (
-              <div
-                key={table}
-                className="flex items-center justify-between p-3 border rounded-lg"
-              >
-                <span className="font-medium capitalize">
-                  {table.replace("_", " ")}
-                </span>
-                {isHealthy ? (
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                ) : (
-                  <XCircle className="w-5 h-5 text-red-600" />
-                )}
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>System Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span>Environment:</span>
-              <span className="font-mono">{import.meta.env.MODE}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Supabase URL:</span>
-              <span className="font-mono text-xs">
-                {import.meta.env.VITE_SUPABASE_URL || "Not configured"}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>Last Check:</span>
-              <span>{new Date().toLocaleString()}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

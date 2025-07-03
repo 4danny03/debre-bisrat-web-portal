@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -88,11 +88,7 @@ export default function Analytics() {
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
 
-  useEffect(() => {
-    loadAnalyticsData();
-  }, [timeRange]);
-
-  const loadAnalyticsData = async () => {
+  const loadAnalyticsData = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -188,7 +184,11 @@ export default function Analytics() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [timeRange, toast]);
+
+  useEffect(() => {
+    loadAnalyticsData();
+  }, [loadAnalyticsData]);
 
   const processMonthlyData = (
     items: any[],
@@ -493,7 +493,7 @@ export default function Analytics() {
                       fill="#8884d8"
                       dataKey="amount"
                     >
-                      {data.donations.byPurpose.map((entry, index) => (
+                      {data.donations.byPurpose.map((_, index) => (
                         <Cell
                           key={`cell-${index}`}
                           fill={COLORS[index % COLORS.length]}
@@ -553,7 +553,7 @@ export default function Analytics() {
                       fill="#8884d8"
                       dataKey="count"
                     >
-                      {data.members.byType.map((entry, index) => (
+                      {data.members.byType.map((_, index) => (
                         <Cell
                           key={`cell-${index}`}
                           fill={COLORS[index % COLORS.length]}
