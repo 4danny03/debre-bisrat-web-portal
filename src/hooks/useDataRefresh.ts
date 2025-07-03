@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from "react";
-import { DataSyncService } from "@/services/DataSyncService";
+import { dataSyncService } from "@/services/DataSyncService";
 import { useDataContext } from "@/contexts/DataContext";
 
 /**
@@ -33,13 +33,15 @@ export const useDataRefresh = (
     }
 
     // Simple refresh function with debouncing
-    const safeRefreshFunction = async () => {
+    const enhancedRefreshFunction = async () => {
       if (!isActiveRef.current || isRefreshingRef.current) {
         console.log(
           `Skipping refresh for ${tableName || "component"} - already refreshing or inactive`,
         );
         return;
       }
+
+      isRefreshingRef.current = true;
       const maxRetries = 3;
       let retryCount = 0;
 
@@ -69,6 +71,8 @@ export const useDataRefresh = (
           }
         }
       }
+
+      isRefreshingRef.current = false;
     };
 
     intervalRef.current = setInterval(async () => {
@@ -99,13 +103,13 @@ export const useDataRefresh = (
     };
 
     if (tableName) {
-      DataSyncService.subscribe(`${tableName}Changed`, handleDataChange);
+      dataSyncService.addSubscription(tableName, handleDataChange);
       window.addEventListener(`${tableName}Changed`, handleDataChange);
     }
 
-    DataSyncService.subscribe("dataChanged", handleDataChange);
-    DataSyncService.subscribe("forceRefresh", handleForceRefresh);
-    DataSyncService.subscribe("adminActionCompleted", handleAdminAction);
+    window.addEventListener("dataChanged", handleDataChange);
+    window.addEventListener("forceRefresh", handleForceRefresh);
+    window.addEventListener("adminActionCompleted", handleAdminAction);
 
     window.addEventListener("dataChanged", handleDataChange);
     window.addEventListener("forceRefresh", handleForceRefresh);
@@ -120,13 +124,9 @@ export const useDataRefresh = (
       }
 
       if (tableName) {
-        DataSyncService.unsubscribe(`${tableName}Changed`, handleDataChange);
+        dataSyncService.removeSubscription(tableName);
         window.removeEventListener(`${tableName}Changed`, handleDataChange);
       }
-
-      DataSyncService.unsubscribe("dataChanged", handleDataChange);
-      DataSyncService.unsubscribe("forceRefresh", handleForceRefresh);
-      DataSyncService.unsubscribe("adminActionCompleted", handleAdminAction);
 
       window.removeEventListener("dataChanged", handleDataChange);
       window.removeEventListener("forceRefresh", handleForceRefresh);

@@ -182,6 +182,12 @@ export default function AdminDiagnostics({
         categories["Admin Helpers"].push(result);
       } else if (result.name.includes("Data Sync")) {
         categories["Data Sync"].push(result);
+      } else if (
+        result.name.includes("Email") ||
+        result.name.includes("Newsletter") ||
+        result.name.includes("Campaign")
+      ) {
+        categories["Email Marketing"].push(result);
       } else {
         categories["Other"].push(result);
       }

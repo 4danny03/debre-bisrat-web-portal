@@ -99,6 +99,7 @@ export class AdminTestSuite {
       "email_subscribers",
       "email_templates",
       "email_campaigns",
+      "newsletter_subscribers",
     ];
 
     for (const table of tables) {
@@ -150,6 +151,26 @@ export class AdminTestSuite {
       {
         name: "Email Settings API",
         test: () => api.emailSettings.getSettings(),
+      },
+      {
+        name: "Email Subscribers API",
+        test: () => api.emailSubscribers.getSubscribers(),
+      },
+      {
+        name: "Newsletter Subscribers API",
+        test: () => api.emailSubscribers.getNewsletterSubscribers(),
+      },
+      {
+        name: "Email Templates API",
+        test: () => api.emailTemplates.getTemplates(),
+      },
+      {
+        name: "Newsletter Templates API",
+        test: () => api.emailTemplates.getNewsletterTemplates(),
+      },
+      {
+        name: "Email Campaigns API",
+        test: () => api.emailCampaigns.getCampaigns(),
       },
     ];
 

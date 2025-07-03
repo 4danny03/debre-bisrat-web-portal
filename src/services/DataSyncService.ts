@@ -410,6 +410,25 @@ class DataSyncService {
     return this.callAdminFunction("exportData", { table, filters });
   }
 
+  // Email Marketing specific methods
+  async sendEmailCampaign(
+    campaignId: string,
+    recipientIds: string[],
+  ): Promise<any> {
+    return this.callAdminFunction("sendEmailCampaign", {
+      campaignId,
+      recipientIds,
+    });
+  }
+
+  async getEmailCampaignStats(campaignId: string): Promise<any> {
+    return this.callAdminFunction("getEmailCampaignStats", { campaignId });
+  }
+
+  async syncNewsletterSubscribers(): Promise<any> {
+    return this.callAdminFunction("syncNewsletterSubscribers");
+  }
+
   async logActionToDb(
     action: string,
     table: string,

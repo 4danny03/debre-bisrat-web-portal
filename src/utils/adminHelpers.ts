@@ -352,6 +352,106 @@ export const loadRecentActivity = async (limit = 6) => {
 };
 
 /**
+ * Email marketing helper functions
+ */
+export const validateEmailTemplate = (template: any): boolean => {
+  if (!template.subject || !template.content) {
+    return false;
+  }
+  if (template.template_type === "newsletter" && !template.title) {
+    return false;
+  }
+  return true;
+};
+
+export const formatEmailCampaignStats = (stats: any) => {
+  return {
+    sent: stats.sent || 0,
+    delivered: stats.delivered || 0,
+    opened: stats.opened || 0,
+    clicked: stats.clicked || 0,
+    bounced: stats.bounced || 0,
+    unsubscribed: stats.unsubscribed || 0,
+    deliveryRate:
+      stats.sent > 0 ? ((stats.delivered / stats.sent) * 100).toFixed(2) : "0",
+    openRate:
+      stats.delivered > 0
+        ? ((stats.opened / stats.delivered) * 100).toFixed(2)
+        : "0",
+    clickRate:
+      stats.opened > 0
+        ? ((stats.clicked / stats.opened) * 100).toFixed(2)
+        : "0",
+  };
+};
+
+export const validateMemberData = (
+  memberData: any,
+): { isValid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+
+  if (!memberData.full_name || memberData.full_name.trim().length < 2) {
+    errors.push("Full name is required and must be at least 2 characters");
+  }
+
+  if (memberData.email && !isValidEmail(memberData.email)) {
+    errors.push("Invalid email format");
+  }
+
+  if (memberData.phone && !isValidPhone(memberData.phone)) {
+    errors.push("Invalid phone number format");
+  }
+
+  const validMembershipTypes = ["regular", "student", "senior", "family"];
+  if (
+    memberData.membership_type &&
+    !validMembershipTypes.includes(memberData.membership_type)
+  ) {
+    errors.push("Invalid membership type");
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+};
+
+export const validateAppointmentData = (
+  appointmentData: any,
+): { isValid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+
+  if (!appointmentData.name || appointmentData.name.trim().length < 2) {
+    errors.push("Name is required and must be at least 2 characters");
+  }
+
+  if (!appointmentData.email || !isValidEmail(appointmentData.email)) {
+    errors.push("Valid email is required");
+  }
+
+  if (!appointmentData.phone || !isValidPhone(appointmentData.phone)) {
+    errors.push("Valid phone number is required");
+  }
+
+  if (!appointmentData.service_title) {
+    errors.push("Service selection is required");
+  }
+
+  if (!appointmentData.requested_date) {
+    errors.push("Requested date is required");
+  }
+
+  if (!appointmentData.requested_time) {
+    errors.push("Requested time is required");
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+};
+
+/**
  * Admin panel health check
  */
 export const performHealthCheck = async () => {
