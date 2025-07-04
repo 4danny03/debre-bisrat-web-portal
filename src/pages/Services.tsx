@@ -452,16 +452,6 @@ const Services: React.FC = () => {
             </Dialog>
           </div>
 
-          {/* Single Appointment Request Button */}
-          <div className="flex justify-center mb-10">
-            <Button
-              className="bg-church-burgundy hover:bg-church-burgundy/90 text-lg px-8 py-3"
-              onClick={() => setShowModal(true)}
-            >
-              {language === "en" ? "Request Appointment" : "ቀጠሮ ይጠይቁ"}
-            </Button>
-          </div>
-
           {/* Modal Dialog for Appointment Form */}
           {showModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">

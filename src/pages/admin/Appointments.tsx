@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -51,7 +51,6 @@ import { api } from "@/integrations/supabase/api";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import LoadingState from "@/components/LoadingState";
 import EmptyState from "@/components/EmptyState";
 
 interface Appointment {
@@ -62,32 +61,31 @@ interface Appointment {
   service_title: string;
   requested_date: string;
   requested_time: string;
-  notes: string | null;
+  notes?: string | null;
   status: string;
-  admin_response: string | null;
-  admin_notes: string | null;
-  confirmed_date: string | null;
-  confirmed_time: string | null;
-  responded_by: string | null;
-  responded_at: string | null;
+  admin_response?: string | null;
+  admin_notes?: string | null;
+  confirmed_date?: string | null;
+  confirmed_time?: string | null;
+  responded_by?: string | null;
+  responded_at?: string | null;
   created_at: string;
-  updated_at: string;
+  updated_at?: string | null;
   responded_by_profile?: { email: string } | null;
 }
 
-export default function Appointments() {
+const AdminAppointments: React.FC = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedAppointment, setSelectedAppointment] =
-    useState<Appointment | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [responseDialog, setResponseDialog] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
   const [currentUser, setCurrentUser] = useState<any>(null);
   const { toast } = useToast();
 
   const loadAppointments = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       let data;
       if (statusFilter === "all") {
         data = await api.appointments.getAppointments();
@@ -113,23 +111,19 @@ export default function Appointments() {
   }, [loadAppointments]);
 
   const getCurrentUser = async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    const { data: { session } } = await supabase.auth.getSession();
     setCurrentUser(session?.user);
   };
 
   const handleResponse = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!selectedAppointment || !currentUser) return;
-
     const formData = new FormData(e.currentTarget);
     const status = formData.get("status") as string;
     const admin_response = formData.get("admin_response") as string;
     const admin_notes = formData.get("admin_notes") as string;
     const confirmed_date = formData.get("confirmed_date") as string;
     const confirmed_time = formData.get("confirmed_time") as string;
-
     try {
       await api.appointments.respondToAppointment(selectedAppointment.id, {
         status,
@@ -139,12 +133,7 @@ export default function Appointments() {
         confirmed_time: confirmed_time || undefined,
         responded_by: currentUser.id,
       });
-
-      toast({
-        title: "Success",
-        description: "Response sent successfully",
-      });
-
+      toast({ title: "Success", description: "Response sent successfully" });
       setResponseDialog(false);
       setSelectedAppointment(null);
       loadAppointments();
@@ -160,32 +149,13 @@ export default function Appointments() {
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      pending: {
-        variant: "secondary" as const,
-        icon: Clock,
-        color: "text-yellow-600",
-      },
-      approved: {
-        variant: "default" as const,
-        icon: CheckCircle,
-        color: "text-green-600",
-      },
-      rejected: {
-        variant: "destructive" as const,
-        icon: XCircle,
-        color: "text-red-600",
-      },
-      completed: {
-        variant: "outline" as const,
-        icon: CheckCircle,
-        color: "text-blue-600",
-      },
+      pending: { variant: "secondary" as const, icon: Clock, color: "text-yellow-600" },
+      approved: { variant: "default" as const, icon: CheckCircle, color: "text-green-600" },
+      rejected: { variant: "destructive" as const, icon: XCircle, color: "text-red-600" },
+      completed: { variant: "outline" as const, icon: CheckCircle, color: "text-blue-600" },
     };
-
-    const config =
-      variants[status as keyof typeof variants] || variants.pending;
+    const config = variants[status as keyof typeof variants] || variants.pending;
     const Icon = config.icon;
-
     return (
       <Badge variant={config.variant} className="capitalize">
         <Icon className={`w-3 h-3 mr-1 ${config.color}`} />
@@ -199,20 +169,12 @@ export default function Appointments() {
     setResponseDialog(true);
   };
 
-  if (loading) {
-    return <LoadingState message="Loading appointments..." />;
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-church-burgundy">
-            Appointments
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Manage appointment requests from the services page
-          </p>
+          <h1 className="text-2xl font-bold text-church-burgundy">Appointments</h1>
+          <p className="text-gray-600 mt-1">Manage appointment requests from the services page</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -234,8 +196,9 @@ export default function Appointments() {
           </Button>
         </div>
       </div>
-
-      {appointments.length === 0 ? (
+      {loading ? (
+        <div className="py-10"><span>Loading...</span></div>
+      ) : appointments.length === 0 ? (
         <EmptyState
           icon={CalendarCheck}
           title="No appointments found"
@@ -246,8 +209,7 @@ export default function Appointments() {
           <CardHeader>
             <CardTitle>Appointment Requests</CardTitle>
             <CardDescription>
-              {appointments.length} appointment
-              {appointments.length !== 1 ? "s" : ""} found
+              {appointments.length} appointment{appointments.length !== 1 ? "s" : ""} found
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -283,15 +245,11 @@ export default function Appointments() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="font-medium">
-                          {appointment.service_title}
-                        </div>
+                        <div className="font-medium">{appointment.service_title}</div>
                         {appointment.notes && (
                           <div className="text-sm text-gray-500 mt-1 flex items-start">
                             <MessageSquare className="w-3 h-3 mr-1 mt-0.5 flex-shrink-0" />
-                            <span className="line-clamp-2">
-                              {appointment.notes}
-                            </span>
+                            <span className="line-clamp-2">{appointment.notes}</span>
                           </div>
                         )}
                       </TableCell>
@@ -299,46 +257,28 @@ export default function Appointments() {
                         <div className="space-y-1">
                           <div className="flex items-center text-sm">
                             <Calendar className="w-3 h-3 mr-1" />
-                            {format(
-                              new Date(appointment.requested_date),
-                              "MMM d, yyyy",
-                            )}
+                            {format(new Date(appointment.requested_date), "MMM d, yyyy")}
                           </div>
                           <div className="flex items-center text-sm text-gray-500">
                             <Clock className="w-3 h-3 mr-1" />
                             {appointment.requested_time}
                           </div>
-                          {appointment.confirmed_date &&
-                            appointment.confirmed_date !==
-                              appointment.requested_date && (
-                              <div className="flex items-center text-sm text-green-600">
-                                <Calendar className="w-3 h-3 mr-1" />
-                                Confirmed:{" "}
-                                {format(
-                                  new Date(appointment.confirmed_date),
-                                  "MMM d, yyyy",
-                                )}
-                              </div>
-                            )}
+                          {appointment.confirmed_date && appointment.confirmed_date !== appointment.requested_date && (
+                            <div className="flex items-center text-sm text-green-600">
+                              <Calendar className="w-3 h-3 mr-1" />
+                              Confirmed: {format(new Date(appointment.confirmed_date), "MMM d, yyyy")}
+                            </div>
+                          )}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        {getStatusBadge(appointment.status)}
-                      </TableCell>
+                      <TableCell>{getStatusBadge(appointment.status)}</TableCell>
                       <TableCell>
                         <div className="text-sm text-gray-500">
-                          {format(
-                            new Date(appointment.created_at),
-                            "MMM d, yyyy HH:mm",
-                          )}
+                          {format(new Date(appointment.created_at), "MMM d, yyyy HH:mm")}
                         </div>
                         {appointment.responded_at && (
                           <div className="text-xs text-gray-400 mt-1">
-                            Responded:{" "}
-                            {format(
-                              new Date(appointment.responded_at),
-                              "MMM d, HH:mm",
-                            )}
+                            Responded: {format(new Date(appointment.responded_at), "MMM d, HH:mm")}
                           </div>
                         )}
                         {appointment.responded_by_profile?.email && (
@@ -353,9 +293,7 @@ export default function Appointments() {
                           onClick={() => openResponseDialog(appointment)}
                           className="bg-church-burgundy hover:bg-church-burgundy/90"
                         >
-                          {appointment.status === "pending"
-                            ? "Respond"
-                            : "Update"}
+                          {appointment.status === "pending" ? "Respond" : "Update"}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -366,7 +304,6 @@ export default function Appointments() {
           </CardContent>
         </Card>
       )}
-
       {/* Response Dialog */}
       <Dialog open={responseDialog} onOpenChange={setResponseDialog}>
         <DialogContent className="max-w-2xl">
@@ -375,8 +312,7 @@ export default function Appointments() {
             <DialogDescription>
               {selectedAppointment && (
                 <span>
-                  Responding to {selectedAppointment.name}'s request for{" "}
-                  {selectedAppointment.service_title}
+                  Responding to {selectedAppointment.name}'s request for {selectedAppointment.service_title}
                 </span>
               )}
             </DialogDescription>
@@ -386,10 +322,7 @@ export default function Appointments() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="status">Status</Label>
-                  <Select
-                    name="status"
-                    defaultValue={selectedAppointment.status}
-                  >
+                  <Select name="status" defaultValue={selectedAppointment.status}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -402,32 +335,22 @@ export default function Appointments() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirmed_date">
-                    Confirmed Date (if approved)
-                  </Label>
+                  <Label htmlFor="confirmed_date">Confirmed Date (if approved)</Label>
                   <Input
                     id="confirmed_date"
                     name="confirmed_date"
                     type="date"
-                    defaultValue={
-                      selectedAppointment.confirmed_date ||
-                      selectedAppointment.requested_date
-                    }
+                    defaultValue={selectedAppointment.confirmed_date || selectedAppointment.requested_date}
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirmed_time">
-                  Confirmed Time (if approved)
-                </Label>
+                <Label htmlFor="confirmed_time">Confirmed Time (if approved)</Label>
                 <Input
                   id="confirmed_time"
                   name="confirmed_time"
                   type="time"
-                  defaultValue={
-                    selectedAppointment.confirmed_time ||
-                    selectedAppointment.requested_time
-                  }
+                  defaultValue={selectedAppointment.confirmed_time || selectedAppointment.requested_time}
                 />
               </div>
               <div className="space-y-2">
@@ -452,17 +375,10 @@ export default function Appointments() {
                 />
               </div>
               <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setResponseDialog(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setResponseDialog(false)}>
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  className="bg-church-burgundy hover:bg-church-burgundy/90"
-                >
+                <Button type="submit" className="bg-church-burgundy hover:bg-church-burgundy/90">
                   Send Response
                 </Button>
               </DialogFooter>
@@ -472,4 +388,6 @@ export default function Appointments() {
       </Dialog>
     </div>
   );
-}
+};
+
+export default AdminAppointments;

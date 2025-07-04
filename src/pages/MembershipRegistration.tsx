@@ -1,4 +1,4 @@
-import { type FC, useState, useEffect } from "react";
+import { type FC, useState } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
@@ -23,39 +23,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  CheckCircle,
-  User,
-  CreditCard,
-  FileText,
-  AlertCircle,
-  Mail,
-  MapPin,
-  Calendar,
-  Users,
-  Heart,
-} from "lucide-react";
+import { CheckCircle, User, CreditCard, MapPin, Users } from "lucide-react";
 
 interface FormData {
-  // Personal Information
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
   dateOfBirth: string;
   gender: string;
-
-  // Address Information
   streetAddress: string;
   city: string;
   stateProvinceRegion: string;
   postalZipCode: string;
   country: string;
-
-  // Membership Information
   membershipType: string;
   ministryInterests: string;
   preferredLanguage: string;
@@ -64,14 +47,12 @@ interface FormData {
 }
 
 const MembershipRegistration: FC = () => {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [children, setChildren] = useState<
-    Array<{ name: string; age: string }>
-  >([{ name: "", age: "" }]);
+
 
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
@@ -95,31 +76,7 @@ const MembershipRegistration: FC = () => {
   const totalSteps = 3;
   const progressPercentage = (currentStep / totalSteps) * 100;
 
-  const ministryOptions = [
-    "Sunday School",
-    "Youth Ministry",
-    "Music Ministry",
-    "Prayer Ministry",
-    "Outreach Ministry",
-    "Women's Ministry",
-    "Men's Ministry",
-    "Children's Ministry",
-    "Hospitality Ministry",
-    "Media Ministry",
-  ];
 
-  const volunteerOptions = [
-    "Event Planning",
-    "Cleaning & Maintenance",
-    "Food Service",
-    "Transportation",
-    "Translation Services",
-    "Technical Support",
-    "Administrative Support",
-    "Fundraising",
-    "Community Outreach",
-    "Teaching",
-  ];
 
   const validateStep = (step: number): boolean => {
     const errors: Record<string, string> = {};
@@ -177,29 +134,7 @@ const MembershipRegistration: FC = () => {
     }
   };
 
-  const handleArrayChange = (field: keyof FormData, values: string[]) => {
-    setFormData((prev) => ({ ...prev, [field]: values }));
-  };
 
-  const addChild = () => {
-    setChildren((prev) => [...prev, { name: "", age: "" }]);
-  };
-
-  const removeChild = (index: number) => {
-    setChildren((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const updateChild = (index: number, field: "name" | "age", value: string) => {
-    setChildren((prev) =>
-      prev.map((child, i) =>
-        i === index ? { ...child, [field]: value } : child,
-      ),
-    );
-  };
-
-  useEffect(() => {
-    setFormData((prev) => ({ ...prev, children }));
-  }, [children]);
 
   const handleSubmit = async () => {
     if (!validateStep(currentStep)) return;
@@ -207,6 +142,7 @@ const MembershipRegistration: FC = () => {
     setIsSubmitting(true);
 
     try {
+
       // Create member record
       const { data: memberData, error: memberError } = await supabase
         .from("members")
@@ -699,178 +635,7 @@ const MembershipRegistration: FC = () => {
     }
   };
 
-  // Amharic translations for membership registration
-  const translations = {
-    en: {
-      title: "Membership Registration",
-      description: "Join our church community by registering as a member",
-      personal: "Personal Information",
-      firstName: "First Name",
-      lastName: "Last Name",
-      email: "Email Address",
-      phone: "Phone Number",
-      dateOfBirth: "Date of Birth",
-      gender: "Gender",
-      male: "Male",
-      female: "Female",
-      address: "Address Information",
-      streetAddress: "Street Address",
-      city: "City",
-      state: "State",
-      zipCode: "ZIP Code",
-      country: "Country",
-      membershipInfo: "Membership & Family Information",
-      membershipType: "Membership Type",
-      regularMember: "Regular Member ($100/year)",
-      studentMember: "Student Member ($50/year)",
-      seniorMember: "Senior Member ($75/year)",
-      familyMember: "Family Member ($200/year)",
-      previousMember: "I was previously a member of another Orthodox church",
-      previousChurch: "Previous Church Name",
-      baptized: "I have been baptized",
-      baptismDate: "Baptism Date",
-      maritalStatus: "Marital Status",
-      single: "Single",
-      married: "Married",
-      divorced: "Divorced",
-      widowed: "Widowed",
-      spouseName: "Spouse's Name",
-      children: "Children",
-      addChild: "Add Child",
-      childName: "Child's name",
-      age: "Age",
-      remove: "Remove",
-      ministryInterests: "Ministry Interests & Emergency Contact",
-      selectMinistries: "Ministry Interests (Select all that apply)",
-      volunteerInterests: "Volunteer Interests (Select all that apply)",
-      skills: "Special Skills or Talents",
-      skillsPlaceholder:
-        "Please describe any special skills, talents, or professional expertise you'd like to share...",
-      emergencyContact: "Emergency Contact Information",
-      emergencyName: "Emergency Contact Name",
-      emergencyPhone: "Emergency Contact Phone",
-      emergencyRelation: "Relationship to Emergency Contact",
-      emergencyRelationPlaceholder: "e.g., Spouse, Parent, Sibling, Friend",
-      finalDetails: "Final Details & Review",
-      preferredLanguage: "Preferred Language",
-      english: "English",
-      amharic: "Amharic",
-      contactMethod: "Preferred Contact Method",
-      emailUpdates:
-        "I would like to receive email updates about church events and news",
-      smsUpdates:
-        "I would like to receive SMS updates for urgent announcements",
-      howDidYouHear: "How did you hear about our church?",
-      additionalNotes: "Additional Notes or Comments",
-      notesPlaceholder: "Please share anything else you'd like us to know...",
-      agreeToTerms:
-        "I agree to the church's terms and conditions, and I understand that membership requires an annual fee. I commit to participating in church activities and supporting the church community.",
-      agreeToPhotos:
-        "I consent to having my photo taken during church events and activities for use in church publications, website, and social media.",
-      membershipFee: "Membership Fee",
-      annualFee: "Annual membership fee: ",
-      paymentRedirect:
-        "After submitting this form, you will be redirected to a secure payment page to complete your membership registration.",
-      previous: "Previous",
-      next: "Next",
-      processing: "Processing...",
-      completeRegistration: "Complete Registration & Pay $100",
-      personal_step: "Personal",
-      address_step: "Address",
-      membership_step: "Membership",
-      ministry_step: "Ministry",
-      review_step: "Review",
-    },
-    am: {
-      title: "የአባልነት ምዝገባ",
-      description: "እንደ አባል በመመዝገብ የቤተክርስቲያን ማህበረሰባችንን ይቀላቀሉ",
-      personal: "የግል መረጃ",
-      firstName: "መጠሪያ ስም",
-      lastName: "የአባት ስም",
-      email: "የኢሜይል አድራሻ",
-      phone: "ስልክ ቁጥር",
-      dateOfBirth: "የትውልድ ቀን",
-      gender: "ፆታ",
-      male: "ወንድ",
-      female: "ሴት",
-      address: "የአድራሻ መረጃ",
-      streetAddress: "የመንገድ አድራሻ",
-      city: "ከተማ",
-      state: "ግዛት",
-      zipCode: "ዚፕ ኮድ",
-      country: "ሀገር",
-      membershipInfo: "የአባልነት እና የቤተሰብ መረጃ",
-      membershipType: "የአባልነት አይነት",
-      regularMember: "መደበኛ አባል ($100/አመት)",
-      studentMember: "የተማሪ አባል ($50/አመት)",
-      seniorMember: "የአዛውንት አባል ($75/አመት)",
-      familyMember: "የቤተሰብ አባል ($200/አመት)",
-      previousMember: "ከዚህ በፊት የሌላ ኦርቶዶክስ ቤተክርስቲያን አባል ነበርኩ",
-      previousChurch: "የቀድሞ ቤተክርስቲያን ስም",
-      baptized: "ተጠምቄአለሁ",
-      baptismDate: "የጥምቀት ቀን",
-      maritalStatus: "የጋብቻ ሁኔታ",
-      single: "ያላገባ",
-      married: "ያገባ",
-      divorced: "የተፋታ",
-      widowed: "የትዳር አጋሩ የሞተበት",
-      spouseName: "የትዳር አጋር ስም",
-      children: "ልጆች",
-      addChild: "ልጅ ጨምር",
-      childName: "የልጅ ስም",
-      age: "እድሜ",
-      remove: "አስወግድ",
-      ministryInterests: "የአገልግሎት ፍላጎቶች እና የአደጋ ጊዜ ተጠሪ",
-      selectMinistries: "የአገልግሎት ፍላጎቶች (የሚመለከትዎትን ሁሉ ይምረጡ)",
-      volunteerInterests: "የበጎ ፈቃድ ፍላጎቶች (የሚመለከትዎትን ሁሉ ይምረጡ)",
-      skills: "ልዩ ችሎታዎች ወይም ተሰጥኦዎች",
-      skillsPlaceholder:
-        "እባክዎን ማካፈል የሚፈልጓቸውን ልዩ ችሎታዎች፣ ተሰጥኦዎች ወይም ሙያዊ ብቃቶች ይግለጹ...",
-      emergencyContact: "የአደጋ ጊዜ ተጠሪ መረጃ",
-      emergencyName: "የአደጋ ጊዜ ተጠሪ ስም",
-      emergencyPhone: "የአደጋ ጊዜ ተጠሪ ስልክ",
-      emergencyRelation: "ከአደጋ ጊዜ ተጠሪ ጋር ያለዎት ግንኙነት",
-      emergencyRelationPlaceholder: "ለምሳሌ፣ ባል/ሚስት፣ ወላጅ፣ ወንድም/እህት፣ ጓደኛ",
-      finalDetails: "የመጨረሻ ዝርዝሮች እና ግምገማ",
-      preferredLanguage: "የመረጡት ቋንቋ",
-      english: "እንግሊዝኛ",
-      amharic: "አማርኛ",
-      contactMethod: "የመረጡት የመገናኛ ዘዴ",
-      emailUpdates: "ስለ ቤተክርስቲያናችን እንዴት ሰሙ?",
-      smsUpdates: "ለአስቸኳይ ማስታወቂያዎች በኤስኤምኤስ መረጃዎችን መቀበል እፈልጋለሁ",
-      howDidYouHear: "ስለ ቤተክርስቲያናችን እንዴት ሰሙ?",
-      additionalNotes: "ተጨማሪ ማስታወሻዎች ወይም አስተያየቶች",
-      notesPlaceholder: "እባክዎን እኛ እንድናውቅ የሚፈልጉትን ማንኛውንም ነገር ያካፍሉ...",
-      agreeToTerms:
-        "የቤተክርስቲያኑን ውሎች እና ሁኔታዎች እስማማለሁ፣ እና አባልነት አመታዊ ክፍያ እንደሚጠይቅ ተረድቻለሁ። በቤተክርስቲያን እንቅስቃሴዎች ለመሳተፍ እና የቤተክርስቲያን ማህበረሰብን ለመደገፍ እቃጠራለሁ።",
-      agreeToPhotos:
-        "በቤተክርስቲያን ዝግጅቶች እና እንቅስቃሴዎች ወቅት ፎቶዬ እንዲነሳ እና በቤተክርስቲያን ህትመቶች፣ ድህረ ገጽ እና ማህበራዊ ሚዲያ ላይ እንዲውል ፈቃዴን እሰጣለሁ።",
-      membershipFee: "የአባልነት ክፍያ",
-      annualFee: "አመታዊ የአባልነት ክፍያ: ",
-      paymentRedirect:
-        "ይህንን ቅጽ ካስገቡ በኋላ፣ የአባልነት ምዝገባዎን ለማጠናቀቅ ወደ ደህንነቱ የተጠበቀ የክፍያ ገጽ ይዞረዛሉ።",
-      previous: "ቀዳሚ",
-      next: "ቀጣይ",
-      processing: "በሂደት ላይ...",
-      completeRegistration: "ምዝገባን አጠናቅቅ እና $100 ክፍል",
-      personal_step: "የግል",
-      address_step: "አድራሻ",
-      membership_step: "አባልነት",
-      ministry_step: "አገልግሎት",
-      review_step: "ግምገማ",
-    },
-  };
 
-  // Get translations based on current language
-  const getTranslation = (key: string): string => {
-    if (
-      language === "am" &&
-      translations.am[key as keyof typeof translations.am]
-    ) {
-      return translations.am[key as keyof typeof translations.am];
-    }
-    return translations.en[key as keyof typeof translations.en];
-  };
 
   return (
     <Layout>
