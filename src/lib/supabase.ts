@@ -1,27 +1,12 @@
-// Minimal placeholder for @/lib/supabase to prevent import errors
-// You should replace this with your actual Supabase client setup
+import { createClient } from '@supabase/supabase-js';
+import { Database } from '@/lib/database.types';
 
-export const supabase = {
-  from(_table: string) {
-    return {
-      select() {
-        return this;
-      },
-      limit() {
-        return this;
-      },
-      single() {
-        return Promise.resolve({ data: {}, error: null });
-      },
-      insert(_data: any) {
-        return {
-          select: () => this,
-          single: () => Promise.resolve({ data: {}, error: null }),
-        };
-      },
-      upsert(_data: any) {
-        return { select: () => Promise.resolve({ data: {}, error: null }) };
-      },
-    };
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+
+// Create a single supabase client for interacting with your database and edge functions
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
   },
-};
+});
