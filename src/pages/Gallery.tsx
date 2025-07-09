@@ -103,117 +103,125 @@ const Gallery: React.FC = () => {
 
   // Use actual images from public/images folder
   const baseUrl = import.meta.env.BASE_URL;
-  const fallbackImages = React.useMemo(() => [
-    {
-      id: "gallery-1",
-      title: language === "en" ? "Church Aerial View" : "የቤተክርስቲያን አየር ላይ እይታ",
-      description:
-        language === "en"
-          ? "Beautiful aerial view of our church grounds"
-          : "የቤተክርስቲያናችን ግቢ ውብ የአየር ላይ እይታ",
-      image_url: baseUrl + "images/gallery/church-aerial.jpg",
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: "gallery-2",
-      title: language === "en" ? "Divine Liturgy Service" : "የቅዳሴ አገልግሎት",
-      description:
-        language === "en"
-          ? "Sunday Divine Liturgy in progress"
-          : "የእሁድ ቅዳሴ በሂደት ላይ",
-      image_url: baseUrl + "images/gallery/church-service.jpg",
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: "gallery-3",
-      title: language === "en" ? "Timket Celebration" : "የጥምቀት በዓል",
-      description:
-        language === "en" ? "Annual Timket celebration" : "ዓመታዊ የጥምቀት በዓል",
-      image_url: baseUrl + "images/gallery/timket.jpg",
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: "gallery-4",
-      title: language === "en" ? "Church Ceremony" : "የቤተክርስቲያን ሥርዓት",
-      description:
-        language === "en" ? "Special church ceremony" : "ልዩ የቤተክርስቲያን ሥርዓት",
-      image_url: baseUrl + "images/gallery/ceremony-1.jpg",
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: "gallery-5",
-      title: language === "en" ? "Community Gathering" : "የማህበረሰብ ስብሰባ",
-      description:
-        language === "en"
-          ? "Church community gathering"
-          : "የቤተክርስቲያን ማህበረሰብ ስብሰባ",
-      image_url: baseUrl + "images/gallery/ceremony-2.jpg",
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: "gallery-6",
-      title: language === "en" ? "Religious Ceremony" : "ሃይማኖታዊ ሥርዓት",
-      description:
-        language === "en"
-          ? "Traditional religious ceremony"
-          : "ባህላዊ ሃይማኖታዊ ሥርዓት",
-      image_url: baseUrl + "images/gallery/ceremony-3.jpg",
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: "gallery-7",
-      title: language === "en" ? "Church Winter View" : "የቤተክርስቲያን የክረምት እይታ",
-      description:
-        language === "en"
-          ? "Church building in winter"
-          : "በክረምት ወቅት የቤተክርስቲያን ህንጻ",
-      image_url: baseUrl + "images/gallery/church-winter.jpg",
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: "gallery-8",
-      title: language === "en" ? "Church Sanctuary" : "የቤተክርስቲያን መቅደስ",
-      description:
-        language === "en" ? "Interior view of the sanctuary" : "የመቅደሱ ውስጣዊ እይታ",
-      image_url: baseUrl + "images/gallery/church/sanctuary.jpg",
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: "gallery-9",
-      title: language === "en" ? "Church Altar" : "የቤተክርስቲያን መሠዊያ",
-      description: language === "en" ? "Sacred altar area" : "ቅዱስ መሠዊያ አካባቢ",
-      image_url: baseUrl + "images/gallery/church/altar.jpg",
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: "gallery-10",
-      title: language === "en" ? "Timket Procession" : "የጥምቀት ሰልፍ",
-      description:
-        language === "en" ? "Traditional Timket procession" : "ባህላዊ የጥምቀት ሰልፍ",
-      image_url: baseUrl + "images/gallery/nd14_timket_09-3x1500-1.jpg",
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: "gallery-11",
-      title: language === "en" ? "Church Community" : "የቤተክርስቲያን ማህበረሰብ",
-      description:
-        language === "en"
-          ? "Church community members"
-          : "የቤተክርስቲያን ማህበረሰብ አባላት",
-      image_url: baseUrl + "images/gallery/photo_2023-09-22_18-56-49.jpg",
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: "gallery-12",
-      title: language === "en" ? "Church Activities" : "የቤተክርስቲያን ስራዎች",
-      description:
-        language === "en"
-          ? "Various church activities"
-          : "የተለያዩ የቤተክርስቲያን ስራዎች",
-      image_url: baseUrl + "images/gallery/photo_2023-09-22_18-56-51.jpg",
-      created_at: new Date().toISOString(),
-    },
-  ], [language, baseUrl]);
+  const fallbackImages = React.useMemo(
+    () => [
+      {
+        id: "gallery-1",
+        title:
+          language === "en" ? "Church Aerial View" : "የቤተክርስቲያን አየር ላይ እይታ",
+        description:
+          language === "en"
+            ? "Beautiful aerial view of our church grounds"
+            : "የቤተክርስቲያናችን ግቢ ውብ የአየር ላይ እይታ",
+        image_url: baseUrl + "images/gallery/church-aerial.jpg",
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: "gallery-2",
+        title: language === "en" ? "Divine Liturgy Service" : "የቅዳሴ አገልግሎት",
+        description:
+          language === "en"
+            ? "Sunday Divine Liturgy in progress"
+            : "የእሁድ ቅዳሴ በሂደት ላይ",
+        image_url: baseUrl + "images/gallery/church-service.jpg",
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: "gallery-3",
+        title: language === "en" ? "Timket Celebration" : "የጥምቀት በዓል",
+        description:
+          language === "en" ? "Annual Timket celebration" : "ዓመታዊ የጥምቀት በዓል",
+        image_url: baseUrl + "images/gallery/timket.jpg",
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: "gallery-4",
+        title: language === "en" ? "Church Ceremony" : "የቤተክርስቲያን ሥርዓት",
+        description:
+          language === "en" ? "Special church ceremony" : "ልዩ የቤተክርስቲያን ሥርዓት",
+        image_url: baseUrl + "images/gallery/ceremony-1.jpg",
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: "gallery-5",
+        title: language === "en" ? "Community Gathering" : "የማህበረሰብ ስብሰባ",
+        description:
+          language === "en"
+            ? "Church community gathering"
+            : "የቤተክርስቲያን ማህበረሰብ ስብሰባ",
+        image_url: baseUrl + "images/gallery/ceremony-2.jpg",
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: "gallery-6",
+        title: language === "en" ? "Religious Ceremony" : "ሃይማኖታዊ ሥርዓት",
+        description:
+          language === "en"
+            ? "Traditional religious ceremony"
+            : "ባህላዊ ሃይማኖታዊ ሥርዓት",
+        image_url: baseUrl + "images/gallery/ceremony-3.jpg",
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: "gallery-7",
+        title: language === "en" ? "Church Winter View" : "የቤተክርስቲያን የክረምት እይታ",
+        description:
+          language === "en"
+            ? "Church building in winter"
+            : "በክረምት ወቅት የቤተክርስቲያን ህንጻ",
+        image_url: baseUrl + "images/gallery/church-winter.jpg",
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: "gallery-8",
+        title: language === "en" ? "Church Sanctuary" : "የቤተክርስቲያን መቅደስ",
+        description:
+          language === "en"
+            ? "Interior view of the sanctuary"
+            : "የመቅደሱ ውስጣዊ እይታ",
+        image_url: baseUrl + "images/gallery/church/sanctuary.jpg",
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: "gallery-9",
+        title: language === "en" ? "Church Altar" : "የቤተክርስቲያን መሠዊያ",
+        description: language === "en" ? "Sacred altar area" : "ቅዱስ መሠዊያ አካባቢ",
+        image_url: baseUrl + "images/gallery/church/altar.jpg",
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: "gallery-10",
+        title: language === "en" ? "Timket Procession" : "የጥምቀት ሰልፍ",
+        description:
+          language === "en"
+            ? "Traditional Timket procession"
+            : "ባህላዊ የጥምቀት ሰልፍ",
+        image_url: baseUrl + "images/gallery/nd14_timket_09-3x1500-1.jpg",
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: "gallery-11",
+        title: language === "en" ? "Church Community" : "የቤተክርስቲያን ማህበረሰብ",
+        description:
+          language === "en"
+            ? "Church community members"
+            : "የቤተክርስቲያን ማህበረሰብ አባላት",
+        image_url: baseUrl + "images/gallery/photo_2023-09-22_18-56-49.jpg",
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: "gallery-12",
+        title: language === "en" ? "Church Activities" : "የቤተክርስቲያን ስራዎች",
+        description:
+          language === "en"
+            ? "Various church activities"
+            : "የተለያዩ የቤተክርስቲያን ስራዎች",
+        image_url: baseUrl + "images/gallery/photo_2023-09-22_18-56-51.jpg",
+        created_at: new Date().toISOString(),
+      },
+    ],
+    [language, baseUrl],
+  );
 
   const fetchGalleryImages = useCallback(async () => {
     try {

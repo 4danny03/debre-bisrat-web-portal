@@ -107,7 +107,10 @@ const religiousServiceImages = {
 };
 
 const getServiceImage = (title: string): string => {
-  return (religiousServiceImages as Record<string, string>)[title] || baseUrl + "images/gallery/church-service.jpg";
+  return (
+    (religiousServiceImages as Record<string, string>)[title] ||
+    baseUrl + "images/gallery/church-service.jpg"
+  );
 };
 
 const Services: React.FC = () => {
@@ -276,10 +279,9 @@ const Services: React.FC = () => {
   ];
 
   // Collect all services that require appointments
-  const appointmentServices = [
-    ...regularServices,
-    ...specialServices,
-  ].filter((s) => s.requiresAppointment);
+  const appointmentServices = [...regularServices, ...specialServices].filter(
+    (s) => s.requiresAppointment,
+  );
 
   return (
     <Layout>
@@ -473,7 +475,9 @@ const Services: React.FC = () => {
                 </CardDescription>
                 <form onSubmit={handleAppointmentSubmit} className="space-y-4">
                   <div>
-                    <Label htmlFor="serviceType">{language === "en" ? "Service Type" : "የአገልግሎት አይነት"}</Label>
+                    <Label htmlFor="serviceType">
+                      {language === "en" ? "Service Type" : "የአገልግሎት አይነት"}
+                    </Label>
                     <select
                       id="serviceType"
                       name="serviceType"
@@ -489,31 +493,59 @@ const Services: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="name">{language === "en" ? "Name" : "ስም"}</Label>
+                      <Label htmlFor="name">
+                        {language === "en" ? "Name" : "ስም"}
+                      </Label>
                       <Input id="name" name="name" required />
                     </div>
                     <div>
-                      <Label htmlFor="email">{language === "en" ? "Email" : "ኢሜይል"}</Label>
+                      <Label htmlFor="email">
+                        {language === "en" ? "Email" : "ኢሜይል"}
+                      </Label>
                       <Input id="email" name="email" type="email" required />
                     </div>
                     <div>
-                      <Label htmlFor="phone">{language === "en" ? "Phone" : "ስልክ"}</Label>
+                      <Label htmlFor="phone">
+                        {language === "en" ? "Phone" : "ስልክ"}
+                      </Label>
                       <Input id="phone" name="phone" type="tel" required />
                     </div>
                     <div>
-                      <Label htmlFor="date">{language === "en" ? "Date" : "ቀን"}</Label>
-                      <Input id="date" name="date" type="date" min={format(new Date(), "yyyy-MM-dd")}/>
+                      <Label htmlFor="date">
+                        {language === "en" ? "Date" : "ቀን"}
+                      </Label>
+                      <Input
+                        id="date"
+                        name="date"
+                        type="date"
+                        min={format(new Date(), "yyyy-MM-dd")}
+                      />
                     </div>
                     <div>
-                      <Label htmlFor="time">{language === "en" ? "Time" : "ሰዓት"}</Label>
+                      <Label htmlFor="time">
+                        {language === "en" ? "Time" : "ሰዓት"}
+                      </Label>
                       <Input id="time" name="time" type="time" required />
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor="notes">{language === "en" ? "Notes" : "ማስታወሻዎች"}</Label>
-                    <Textarea id="notes" name="notes" placeholder={language === "en" ? "Any additional information..." : "ማንኛውም ተጨማሪ መረጃ..."} />
+                    <Label htmlFor="notes">
+                      {language === "en" ? "Notes" : "ማስታወሻዎች"}
+                    </Label>
+                    <Textarea
+                      id="notes"
+                      name="notes"
+                      placeholder={
+                        language === "en"
+                          ? "Any additional information..."
+                          : "ማንኛውም ተጨማሪ መረጃ..."
+                      }
+                    />
                   </div>
-                  <Button type="submit" className="bg-church-burgundy hover:bg-church-burgundy/90">
+                  <Button
+                    type="submit"
+                    className="bg-church-burgundy hover:bg-church-burgundy/90"
+                  >
                     {language === "en" ? "Submit Request" : "ጥያቄ አስገባ"}
                   </Button>
                 </form>
@@ -536,7 +568,10 @@ const Services: React.FC = () => {
               </CardHeader>
               <CardContent className="pt-6">
                 {regularServices.map((service, index) => (
-                  <div key={`regular-${index}`} className="border-l-2 border-church-gold pl-4 mb-6">
+                  <div
+                    key={`regular-${index}`}
+                    className="border-l-2 border-church-gold pl-4 mb-6"
+                  >
                     <div className="mb-3 rounded-md overflow-hidden w-32 h-32 float-right ml-4">
                       <img
                         src={getServiceImage(service.title)}
@@ -544,7 +579,9 @@ const Services: React.FC = () => {
                         className="object-cover w-full h-full transition-transform hover:scale-105 duration-300 rounded-md"
                       />
                     </div>
-                    <h3 className="text-xl font-serif text-church-burgundy">{service.title}</h3>
+                    <h3 className="text-xl font-serif text-church-burgundy">
+                      {service.title}
+                    </h3>
                     <p className="text-sm text-gray-500 mb-2">{service.time}</p>
                     <p className="text-gray-700">{service.description}</p>
                   </div>
@@ -564,7 +601,10 @@ const Services: React.FC = () => {
               </CardHeader>
               <CardContent className="pt-6">
                 {specialServices.map((service, index) => (
-                  <div key={`special-${index}`} className="border-l-2 border-church-gold pl-4 mb-6">
+                  <div
+                    key={`special-${index}`}
+                    className="border-l-2 border-church-gold pl-4 mb-6"
+                  >
                     <div className="mb-3 rounded-md overflow-hidden w-32 h-32 float-right ml-4">
                       <img
                         src={getServiceImage(service.title)}
@@ -572,7 +612,9 @@ const Services: React.FC = () => {
                         className="object-cover w-full h-full transition-transform hover:scale-105 duration-300 rounded-md"
                       />
                     </div>
-                    <h3 className="text-xl font-serif text-church-burgundy">{service.title}</h3>
+                    <h3 className="text-xl font-serif text-church-burgundy">
+                      {service.title}
+                    </h3>
                     <p className="text-sm text-gray-500 mb-2">{service.time}</p>
                     <p className="text-gray-700">{service.description}</p>
                   </div>

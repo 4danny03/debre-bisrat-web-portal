@@ -23,8 +23,5 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true
   },
-  "include": [
-    "vite.config.ts",
-    "supabase/functions/**/*"
-  ]
+  "include": ["vite.config.ts", "supabase/functions/**/*"]
 }

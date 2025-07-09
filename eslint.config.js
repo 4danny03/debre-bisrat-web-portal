@@ -6,8 +6,20 @@ import tsPlugin from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 
 // Sanitize global names to remove whitespace
+
+// Add additional globals for Node, React, Deno, etc.
+const extraGlobals = {
+  ...globals.browser,
+  ...globals.node,
+  React: true,
+  process: true,
+  Deno: true,
+  require: true,
+  __dirname: true,
+};
+
 const sanitizedGlobals = Object.fromEntries(
-  Object.entries(globals.browser).map(([k, v]) => [k.trim(), v])
+  Object.entries(extraGlobals).map(([k, v]) => [k.trim(), v]),
 );
 
 export default [

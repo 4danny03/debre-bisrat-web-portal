@@ -77,7 +77,8 @@ interface Appointment {
 const AdminAppointments: React.FC = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<Appointment | null>(null);
   const [responseDialog, setResponseDialog] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -111,7 +112,9 @@ const AdminAppointments: React.FC = () => {
   }, [loadAppointments]);
 
   const getCurrentUser = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     setCurrentUser(session?.user);
   };
 
@@ -149,12 +152,29 @@ const AdminAppointments: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      pending: { variant: "secondary" as const, icon: Clock, color: "text-yellow-600" },
-      approved: { variant: "default" as const, icon: CheckCircle, color: "text-green-600" },
-      rejected: { variant: "destructive" as const, icon: XCircle, color: "text-red-600" },
-      completed: { variant: "outline" as const, icon: CheckCircle, color: "text-blue-600" },
+      pending: {
+        variant: "secondary" as const,
+        icon: Clock,
+        color: "text-yellow-600",
+      },
+      approved: {
+        variant: "default" as const,
+        icon: CheckCircle,
+        color: "text-green-600",
+      },
+      rejected: {
+        variant: "destructive" as const,
+        icon: XCircle,
+        color: "text-red-600",
+      },
+      completed: {
+        variant: "outline" as const,
+        icon: CheckCircle,
+        color: "text-blue-600",
+      },
     };
-    const config = variants[status as keyof typeof variants] || variants.pending;
+    const config =
+      variants[status as keyof typeof variants] || variants.pending;
     const Icon = config.icon;
     return (
       <Badge variant={config.variant} className="capitalize">
@@ -173,8 +193,12 @@ const AdminAppointments: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-church-burgundy">Appointments</h1>
-          <p className="text-gray-600 mt-1">Manage appointment requests from the services page</p>
+          <h1 className="text-2xl font-bold text-church-burgundy">
+            Appointments
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Manage appointment requests from the services page
+          </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -197,7 +221,9 @@ const AdminAppointments: React.FC = () => {
         </div>
       </div>
       {loading ? (
-        <div className="py-10"><span>Loading...</span></div>
+        <div className="py-10">
+          <span>Loading...</span>
+        </div>
       ) : appointments.length === 0 ? (
         <EmptyState
           icon={CalendarCheck}
@@ -209,7 +235,8 @@ const AdminAppointments: React.FC = () => {
           <CardHeader>
             <CardTitle>Appointment Requests</CardTitle>
             <CardDescription>
-              {appointments.length} appointment{appointments.length !== 1 ? "s" : ""} found
+              {appointments.length} appointment
+              {appointments.length !== 1 ? "s" : ""} found
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -245,11 +272,15 @@ const AdminAppointments: React.FC = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="font-medium">{appointment.service_title}</div>
+                        <div className="font-medium">
+                          {appointment.service_title}
+                        </div>
                         {appointment.notes && (
                           <div className="text-sm text-gray-500 mt-1 flex items-start">
                             <MessageSquare className="w-3 h-3 mr-1 mt-0.5 flex-shrink-0" />
-                            <span className="line-clamp-2">{appointment.notes}</span>
+                            <span className="line-clamp-2">
+                              {appointment.notes}
+                            </span>
                           </div>
                         )}
                       </TableCell>
@@ -257,28 +288,46 @@ const AdminAppointments: React.FC = () => {
                         <div className="space-y-1">
                           <div className="flex items-center text-sm">
                             <Calendar className="w-3 h-3 mr-1" />
-                            {format(new Date(appointment.requested_date), "MMM d, yyyy")}
+                            {format(
+                              new Date(appointment.requested_date),
+                              "MMM d, yyyy",
+                            )}
                           </div>
                           <div className="flex items-center text-sm text-gray-500">
                             <Clock className="w-3 h-3 mr-1" />
                             {appointment.requested_time}
                           </div>
-                          {appointment.confirmed_date && appointment.confirmed_date !== appointment.requested_date && (
-                            <div className="flex items-center text-sm text-green-600">
-                              <Calendar className="w-3 h-3 mr-1" />
-                              Confirmed: {format(new Date(appointment.confirmed_date), "MMM d, yyyy")}
-                            </div>
-                          )}
+                          {appointment.confirmed_date &&
+                            appointment.confirmed_date !==
+                              appointment.requested_date && (
+                              <div className="flex items-center text-sm text-green-600">
+                                <Calendar className="w-3 h-3 mr-1" />
+                                Confirmed:{" "}
+                                {format(
+                                  new Date(appointment.confirmed_date),
+                                  "MMM d, yyyy",
+                                )}
+                              </div>
+                            )}
                         </div>
                       </TableCell>
-                      <TableCell>{getStatusBadge(appointment.status)}</TableCell>
+                      <TableCell>
+                        {getStatusBadge(appointment.status)}
+                      </TableCell>
                       <TableCell>
                         <div className="text-sm text-gray-500">
-                          {format(new Date(appointment.created_at), "MMM d, yyyy HH:mm")}
+                          {format(
+                            new Date(appointment.created_at),
+                            "MMM d, yyyy HH:mm",
+                          )}
                         </div>
                         {appointment.responded_at && (
                           <div className="text-xs text-gray-400 mt-1">
-                            Responded: {format(new Date(appointment.responded_at), "MMM d, HH:mm")}
+                            Responded:{" "}
+                            {format(
+                              new Date(appointment.responded_at),
+                              "MMM d, HH:mm",
+                            )}
                           </div>
                         )}
                         {appointment.responded_by_profile?.email && (
@@ -293,7 +342,9 @@ const AdminAppointments: React.FC = () => {
                           onClick={() => openResponseDialog(appointment)}
                           className="bg-church-burgundy hover:bg-church-burgundy/90"
                         >
-                          {appointment.status === "pending" ? "Respond" : "Update"}
+                          {appointment.status === "pending"
+                            ? "Respond"
+                            : "Update"}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -312,7 +363,8 @@ const AdminAppointments: React.FC = () => {
             <DialogDescription>
               {selectedAppointment && (
                 <span>
-                  Responding to {selectedAppointment.name}'s request for {selectedAppointment.service_title}
+                  Responding to {selectedAppointment.name}'s request for{" "}
+                  {selectedAppointment.service_title}
                 </span>
               )}
             </DialogDescription>
@@ -322,7 +374,10 @@ const AdminAppointments: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="status">Status</Label>
-                  <Select name="status" defaultValue={selectedAppointment.status}>
+                  <Select
+                    name="status"
+                    defaultValue={selectedAppointment.status}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -335,22 +390,32 @@ const AdminAppointments: React.FC = () => {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirmed_date">Confirmed Date (if approved)</Label>
+                  <Label htmlFor="confirmed_date">
+                    Confirmed Date (if approved)
+                  </Label>
                   <Input
                     id="confirmed_date"
                     name="confirmed_date"
                     type="date"
-                    defaultValue={selectedAppointment.confirmed_date || selectedAppointment.requested_date}
+                    defaultValue={
+                      selectedAppointment.confirmed_date ||
+                      selectedAppointment.requested_date
+                    }
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirmed_time">Confirmed Time (if approved)</Label>
+                <Label htmlFor="confirmed_time">
+                  Confirmed Time (if approved)
+                </Label>
                 <Input
                   id="confirmed_time"
                   name="confirmed_time"
                   type="time"
-                  defaultValue={selectedAppointment.confirmed_time || selectedAppointment.requested_time}
+                  defaultValue={
+                    selectedAppointment.confirmed_time ||
+                    selectedAppointment.requested_time
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -375,10 +440,17 @@ const AdminAppointments: React.FC = () => {
                 />
               </div>
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setResponseDialog(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setResponseDialog(false)}
+                >
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-church-burgundy hover:bg-church-burgundy/90">
+                <Button
+                  type="submit"
+                  className="bg-church-burgundy hover:bg-church-burgundy/90"
+                >
                   Send Response
                 </Button>
               </DialogFooter>

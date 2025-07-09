@@ -1,8 +1,8 @@
 // Backend service for handling appointments
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export interface Appointment {
@@ -18,16 +18,14 @@ export interface Appointment {
 
 export async function createAppointment(appointment: Appointment) {
   const { data, error } = await supabase
-    .from('appointments')
+    .from("appointments")
     .insert([{ ...appointment }]);
   if (error) throw error;
   return data;
 }
 
 export async function getAppointments() {
-  const { data, error } = await supabase
-    .from('appointments')
-    .select('*');
+  const { data, error } = await supabase.from("appointments").select("*");
   if (error) throw error;
   return data;
 }

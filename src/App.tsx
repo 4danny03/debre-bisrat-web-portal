@@ -1,9 +1,9 @@
 import * as React from "react";
-import { useState, useEffect } from "react";
+// import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { usePerformanceMonitoring } from "@/hooks/use-performance-monitoring";
 
@@ -12,7 +12,7 @@ if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
       .register("/sw.js")
-      .then((registration) => {
+      .then(() => {
         console.log("ServiceWorker registration successful");
       })
       .catch((err) => {
@@ -22,15 +22,14 @@ if ("serviceWorker" in navigator) {
 }
 
 // Simple component to handle tempo routes without causing recursion
-function TempoRoutesHandler() {
-  // Only render tempo routes if in tempo environment
-  if (!import.meta.env.VITE_TEMPO || import.meta.env.VITE_TEMPO !== "true") {
-    return null;
-  }
-
-  // Return a simple route that will be handled by the main Routes component
-  return null;
-}
+// function TempoRoutesHandler() {
+//   // Only render tempo routes if in tempo environment
+//   if (!import.meta.env.VITE_TEMPO || import.meta.env.VITE_TEMPO !== "true") {
+//     return null;
+//   }
+//   // Return a simple route that will be handled by the main Routes component
+//   return null;
+// }
 import Home from "./pages/Home";
 import About from "./pages/About";
 import Events from "./pages/Events";
@@ -73,10 +72,7 @@ function AppContent() {
       <Route path="/about" element={<About />} />
       <Route path="/events" element={<Events />} />
       <Route path="/contact" element={<Contact />} />
-      <Route
-        path="/membership"
-        element={<MembershipRegistration />}
-      />
+      <Route path="/membership" element={<MembershipRegistration />} />
       <Route path="/donation" element={<Donation />} />
       <Route path="/donation-success" element={<DonationSuccess />} />
       <Route path="/donation-demo" element={<DonationDemo />} />

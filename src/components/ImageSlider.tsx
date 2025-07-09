@@ -3,8 +3,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface ImageSliderProps {
   slides: {
-    image: string; 
-    title: string; 
+    image: string;
+    title: string;
     content: string;
   }[];
   autoPlay?: boolean;
@@ -18,7 +18,7 @@ export default function ImageSlider({
 }: ImageSliderProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [imageLoaded, setImageLoaded] = useState<boolean[]>(
-    new Array(slides.length).fill(false)
+    new Array(slides.length).fill(false),
   );
 
   useEffect(() => {
@@ -57,15 +57,11 @@ export default function ImageSlider({
   };
 
   const prevSlide = () => {
-    setCurrentSlide(
-      currentSlide === 0 ? slides.length - 1 : currentSlide - 1
-    );
+    setCurrentSlide(currentSlide === 0 ? slides.length - 1 : currentSlide - 1);
   };
 
   const nextSlide = () => {
-    setCurrentSlide(
-      currentSlide === slides.length - 1 ? 0 : currentSlide + 1
-    );
+    setCurrentSlide(currentSlide === slides.length - 1 ? 0 : currentSlide + 1);
   };
 
   if (!slides || slides.length === 0) {

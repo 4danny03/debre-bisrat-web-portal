@@ -3,17 +3,26 @@ import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
 const app = express();
-app.use(express.json({ verify: (req, res, buf) => { (req as any).rawBody = buf; } }));
+app.use(
+  express.json({
+    verify: (req, res, buf) => {
+      (req as any).rawBody = buf;
+    },
+  }),
+);
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!stripeSecretKey) throw new Error("Missing STRIPE_SECRET_KEY environment variable");
-if (!stripeWebhookSecret) throw new Error("Missing STRIPE_WEBHOOK_SECRET environment variable");
+if (!stripeSecretKey)
+  throw new Error("Missing STRIPE_SECRET_KEY environment variable");
+if (!stripeWebhookSecret)
+  throw new Error("Missing STRIPE_WEBHOOK_SECRET environment variable");
 if (!supabaseUrl) throw new Error("Missing SUPABASE_URL environment variable");
-if (!supabaseServiceRoleKey) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY environment variable");
+if (!supabaseServiceRoleKey)
+  throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY environment variable");
 
 const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
 
@@ -27,7 +36,7 @@ app.post("/webhook", async (req: Request, res: Response) => {
     event = stripe.webhooks.constructEvent(
       (req as any).rawBody,
       signature,
-      stripeWebhookSecret
+      stripeWebhookSecret,
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -42,9 +51,9 @@ app.post("/webhook", async (req: Request, res: Response) => {
     // Update donation status
     const { error: updateError } = await supabaseClient
       .from("donations")
-      .update({ 
+      .update({
         payment_status: "completed",
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq("payment_id", session.id);
 
@@ -75,10 +84,10 @@ app.post("/webhook", async (req: Request, res: Response) => {
               donor_name: donation.donor_name,
               amount: donation.amount,
               purpose: donation.purpose,
-              date: new Date(donation.created_at).toISOString().split("T")[0]
+              date: new Date(donation.created_at).toISOString().split("T")[0],
             },
-            recipients: [donation.donor_email]
-          }
+            recipients: [donation.donor_email],
+          },
         });
       }
 
@@ -93,10 +102,10 @@ app.post("/webhook", async (req: Request, res: Response) => {
               amount: donation.amount,
               purpose: donation.purpose,
               date: new Date(donation.created_at).toISOString().split("T")[0],
-              status: "completed"
+              status: "completed",
             },
-            recipients: [settings.admin_email]
-          }
+            recipients: [settings.admin_email],
+          },
         });
       }
     }

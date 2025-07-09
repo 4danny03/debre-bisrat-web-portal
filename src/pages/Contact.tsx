@@ -6,12 +6,19 @@ import { useLanguage } from "../contexts/LanguageContext";
 const Contact: React.FC = () => {
   const { language } = useLanguage();
   // Add state for form fields and submission status
-  const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    subject: "",
+    message: "",
+  });
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     setForm({ ...form, [e.target.id]: e.target.value });
   };
 
@@ -23,7 +30,9 @@ const Contact: React.FC = () => {
     // Simulate async send (replace with real API call if needed)
     setTimeout(() => {
       setSubmitting(false);
-      setSuccess(language === "am" ? "መልዕክትዎ ተልኳል!" : "Your message has been sent!");
+      setSuccess(
+        language === "am" ? "መልዕክትዎ ተልኳል!" : "Your message has been sent!",
+      );
       setForm({ name: "", email: "", subject: "", message: "" });
     }, 1200);
   };
@@ -189,7 +198,9 @@ const Contact: React.FC = () => {
                       value={form.subject}
                       onChange={handleInputChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-church-burgundy"
-                      placeholder={language === "am" ? "የመልዕክት ርዕስ" : "Message subject"}
+                      placeholder={
+                        language === "am" ? "የመልዕክት ርዕስ" : "Message subject"
+                      }
                       required
                     />
                   </div>
@@ -204,13 +215,19 @@ const Contact: React.FC = () => {
                       value={form.message}
                       onChange={handleInputChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-church-burgundy"
-                      placeholder={language === "am" ? "መልዕክትዎን" : "Your message"}
+                      placeholder={
+                        language === "am" ? "መልዕክትዎን" : "Your message"
+                      }
                       required
                     ></textarea>
                   </div>
 
-                  {success && <div className="text-green-600 font-medium">{success}</div>}
-                  {error && <div className="text-red-600 font-medium">{error}</div>}
+                  {success && (
+                    <div className="text-green-600 font-medium">{success}</div>
+                  )}
+                  {error && (
+                    <div className="text-red-600 font-medium">{error}</div>
+                  )}
 
                   <div>
                     <button
@@ -219,8 +236,12 @@ const Contact: React.FC = () => {
                       disabled={submitting}
                     >
                       {submitting
-                        ? language === "am" ? "በማስተናገድ ላይ..." : "Sending..."
-                        : language === "am" ? "መልዕክት ላክ" : "Send Message"}
+                        ? language === "am"
+                          ? "በማስተናገድ ላይ..."
+                          : "Sending..."
+                        : language === "am"
+                          ? "መልዕክት ላክ"
+                          : "Send Message"}
                     </button>
                   </div>
                 </form>

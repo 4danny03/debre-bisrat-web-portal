@@ -33,7 +33,9 @@ export interface EmailTemplate {
 
 export default function EmailTemplates() {
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
-  const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(
+    null,
+  );
   const [newTemplate, setNewTemplate] = useState<EmailTemplate>({
     name: "",
     subject: "",
@@ -231,7 +233,8 @@ export default function EmailTemplates() {
                 <div>
                   <CardTitle className="text-lg">{template.name}</CardTitle>
                   <CardDescription>
-                    Type: {template.template_type} | Status: {template.is_active ? "Active" : "Inactive"}
+                    Type: {template.template_type} | Status:{" "}
+                    {template.is_active ? "Active" : "Inactive"}
                   </CardDescription>
                 </div>
                 <div className="flex space-x-2">
@@ -260,7 +263,16 @@ export default function EmailTemplates() {
                     value={editingTemplate.subject}
                     onChange={(e) =>
                       setEditingTemplate((prev) =>
-                        prev ? { ...prev, subject: e.target.value, name: prev.name ?? "", content: prev.content ?? "", template_type: prev.template_type ?? "newsletter", is_active: prev.is_active ?? true } : prev
+                        prev
+                          ? {
+                              ...prev,
+                              subject: e.target.value,
+                              name: prev.name ?? "",
+                              content: prev.content ?? "",
+                              template_type: prev.template_type ?? "newsletter",
+                              is_active: prev.is_active ?? true,
+                            }
+                          : prev,
                       )
                     }
                   />
@@ -272,13 +284,26 @@ export default function EmailTemplates() {
                     value={editingTemplate.content}
                     onChange={(e) =>
                       setEditingTemplate((prev) =>
-                        prev ? { ...prev, content: e.target.value, name: prev.name ?? "", subject: prev.subject ?? "", template_type: prev.template_type ?? "newsletter", is_active: prev.is_active ?? true } : prev
+                        prev
+                          ? {
+                              ...prev,
+                              content: e.target.value,
+                              name: prev.name ?? "",
+                              subject: prev.subject ?? "",
+                              template_type: prev.template_type ?? "newsletter",
+                              is_active: prev.is_active ?? true,
+                            }
+                          : prev,
                       )
                     }
                   />
                 </div>
                 <div className="flex space-x-2">
-                  <Button onClick={() => editingTemplate && saveTemplate(editingTemplate)}>
+                  <Button
+                    onClick={() =>
+                      editingTemplate && saveTemplate(editingTemplate)
+                    }
+                  >
                     <Save className="h-4 w-4 mr-2" />
                     Save Changes
                   </Button>

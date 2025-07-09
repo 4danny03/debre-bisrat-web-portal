@@ -17,12 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "react-hot-toast";
 import api from "@/lib/api";
@@ -175,7 +170,10 @@ export default function Settings() {
   };
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (settings.enable_stripe && !validateStripeKey(settings.stripe_publishable_key)) {
+    if (
+      settings.enable_stripe &&
+      !validateStripeKey(settings.stripe_publishable_key)
+    ) {
       toast({
         title: "Invalid Stripe Key",
         description: "Please enter a valid Stripe publishable key.",
@@ -271,7 +269,9 @@ export default function Settings() {
             <Card>
               <CardHeader>
                 <CardTitle>General Settings</CardTitle>
-                <CardDescription>Configure basic church information</CardDescription>
+                <CardDescription>
+                  Configure basic church information
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -279,7 +279,9 @@ export default function Settings() {
                   <Input
                     id="churchName"
                     value={settings.church_name}
-                    onChange={(e) => handleChange("church_name", e.target.value)}
+                    onChange={(e) =>
+                      handleChange("church_name", e.target.value)
+                    }
                   />
                 </div>
                 <div className="space-y-2">
@@ -287,7 +289,9 @@ export default function Settings() {
                   <Input
                     id="address"
                     value={settings.church_address}
-                    onChange={(e) => handleChange("church_address", e.target.value)}
+                    onChange={(e) =>
+                      handleChange("church_address", e.target.value)
+                    }
                   />
                 </div>
                 <div className="space-y-2">
@@ -295,7 +299,9 @@ export default function Settings() {
                   <Input
                     id="phone"
                     value={settings.phone_number}
-                    onChange={(e) => handleChange("phone_number", e.target.value)}
+                    onChange={(e) =>
+                      handleChange("phone_number", e.target.value)
+                    }
                   />
                 </div>
                 <div className="space-y-2">
@@ -313,7 +319,9 @@ export default function Settings() {
                     id="adminEmail"
                     type="email"
                     value={settings.admin_email}
-                    onChange={(e) => handleChange("admin_email", e.target.value)}
+                    onChange={(e) =>
+                      handleChange("admin_email", e.target.value)
+                    }
                   />
                 </div>
                 <div className="space-y-2">
@@ -381,7 +389,9 @@ export default function Settings() {
             <Card>
               <CardHeader>
                 <CardTitle>Email Configuration</CardTitle>
-                <CardDescription>Configure email settings for notifications and newsletters</CardDescription>
+                <CardDescription>
+                  Configure email settings for notifications and newsletters
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -390,10 +400,14 @@ export default function Settings() {
                     id="adminEmail"
                     type="email"
                     value={settings.admin_email}
-                    onChange={(e) => handleChange("admin_email", e.target.value)}
+                    onChange={(e) =>
+                      handleChange("admin_email", e.target.value)
+                    }
                     placeholder="admin@church.com"
                   />
-                  <p className="text-sm text-gray-500">Email to receive admin notifications</p>
+                  <p className="text-sm text-gray-500">
+                    Email to receive admin notifications
+                  </p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -402,7 +416,9 @@ export default function Settings() {
                       id="fromEmail"
                       type="email"
                       value={emailSettings.from_email}
-                      onChange={(e) => handleEmailChange("from_email", e.target.value)}
+                      onChange={(e) =>
+                        handleEmailChange("from_email", e.target.value)
+                      }
                       placeholder="noreply@church.org"
                     />
                   </div>
@@ -411,7 +427,9 @@ export default function Settings() {
                     <Input
                       id="fromName"
                       value={emailSettings.from_name}
-                      onChange={(e) => handleEmailChange("from_name", e.target.value)}
+                      onChange={(e) =>
+                        handleEmailChange("from_name", e.target.value)
+                      }
                       placeholder="St. Gabriel Church"
                     />
                   </div>
@@ -461,13 +479,18 @@ export default function Settings() {
                   Payment Settings
                   {getStripeStatusBadge()}
                 </CardTitle>
-                <CardDescription>Configure Stripe payment integration for donations and membership</CardDescription>
+                <CardDescription>
+                  Configure Stripe payment integration for donations and
+                  membership
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Enable Stripe Payments</Label>
-                    <p className="text-sm text-gray-500">Allow online donations and membership payments via Stripe</p>
+                    <p className="text-sm text-gray-500">
+                      Allow online donations and membership payments via Stripe
+                    </p>
                     <Label>Auto Welcome Email</Label>
                     <p className="text-sm text-gray-500">
                       Send welcome email to new subscribers
@@ -475,10 +498,12 @@ export default function Settings() {
                   </div>
                   <Switch
                     checked={settings.enable_stripe}
-                    onCheckedChange={(checked) => handleChange("enable_stripe", checked)}
+                    onCheckedChange={(checked) =>
+                      handleChange("enable_stripe", checked)
+                    }
                   />
                 </div>
-                
+
                 {settings.enable_stripe && (
                   <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
                     <div className="grid grid-cols-2 gap-4">
@@ -513,15 +538,21 @@ export default function Settings() {
                           <SelectContent>
                             <SelectItem value="USD">USD - US Dollar</SelectItem>
                             <SelectItem value="EUR">EUR - Euro</SelectItem>
-                            <SelectItem value="GBP">GBP - British Pound</SelectItem>
-                            <SelectItem value="CAD">CAD - Canadian Dollar</SelectItem>
+                            <SelectItem value="GBP">
+                              GBP - British Pound
+                            </SelectItem>
+                            <SelectItem value="CAD">
+                              CAD - Canadian Dollar
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="publishableKey">Stripe Publishable Key</Label>
+                      <Label htmlFor="publishableKey">
+                        Stripe Publishable Key
+                      </Label>
                       <Input
                         id="publishableKey"
                         type="password"
@@ -542,13 +573,18 @@ export default function Settings() {
                         type="password"
                         value={stripeSettings.stripe_secret_key}
                         onChange={(e) =>
-                          handleStripeChange("stripe_secret_key", e.target.value)
+                          handleStripeChange(
+                            "stripe_secret_key",
+                            e.target.value,
+                          )
                         }
                         placeholder="sk_test_..."
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="webhookSecret">Stripe Webhook Secret</Label>
+                      <Label htmlFor="webhookSecret">
+                        Stripe Webhook Secret
+                      </Label>
                       <Input
                         id="webhookSecret"
                         type="password"
@@ -566,7 +602,9 @@ export default function Settings() {
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
                         <Label>Enable Donations</Label>
-                        <p className="text-sm text-gray-500">Allow visitors to make donations</p>
+                        <p className="text-sm text-gray-500">
+                          Allow visitors to make donations
+                        </p>
                       </div>
                       <Switch
                         checked={settings.enable_donations}
@@ -578,7 +616,9 @@ export default function Settings() {
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
                         <Label>Enable Membership</Label>
-                        <p className="text-sm text-gray-500">Allow visitors to register for membership</p>
+                        <p className="text-sm text-gray-500">
+                          Allow visitors to register for membership
+                        </p>
                       </div>
                       <Switch
                         checked={settings.enable_membership}
@@ -590,7 +630,9 @@ export default function Settings() {
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
                         <Label>Maintenance Mode</Label>
-                        <p className="text-sm text-gray-500">Put the website in maintenance mode</p>
+                        <p className="text-sm text-gray-500">
+                          Put the website in maintenance mode
+                        </p>
                       </div>
                       <Switch
                         checked={settings.maintenance_mode}
@@ -601,22 +643,36 @@ export default function Settings() {
                     </div>
 
                     <div className="bg-blue-50 p-3 rounded border border-blue-200">
-                      <h4 className="font-medium text-blue-900 mb-2">Stripe Configuration Status</h4>
+                      <h4 className="font-medium text-blue-900 mb-2">
+                        Stripe Configuration Status
+                      </h4>
                       <ul className="space-y-1 text-sm text-blue-800">
                         <li className="flex items-center">
-                          {settings.enable_stripe ? <CheckCircle className="w-4 h-4 mr-2 text-green-600" /> : <AlertCircle className="w-4 h-4 mr-2 text-red-600" />}
-                          Stripe integration {settings.enable_stripe ? 'enabled' : 'disabled'}
+                          {settings.enable_stripe ? (
+                            <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 mr-2 text-red-600" />
+                          )}
+                          Stripe integration{" "}
+                          {settings.enable_stripe ? "enabled" : "disabled"}
                         </li>
                         <li className="flex items-center">
-                          {settings.stripe_publishable_key && validateStripeKey(settings.stripe_publishable_key) ? 
-                            <CheckCircle className="w-4 h-4 mr-2 text-green-600" /> : 
+                          {settings.stripe_publishable_key &&
+                          validateStripeKey(settings.stripe_publishable_key) ? (
+                            <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
+                          ) : (
                             <AlertCircle className="w-4 h-4 mr-2 text-red-600" />
-                          }
-                          Publishable key {settings.stripe_publishable_key && validateStripeKey(settings.stripe_publishable_key) ? 'configured' : 'missing or invalid'}
+                          )}
+                          Publishable key{" "}
+                          {settings.stripe_publishable_key &&
+                          validateStripeKey(settings.stripe_publishable_key)
+                            ? "configured"
+                            : "missing or invalid"}
                         </li>
                         <li className="flex items-center">
                           <AlertCircle className="w-4 h-4 mr-2 text-orange-600" />
-                          Secret key must be configured in Supabase Edge Function secrets
+                          Secret key must be configured in Supabase Edge
+                          Function secrets
                         </li>
                       </ul>
                     </div>
@@ -630,57 +686,79 @@ export default function Settings() {
             <Card>
               <CardHeader>
                 <CardTitle>Feature Settings</CardTitle>
-                <CardDescription>Enable or disable website features</CardDescription>
+                <CardDescription>
+                  Enable or disable website features
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Enable Donations</Label>
-                    <p className="text-sm text-gray-500">Allow visitors to make donations</p>
+                    <p className="text-sm text-gray-500">
+                      Allow visitors to make donations
+                    </p>
                   </div>
                   <Switch
                     checked={settings.enable_donations}
-                    onCheckedChange={(checked) => handleChange("enable_donations", checked)}
+                    onCheckedChange={(checked) =>
+                      handleChange("enable_donations", checked)
+                    }
                   />
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Enable Membership</Label>
-                    <p className="text-sm text-gray-500">Allow visitors to register for membership</p>
+                    <p className="text-sm text-gray-500">
+                      Allow visitors to register for membership
+                    </p>
                   </div>
                   <Switch
                     checked={settings.enable_membership}
-                    onCheckedChange={(checked) => handleChange("enable_membership", checked)}
+                    onCheckedChange={(checked) =>
+                      handleChange("enable_membership", checked)
+                    }
                   />
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Enable Email Notifications</Label>
-                    <p className="text-sm text-gray-500">Send email notifications to admin</p>
+                    <p className="text-sm text-gray-500">
+                      Send email notifications to admin
+                    </p>
                   </div>
                   <Switch
                     checked={settings.enable_email_notifications}
-                    onCheckedChange={(checked) => handleChange("enable_email_notifications", checked)}
+                    onCheckedChange={(checked) =>
+                      handleChange("enable_email_notifications", checked)
+                    }
                   />
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Enable Newsletter</Label>
-                    <p className="text-sm text-gray-500">Allow newsletter subscriptions</p>
+                    <p className="text-sm text-gray-500">
+                      Allow newsletter subscriptions
+                    </p>
                   </div>
                   <Switch
                     checked={settings.enable_newsletter}
-                    onCheckedChange={(checked) => handleChange("enable_newsletter", checked)}
+                    onCheckedChange={(checked) =>
+                      handleChange("enable_newsletter", checked)
+                    }
                   />
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Maintenance Mode</Label>
-                    <p className="text-sm text-gray-500">Put the website in maintenance mode</p>
+                    <p className="text-sm text-gray-500">
+                      Put the website in maintenance mode
+                    </p>
                   </div>
                   <Switch
                     checked={settings.maintenance_mode}
-                    onCheckedChange={(checked) => handleChange("maintenance_mode", checked)}
+                    onCheckedChange={(checked) =>
+                      handleChange("maintenance_mode", checked)
+                    }
                   />
                 </div>
               </CardContent>

@@ -3,19 +3,33 @@
 
 const api = {
   stripeSettings: {
-    async getSettings() { return {}; },
-    async updateSettings(_settings: any) { return {}; },
+    async getSettings() {
+      return {};
+    },
+    async updateSettings(_settings: any) {
+      return {};
+    },
   },
   emailSettings: {
-    async getSettings() { return {}; },
-    async updateSettings(_settings: any) { return {}; },
+    async getSettings() {
+      return {};
+    },
+    async updateSettings(_settings: any) {
+      return {};
+    },
   },
   emailSubscribers: {
-    async getSubscribers() { return []; },
-    async deleteSubscriber(_id: string) { return {}; },
+    async getSubscribers() {
+      return [];
+    },
+    async deleteSubscriber(_id: string) {
+      return {};
+    },
   },
   emailTemplates: {
-    async getTemplates() { return []; },
+    async getTemplates() {
+      return [];
+    },
   },
 };
 

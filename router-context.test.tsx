@@ -12,7 +12,7 @@ describe("Root Router context", () => {
     render(
       <MemoryRouter initialEntries={["/test"]}>
         <LocationDisplay />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
     expect(screen.getByText("Path: /test")).toBeInTheDocument();
   });

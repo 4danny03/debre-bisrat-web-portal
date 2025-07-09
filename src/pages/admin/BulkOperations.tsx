@@ -54,9 +54,7 @@ export default function BulkOperations() {
   const [activeTab, setActiveTab] = useState("members");
   const { toast } = useToast();
 
-  const handleFileUpload = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -230,10 +228,14 @@ export default function BulkOperations() {
       }
 
       // If emailCampaigns is not available, show a warning and skip
-      if (!('emailCampaigns' in api) || typeof (api as any).emailCampaigns?.createCampaign !== 'function') {
+      if (
+        !("emailCampaigns" in api) ||
+        typeof (api as any).emailCampaigns?.createCampaign !== "function"
+      ) {
         toast({
           title: "Not Supported",
-          description: "Bulk email campaigns are not supported in this deployment.",
+          description:
+            "Bulk email campaigns are not supported in this deployment.",
           variant: "destructive",
         });
         return;

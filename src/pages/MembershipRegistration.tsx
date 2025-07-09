@@ -53,7 +53,6 @@ const MembershipRegistration: FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
     lastName: "",
@@ -75,8 +74,6 @@ const MembershipRegistration: FC = () => {
 
   const totalSteps = 3;
   const progressPercentage = (currentStep / totalSteps) * 100;
-
-
 
   const validateStep = (step: number): boolean => {
     const errors: Record<string, string> = {};
@@ -134,15 +131,12 @@ const MembershipRegistration: FC = () => {
     }
   };
 
-
-
   const handleSubmit = async () => {
     if (!validateStep(currentStep)) return;
 
     setIsSubmitting(true);
 
     try {
-
       // Create member record
       const { data: memberData, error: memberError } = await supabase
         .from("members")
@@ -634,8 +628,6 @@ const MembershipRegistration: FC = () => {
       );
     }
   };
-
-
 
   return (
     <Layout>

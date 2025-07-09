@@ -277,8 +277,7 @@ const Home: React.FC = () => {
           : "በባህላዊ ኦርቶዶክስ ሥርዓቶች እምነታችንን እናከብራለን",
     },
     {
-      image:
-        import.meta.env.BASE_URL + "images/gallery/church-celebration.jpg",
+      image: import.meta.env.BASE_URL + "images/gallery/church-celebration.jpg",
       title: language === "en" ? "Community Celebration" : "የማህበረሰብ በዓል",
       content:
         language === "en"
@@ -286,8 +285,7 @@ const Home: React.FC = () => {
           : "በእምነት አንድ ሆነን የእግዚአብሔርን በረከት በአንድነት እናከብራለን",
     },
     {
-      image:
-        import.meta.env.BASE_URL + "images/gallery/church-gathering.jpg",
+      image: import.meta.env.BASE_URL + "images/gallery/church-gathering.jpg",
       title: language === "en" ? "Faithful Gathering" : "የምእመናን ስብሰባ",
       content:
         language === "en"
@@ -383,12 +381,14 @@ const Home: React.FC = () => {
                             )}
                           </div>
                           {(event.image_url ||
-                            import.meta.env.BASE_URL + "images/gallery/church-service.jpg") && (
+                            import.meta.env.BASE_URL +
+                              "images/gallery/church-service.jpg") && (
                             <div className="w-20 h-20 rounded-md overflow-hidden ml-3 flex-shrink-0">
                               <img
                                 src={
                                   event.image_url ||
-                                  import.meta.env.BASE_URL + "images/gallery/church-service.jpg"
+                                  import.meta.env.BASE_URL +
+                                    "images/gallery/church-service.jpg"
                                 }
                                 alt={event.title}
                                 className="w-full h-full object-cover"

@@ -100,7 +100,7 @@ export default function GalleryManager() {
         setUploading(false);
       }
     },
-    [toast, loadImages]
+    [toast, loadImages],
   );
 
   const handleDelete = useCallback(
@@ -140,7 +140,7 @@ export default function GalleryManager() {
         });
       }
     },
-    [toast, loadImages]
+    [toast, loadImages],
   );
 
   if (loading) {

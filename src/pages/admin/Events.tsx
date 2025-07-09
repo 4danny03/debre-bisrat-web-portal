@@ -250,87 +250,96 @@ export default function AdminEvents() {
     filterEvents();
   }, [filterEvents]);
 
-  const handleAddEvent = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    const form = e.target as HTMLFormElement;
-    const formData = new FormData(form);
-    try {
-      await api.events.createEvent({
-        title: formData.get("title") as string,
-        description: formData.get("description") as string,
-        event_date: formData.get("event_date") as string,
-        event_time: (formData.get("event_time") as string) || null,
-        location: (formData.get("location") as string) || null,
-        image_url: uploadedImageUrl || null,
-        is_featured: formData.get("is_featured") === "on",
-      });
-      toast({
-        title: "Success",
-        description: "Event added successfully",
-      });
-      loadEvents();
-      setIsAddDialogOpen(false);
-      setUploadedImageUrl(null);
-      form.reset();
-    } catch (error) {
-      console.error("Error adding event:", error);
-      toast({
-        title: "Error",
-        description: "Failed to add event",
-        variant: "destructive",
-      });
-    }
-  }, [uploadedImageUrl, toast, loadEvents]);
+  const handleAddEvent = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      const form = e.target as HTMLFormElement;
+      const formData = new FormData(form);
+      try {
+        await api.events.createEvent({
+          title: formData.get("title") as string,
+          description: formData.get("description") as string,
+          event_date: formData.get("event_date") as string,
+          event_time: (formData.get("event_time") as string) || null,
+          location: (formData.get("location") as string) || null,
+          image_url: uploadedImageUrl || null,
+          is_featured: formData.get("is_featured") === "on",
+        });
+        toast({
+          title: "Success",
+          description: "Event added successfully",
+        });
+        loadEvents();
+        setIsAddDialogOpen(false);
+        setUploadedImageUrl(null);
+        form.reset();
+      } catch (error) {
+        console.error("Error adding event:", error);
+        toast({
+          title: "Error",
+          description: "Failed to add event",
+          variant: "destructive",
+        });
+      }
+    },
+    [uploadedImageUrl, toast, loadEvents],
+  );
 
-  const handleUpdateEvent = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingEvent) return;
-    const form = e.target as HTMLFormElement;
-    const formData = new FormData(form);
-    try {
-      await api.events.updateEvent(editingEvent.id, {
-        title: formData.get("title") as string,
-        description: formData.get("description") as string,
-        event_date: formData.get("event_date") as string,
-        event_time: (formData.get("event_time") as string) || null,
-        location: (formData.get("location") as string) || null,
-        image_url: uploadedImageUrl || editingEvent.image_url,
-        is_featured: formData.get("is_featured") === "on",
-      });
-      toast({
-        title: "Success",
-        description: "Event updated successfully",
-      });
-      loadEvents();
-      setEditingEvent(null);
-      setUploadedImageUrl(null);
-    } catch (error) {
-      console.error("Error updating event:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update event",
-        variant: "destructive",
-      });
-    }
-  }, [editingEvent, uploadedImageUrl, toast, loadEvents]);
+  const handleUpdateEvent = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!editingEvent) return;
+      const form = e.target as HTMLFormElement;
+      const formData = new FormData(form);
+      try {
+        await api.events.updateEvent(editingEvent.id, {
+          title: formData.get("title") as string,
+          description: formData.get("description") as string,
+          event_date: formData.get("event_date") as string,
+          event_time: (formData.get("event_time") as string) || null,
+          location: (formData.get("location") as string) || null,
+          image_url: uploadedImageUrl || editingEvent.image_url,
+          is_featured: formData.get("is_featured") === "on",
+        });
+        toast({
+          title: "Success",
+          description: "Event updated successfully",
+        });
+        loadEvents();
+        setEditingEvent(null);
+        setUploadedImageUrl(null);
+      } catch (error) {
+        console.error("Error updating event:", error);
+        toast({
+          title: "Error",
+          description: "Failed to update event",
+          variant: "destructive",
+        });
+      }
+    },
+    [editingEvent, uploadedImageUrl, toast, loadEvents],
+  );
 
-  const handleDeleteEvent = useCallback(async (id: string) => {
-    try {
-      await api.events.deleteEvent(id);
-      toast({
-        title: "Success",
-        description: "Event deleted successfully",
-      });
-      loadEvents();
-    } catch (error) {
-      console.error("Error deleting event:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete event",
-        variant: "destructive",
-      });
-    }
-  }, [toast, loadEvents]);
+  const handleDeleteEvent = useCallback(
+    async (id: string) => {
+      try {
+        await api.events.deleteEvent(id);
+        toast({
+          title: "Success",
+          description: "Event deleted successfully",
+        });
+        loadEvents();
+      } catch (error) {
+        console.error("Error deleting event:", error);
+        toast({
+          title: "Error",
+          description: "Failed to delete event",
+          variant: "destructive",
+        });
+      }
+    },
+    [toast, loadEvents],
+  );
 
   if (loading) {
     return (

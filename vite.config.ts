@@ -10,10 +10,7 @@ const __dirname = path.dirname(__filename);
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  plugins: [
-    react(),
-    tempo(),
-  ].filter(Boolean),
+  plugins: [react(), tempo()].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -34,16 +31,16 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks: {
           vendor: [
-            'react',
-            'react-dom',
-            'react-router-dom',
-            '@supabase/supabase-js',
+            "react",
+            "react-dom",
+            "react-router-dom",
+            "@supabase/supabase-js",
           ],
           ui: [
-            '@radix-ui/react-dialog',
-            '@radix-ui/react-dropdown-menu',
-            '@radix-ui/react-popover',
-            '@radix-ui/react-toast',
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-dropdown-menu",
+            "@radix-ui/react-popover",
+            "@radix-ui/react-toast",
           ],
         },
       },

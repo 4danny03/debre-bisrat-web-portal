@@ -66,28 +66,44 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
     try {
       setLoading(true);
       // Fetch recent actions from Supabase
-      const actionsFromDb = await dataSyncService.getRecentAdminActionsFromDb(50);
+      const actionsFromDb =
+        await dataSyncService.getRecentAdminActionsFromDb(50);
       setActions(actionsFromDb);
-      setCriticalActions(actionsFromDb.filter(a => a.action && a.action.toLowerCase().includes('delete')));
+      setCriticalActions(
+        actionsFromDb.filter(
+          (a) => a.action && a.action.toLowerCase().includes("delete"),
+        ),
+      );
       setStatistics({
-        today: actionsFromDb.filter(a => new Date(a.timestamp).toDateString() === new Date().toDateString()).length,
-        thisWeek: actionsFromDb.filter(a => {
+        today: actionsFromDb.filter(
+          (a) =>
+            new Date(a.timestamp).toDateString() === new Date().toDateString(),
+        ).length,
+        thisWeek: actionsFromDb.filter((a) => {
           const now = new Date();
           const weekAgo = new Date(now);
           weekAgo.setDate(now.getDate() - 7);
           return new Date(a.timestamp) >= weekAgo;
         }).length,
-        criticalCount: actionsFromDb.filter(a => a.action && a.action.toLowerCase().includes('delete')).length,
+        criticalCount: actionsFromDb.filter(
+          (a) => a.action && a.action.toLowerCase().includes("delete"),
+        ).length,
         total: actionsFromDb.length,
-        byAction: actionsFromDb.reduce((acc, a) => {
-          acc[a.action] = (acc[a.action] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>),
-        byUser: actionsFromDb.reduce((acc, a) => {
-          const uid = a.user_id || a.userId || 'unknown';
-          acc[uid] = (acc[uid] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>),
+        byAction: actionsFromDb.reduce(
+          (acc, a) => {
+            acc[a.action] = (acc[a.action] || 0) + 1;
+            return acc;
+          },
+          {} as Record<string, number>,
+        ),
+        byUser: actionsFromDb.reduce(
+          (acc, a) => {
+            const uid = a.user_id || a.userId || "unknown";
+            acc[uid] = (acc[uid] || 0) + 1;
+            return acc;
+          },
+          {} as Record<string, number>,
+        ),
       });
     } catch (error) {
       console.error("Error loading audit data:", error);
@@ -302,7 +318,10 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
                             </p>
                           )}
                           <div className="flex items-center space-x-4 text-xs text-gray-400 mt-1">
-                            <span>User: {action.user_id || action.userId || "unknown"}</span>
+                            <span>
+                              User:{" "}
+                              {action.user_id || action.userId || "unknown"}
+                            </span>
                             <span>
                               {format(
                                 new Date(action.timestamp),
@@ -352,7 +371,10 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
                             </p>
                           )}
                           <div className="flex items-center space-x-4 text-xs text-gray-400 mt-1">
-                            <span>User: {action.user_id || action.userId || "unknown"}</span>
+                            <span>
+                              User:{" "}
+                              {action.user_id || action.userId || "unknown"}
+                            </span>
                             <span>
                               {format(
                                 new Date(action.timestamp),
@@ -380,10 +402,26 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-1 text-sm">
-                    <li>Today: <span className="font-semibold">{statistics.today}</span></li>
-                    <li>This week: <span className="font-semibold">{statistics.thisWeek}</span></li>
-                    <li>Critical actions: <span className="font-semibold text-red-700">{statistics.criticalCount}</span></li>
-                    <li>Total actions: <span className="font-semibold">{statistics.total}</span></li>
+                    <li>
+                      Today:{" "}
+                      <span className="font-semibold">{statistics.today}</span>
+                    </li>
+                    <li>
+                      This week:{" "}
+                      <span className="font-semibold">
+                        {statistics.thisWeek}
+                      </span>
+                    </li>
+                    <li>
+                      Critical actions:{" "}
+                      <span className="font-semibold text-red-700">
+                        {statistics.criticalCount}
+                      </span>
+                    </li>
+                    <li>
+                      Total actions:{" "}
+                      <span className="font-semibold">{statistics.total}</span>
+                    </li>
                   </ul>
                 </CardContent>
               </Card>
@@ -404,7 +442,9 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
               </Card>
             </div>
           ) : (
-            <div className="text-center text-gray-500">No statistics available</div>
+            <div className="text-center text-gray-500">
+              No statistics available
+            </div>
           )}
         </TabsContent>
       </Tabs>

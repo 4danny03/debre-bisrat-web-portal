@@ -10,16 +10,20 @@
       // GitHub Pages SPA fallback: preserve path for client-side routing
       if (sessionStorage.redirect) {
         var redirect = sessionStorage.redirect;
-        sessionStorage.removeItem('redirect');
+        sessionStorage.removeItem("redirect");
         window.location = redirect;
       } else {
-        sessionStorage.redirect = location.pathname + location.search + location.hash;
-        window.location = '/';
+        sessionStorage.redirect =
+          location.pathname + location.search + location.hash;
+        window.location = "/";
       }
     </script>
     <noscript>
       <h1>404 - Not Found</h1>
-      <p>This page could not be found. Please return to the <a href="/">home page</a>.</p>
+      <p>
+        This page could not be found. Please return to the
+        <a href="/">home page</a>.
+      </p>
     </noscript>
   </body>
 </html>

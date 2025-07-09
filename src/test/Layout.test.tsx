@@ -13,7 +13,7 @@ describe("Layout Component", () => {
             <div>Test Content</div>
           </Layout>
         </LanguageProvider>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     // Test content is rendered

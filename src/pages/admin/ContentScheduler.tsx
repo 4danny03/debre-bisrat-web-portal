@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,7 +64,9 @@ interface ScheduledContent {
 }
 
 export default function ContentScheduler() {
-  const [scheduledContent, setScheduledContent] = useState<ScheduledContent[]>([]);
+  const [scheduledContent, setScheduledContent] = useState<ScheduledContent[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("scheduled");
@@ -163,7 +162,8 @@ export default function ContentScheduler() {
         case "email":
           toast({
             title: "Email Campaigns Not Supported",
-            description: "Email campaign API is not available in this deployment.",
+            description:
+              "Email campaign API is not available in this deployment.",
             variant: "destructive",
           });
           success = false;
@@ -425,10 +425,12 @@ export default function ContentScheduler() {
                     id="title"
                     placeholder="Content title"
                     value={newContent.title}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewContent((prev) => ({
-                      ...prev,
-                      title: e.target.value,
-                    }))}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setNewContent((prev) => ({
+                        ...prev,
+                        title: e.target.value,
+                      }))
+                    }
                   />
                 </div>
               </div>
@@ -439,10 +441,12 @@ export default function ContentScheduler() {
                   id="description"
                   placeholder="Content description"
                   value={newContent.description}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewContent((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                    setNewContent((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
                   rows={3}
                 />
               </div>
@@ -454,10 +458,12 @@ export default function ContentScheduler() {
                     id="scheduled-date"
                     type="date"
                     value={newContent.scheduledFor}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewContent((prev) => ({
-                      ...prev,
-                      scheduledFor: e.target.value,
-                    }))}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setNewContent((prev) => ({
+                        ...prev,
+                        scheduledFor: e.target.value,
+                      }))
+                    }
                   />
                 </div>
                 <div className="space-y-2">
@@ -466,10 +472,12 @@ export default function ContentScheduler() {
                     id="scheduled-time"
                     type="time"
                     value={newContent.scheduledTime}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewContent((prev) => ({
-                      ...prev,
-                      scheduledTime: e.target.value,
-                    }))}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setNewContent((prev) => ({
+                        ...prev,
+                        scheduledTime: e.target.value,
+                      }))
+                    }
                   />
                 </div>
               </div>
@@ -483,10 +491,12 @@ export default function ContentScheduler() {
                       id="event-location"
                       placeholder="Event location"
                       value={newContent.eventLocation}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewContent((prev) => ({
-                        ...prev,
-                        eventLocation: e.target.value,
-                      }))}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setNewContent((prev) => ({
+                          ...prev,
+                          eventLocation: e.target.value,
+                        }))
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -495,10 +505,12 @@ export default function ContentScheduler() {
                       id="event-time"
                       type="time"
                       value={newContent.eventTime}
-                      onChange={(e) => setNewContent((prev) => ({
-                        ...prev,
-                        eventTime: e.target.value,
-                      }))}
+                      onChange={(e) =>
+                        setNewContent((prev) => ({
+                          ...prev,
+                          eventTime: e.target.value,
+                        }))
+                      }
                     />
                   </div>
                 </div>
@@ -512,10 +524,12 @@ export default function ContentScheduler() {
                       id="email-subject"
                       placeholder="Email subject line"
                       value={newContent.emailSubject}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewContent((prev) => ({
-                        ...prev,
-                        emailSubject: e.target.value,
-                      }))}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setNewContent((prev) => ({
+                          ...prev,
+                          emailSubject: e.target.value,
+                        }))
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -524,10 +538,12 @@ export default function ContentScheduler() {
                       id="email-content"
                       placeholder="Email content"
                       value={newContent.emailContent}
-                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewContent((prev) => ({
-                        ...prev,
-                        emailContent: e.target.value,
-                      }))}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                        setNewContent((prev) => ({
+                          ...prev,
+                          emailContent: e.target.value,
+                        }))
+                      }
                       rows={4}
                     />
                   </div>
@@ -580,10 +596,12 @@ export default function ContentScheduler() {
                         type="number"
                         min="1"
                         value={newContent.interval}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewContent((prev) => ({
-                          ...prev,
-                          interval: parseInt(e.target.value) || 1,
-                        }))}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          setNewContent((prev) => ({
+                            ...prev,
+                            interval: parseInt(e.target.value) || 1,
+                          }))
+                        }
                       />
                     </div>
                     <div className="space-y-2">
@@ -592,10 +610,12 @@ export default function ContentScheduler() {
                         id="end-date"
                         type="date"
                         value={newContent.endDate}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewContent((prev) => ({
-                          ...prev,
-                          endDate: e.target.value,
-                        }))}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          setNewContent((prev) => ({
+                            ...prev,
+                            endDate: e.target.value,
+                          }))
+                        }
                       />
                     </div>
                   </div>

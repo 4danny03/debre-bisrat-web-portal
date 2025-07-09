@@ -139,13 +139,15 @@ const PlaceholderEvents = () => {
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     if (target.src.includes("church-service.jpg")) {
-                      target.src = baseUrl + "images/gallery/church-gathering.jpg";
+                      target.src =
+                        baseUrl + "images/gallery/church-gathering.jpg";
                     } else if (target.src.includes("church-gathering.jpg")) {
                       target.src = baseUrl + "images/gallery/ceremony-1.jpg";
                     } else if (target.src.includes("ceremony-1.jpg")) {
                       target.src = baseUrl + "images/gallery/timket.jpg";
                     } else {
-                      target.src = baseUrl + "images/gallery/church-service.jpg";
+                      target.src =
+                        baseUrl + "images/gallery/church-service.jpg";
                     }
                   }}
                 />
@@ -308,13 +310,15 @@ export default function Events() {
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       if (target.src.includes("church-service.jpg")) {
-                        target.src = baseUrl + "images/gallery/church-gathering.jpg";
+                        target.src =
+                          baseUrl + "images/gallery/church-gathering.jpg";
                       } else if (target.src.includes("church-gathering.jpg")) {
                         target.src = baseUrl + "images/gallery/ceremony-1.jpg";
                       } else if (target.src.includes("ceremony-1.jpg")) {
                         target.src = baseUrl + "images/gallery/timket.jpg";
                       } else {
-                        target.src = baseUrl + "images/gallery/church-service.jpg";
+                        target.src =
+                          baseUrl + "images/gallery/church-service.jpg";
                       }
                     }}
                   />
