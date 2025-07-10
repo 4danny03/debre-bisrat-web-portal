@@ -137,41 +137,40 @@ const MembershipRegistration: FC = () => {
     setIsSubmitting(true);
 
     try {
-      // Create member record
-      const { data: memberData, error: memberError } = await supabase
-        .from("members")
-        .insert([
-          {
-            full_name: `${formData.firstName} ${formData.lastName}`,
-            email: formData.email,
-            phone: formData.phone,
-            address: `${formData.streetAddress}, ${formData.city}, ${formData.stateProvinceRegion} ${formData.postalZipCode}`,
-            membership_type: formData.membershipType,
-            membership_status: "pending",
-            join_date: new Date().toISOString(),
-            registration_date: new Date().toISOString().split("T")[0],
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            street_address: formData.streetAddress,
-            city: formData.city,
-            state_province_region: formData.stateProvinceRegion,
-            postal_zip_code: formData.postalZipCode,
-            country: formData.country,
-            date_of_birth: formData.dateOfBirth,
-            gender: formData.gender,
-            preferred_language: formData.preferredLanguage,
-            ministry_interests: formData.ministryInterests
-              ? [formData.ministryInterests]
-              : [],
-            email_updates: formData.emailUpdates,
-          },
-        ])
-        .select()
-        .single();
+      // Prepare member data for Edge Function
+      const memberPayload = {
+        full_name: `${formData.firstName} ${formData.lastName}`,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        address: `${formData.streetAddress}, ${formData.city}, ${formData.stateProvinceRegion} ${formData.postalZipCode}`,
+        street_address: formData.streetAddress,
+        city: formData.city,
+        state_province_region: formData.stateProvinceRegion,
+        postal_zip_code: formData.postalZipCode,
+        country: formData.country,
+        date_of_birth: formData.dateOfBirth,
+        gender: formData.gender,
+        membership_type: formData.membershipType,
+        preferred_language: formData.preferredLanguage,
+        ministry_interests: formData.ministryInterests ? [formData.ministryInterests] : [],
+        email_updates: formData.emailUpdates,
+        agree_to_terms: formData.agreeToTerms,
+        // Add any other fields as needed
+      };
 
-      if (memberError) {
-        throw memberError;
+      // Call Edge Function for registration
+      const response = await fetch("/functions/v1/membership-management", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(memberPayload),
+      });
+      const result = await response.json();
+      if (!response.ok || result.error) {
+        throw new Error(result.error || "Registration failed");
       }
+      const memberData = result.member;
 
       // Determine membership fee based on type
       const membershipFees = {
@@ -197,39 +196,22 @@ const MembershipRegistration: FC = () => {
         membershipType: formData.membershipType,
       };
 
-      console.log("Invoking create-checkout function with data:", checkoutData);
-      console.log(
-        "Membership fee for type",
-        formData.membershipType,
-        ":",
-        membershipFee,
-      );
-
-      const response = await supabase.functions.invoke("create-checkout", {
+      const checkoutResponse = await supabase.functions.invoke("create-checkout", {
         body: checkoutData,
       });
 
-      console.log("Checkout function response:", response);
-      console.log("Response data:", response.data);
-      console.log("Response error:", response.error);
-
-      if (response.error) {
-        console.error("Function error:", response.error);
+      if (checkoutResponse.error) {
         throw new Error(
-          `Payment initiation failed: ${response.error.message || "Unknown error"}`,
+          `Payment initiation failed: ${checkoutResponse.error.message || "Unknown error"}`,
         );
       }
 
-      if (!response.data?.url) {
-        console.error("No checkout URL in response:", response.data);
+      if (!checkoutResponse.data?.url) {
         throw new Error("No checkout URL received");
       }
 
-      // Redirect to Stripe checkout
-      console.log("Redirecting to checkout URL:", response.data.url);
-      window.location.href = response.data.url;
+      window.location.href = checkoutResponse.data.url;
     } catch (error: any) {
-      // Enhanced error logging for debugging
       console.error("Membership registration error:", error);
       let errorMsg =
         (error && (error.message || error.error_description || error.toString())) ||

@@ -129,23 +129,36 @@ const Services: React.FC = () => {
     const phone = formData.get("phone") as string;
     const date = formData.get("date") as string;
     const time = formData.get("time") as string;
-    const service = formData.get("service") as string;
+    const service = formData.get("service") as string || formData.get("serviceType") as string;
     const notes = formData.get("notes") as string;
 
     try {
-      // Save appointment to database
-      await api.appointments.createAppointment({
+      // Prepare appointment data for Edge Function (if you have one) or direct insert
+      const appointmentPayload = {
         name,
         email,
         phone,
-        service_title: service,
-        requested_date: date,
-        requested_time: time,
+        service_type: service,
+        appointment_date: date,
+        appointment_time: time,
         notes,
         status: "pending",
-      });
+      };
 
-      // Show success message
+      // Direct insert using Supabase client (current method)
+      // await api.appointments.createAppointment(appointmentPayload);
+
+      // Use Edge Function if available (recommended for validation, logging, etc.)
+      const response = await fetch("/functions/v1/appointment-management", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(appointmentPayload),
+      });
+      const result = await response.json();
+      if (!response.ok || result.error) {
+        throw new Error(result.error || "Appointment request failed");
+      }
+
       toast({
         title: language === "en" ? "Appointment Request Sent" : "የቀጠሮ ጥያቄ ተልኳል",
         description:
@@ -157,7 +170,6 @@ const Services: React.FC = () => {
       setIsDialogOpen(false);
       (e.target as HTMLFormElement).reset();
     } catch (error: any) {
-      // Enhanced error logging for debugging
       console.error("Error submitting appointment:", error);
       let errorMsg =
         (error && (error.message || error.error_description || error.toString())) ||
