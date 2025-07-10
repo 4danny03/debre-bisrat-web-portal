@@ -156,14 +156,18 @@ const Services: React.FC = () => {
 
       setIsDialogOpen(false);
       (e.target as HTMLFormElement).reset();
-    } catch (error) {
+    } catch (error: any) {
+      // Enhanced error logging for debugging
       console.error("Error submitting appointment:", error);
+      let errorMsg =
+        (error && (error.message || error.error_description || error.toString())) ||
+        (typeof error === "object" ? JSON.stringify(error) : String(error));
       toast({
         title: language === "en" ? "Error" : "ስህተት",
         description:
-          language === "en"
-            ? "Failed to submit appointment request. Please try again."
-            : "የቀጠሮ ጥያቄ ማስገባት አልተሳካም። እባክዎ እንደገና ይሞክሩ።",
+          (language === "en"
+            ? "Failed to submit appointment request. "
+            : "የቀጠሮ ጥያቄ ማስገባት አልተሳካም። ") + errorMsg,
         variant: "destructive",
       });
     }

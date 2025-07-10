@@ -228,13 +228,17 @@ const MembershipRegistration: FC = () => {
       // Redirect to Stripe checkout
       console.log("Redirecting to checkout URL:", response.data.url);
       window.location.href = response.data.url;
-    } catch (error) {
+    } catch (error: any) {
+      // Enhanced error logging for debugging
       console.error("Membership registration error:", error);
+      let errorMsg =
+        (error && (error.message || error.error_description || error.toString())) ||
+        (typeof error === "object" ? JSON.stringify(error) : String(error));
       toast({
         variant: "destructive",
         title: "Registration Error",
         description:
-          "There was an error processing your membership registration. Please try again.",
+          "There was an error processing your membership registration. " + errorMsg,
       });
     } finally {
       setIsSubmitting(false);
