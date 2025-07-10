@@ -52,6 +52,7 @@ const MembershipRegistration: FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
@@ -131,11 +132,10 @@ const MembershipRegistration: FC = () => {
     }
   };
 
-  const handleSubmit = async () => {
-    if (!validateStep(currentStep)) return;
-
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsSubmitting(true);
-
+    setError(null);
     try {
       // Prepare member data for Edge Function
       const memberPayload = {
@@ -222,6 +222,7 @@ const MembershipRegistration: FC = () => {
         description:
           "There was an error processing your membership registration. " + errorMsg,
       });
+      setError(error.message || "Registration failed. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -658,6 +659,13 @@ const MembershipRegistration: FC = () => {
 
             {/* Step Content */}
             <div className="min-h-[400px]">{renderStepContent()}</div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="text-red-600 bg-red-50 border border-red-200 rounded p-2 mb-4">
+                {error}
+              </div>
+            )}
 
             {/* Navigation Buttons */}
             <div className="flex justify-between mt-8 pt-6 border-t">
