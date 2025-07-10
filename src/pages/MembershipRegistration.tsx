@@ -1,4 +1,4 @@
-import { type FC, useState } from "react";
+import { useState } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
@@ -46,7 +46,7 @@ interface FormData {
   agreeToTerms: boolean;
 }
 
-const MembershipRegistration: FC = () => {
+const MembershipRegistration = () => {
   const { t } = useLanguage();
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
@@ -139,12 +139,12 @@ const MembershipRegistration: FC = () => {
     try {
       // Prepare member data for Edge Function
       const memberPayload = {
-        full_name: `${formData.firstName} ${formData.lastName}`,
+        full_name: `${formData.firstName} ${formData.lastName}`.trim(),
         first_name: formData.firstName,
         last_name: formData.lastName,
         email: formData.email,
         phone: formData.phone,
-        address: `${formData.streetAddress}, ${formData.city}, ${formData.stateProvinceRegion} ${formData.postalZipCode}`,
+        address: `${formData.streetAddress}, ${formData.city}, ${formData.stateProvinceRegion} ${formData.postalZipCode}`.trim(),
         street_address: formData.streetAddress,
         city: formData.city,
         state_province_region: formData.stateProvinceRegion,
@@ -157,6 +157,10 @@ const MembershipRegistration: FC = () => {
         ministry_interests: formData.ministryInterests ? [formData.ministryInterests] : [],
         email_updates: formData.emailUpdates,
         agree_to_terms: formData.agreeToTerms,
+        newsletter_consent: formData.emailUpdates,
+        terms_accepted: formData.agreeToTerms,
+        privacy_accepted: true,
+        data_processing_consent: true,
         // Add any other fields as needed
       };
 

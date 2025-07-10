@@ -22,11 +22,14 @@ export interface AppointmentFilters {
 }
 
 // Call our appointment management edge function
-async function callAppointmentFunction(
+async function callAppointmentFunction<
+  T = any,
+  R = any
+>(
   action: string,
-  data?: any,
+  data?: T,
   filters?: AppointmentFilters,
-) {
+): Promise<R> {
   const { data: functionData, error } = await supabase.functions.invoke(
     "appointment-management",
     {
@@ -35,7 +38,7 @@ async function callAppointmentFunction(
   );
 
   if (error) throw error;
-  return functionData;
+  return functionData as R;
 }
 
 export async function createAppointment(
@@ -43,42 +46,42 @@ export async function createAppointment(
     Appointment,
     "id" | "user_id" | "status" | "created_at" | "updated_at"
   >,
-) {
-  const result = await callAppointmentFunction("create", appointment);
+): Promise<Appointment> {
+  const result = await callAppointmentFunction<typeof appointment, { appointment: Appointment }>("create", appointment);
   return result.appointment;
 }
 
-export async function getAppointments(filters?: AppointmentFilters) {
-  const result = await callAppointmentFunction("list", undefined, filters);
+export async function getAppointments(filters?: AppointmentFilters): Promise<Appointment[]> {
+  const result = await callAppointmentFunction<undefined, { appointments: Appointment[] }>("list", undefined, filters);
   return result.appointments;
 }
 
 export async function updateAppointment(
   id: string,
   updateData: Partial<Appointment>,
-) {
-  const result = await callAppointmentFunction("update", { id, ...updateData });
+): Promise<Appointment> {
+  const result = await callAppointmentFunction<{ id: string } & Partial<Appointment>, { appointment: Appointment }>("update", { id, ...updateData });
   return result.appointment;
 }
 
-export async function deleteAppointment(id: string) {
-  const result = await callAppointmentFunction("delete", { id });
+export async function deleteAppointment(id: string): Promise<boolean> {
+  const result = await callAppointmentFunction<{ id: string }, { success: boolean }>("delete", { id });
   return result.success;
 }
 
 // Helper function to format appointment data from form submission
 export function formatAppointmentData(
-  formData: any,
+  formData: Record<string, unknown>,
 ): Omit<
   Appointment,
   "id" | "user_id" | "status" | "created_at" | "updated_at"
 > {
   return {
-    name: formData.name,
-    email: formData.email,
-    phone: formData.phone,
-    service_type: formData.service_type,
-    appointment_date: formData.appointment_date,
-    notes: formData.notes || undefined,
+    name: String(formData.name ?? ""),
+    email: String(formData.email ?? ""),
+    phone: String(formData.phone ?? ""),
+    service_type: String(formData.service_type ?? ""),
+    appointment_date: String(formData.appointment_date ?? ""),
+    notes: typeof formData.notes === "string" ? formData.notes : undefined,
   };
 }
