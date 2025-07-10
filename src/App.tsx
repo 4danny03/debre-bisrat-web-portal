@@ -58,6 +58,7 @@ import AdminAnalytics from "./pages/admin/Analytics";
 import AdminBulkOperations from "./pages/admin/BulkOperations";
 import AdminContentScheduler from "./pages/admin/ContentScheduler";
 import AdminAppointments from "./pages/admin/Appointments";
+import AdminEmailMarketing from "./pages/admin/EmailMarketing";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { DataProvider } from "./contexts/DataContext";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -105,6 +106,7 @@ function AppContent() {
         <Route path="bulk-operations" element={<AdminBulkOperations />} />
         <Route path="content-scheduler" element={<AdminContentScheduler />} />
         <Route path="appointments" element={<AdminAppointments />} />
+        <Route path="email-marketing" element={<AdminEmailMarketing />} />
       </Route>
 
       {/* Add this before the catchall route */}
