@@ -16,35 +16,31 @@ serve(async (req) => {
   try {
     const { action, data, filters } = await req.json();
 
-    // Get authorization header from request
+    // Get authorization header from request (optional for create)
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('No authorization header');
-    }
-
-    // Create client with user's JWT
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: {
-          Authorization: authHeader,
+    let user = null;
+    if (authHeader) {
+      // Create client with user's JWT
+      const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: {
+          headers: {
+            Authorization: authHeader,
+          },
         },
-      },
-    });
-
-    // Get user from auth
-    const {
-      data: { user },
-      error: userError,
-    } = await userClient.auth.getUser();
-
-    if (userError || !user) {
-      throw new Error('Unauthorized');
+      });
+      // Get user from auth
+      const {
+        data: { user: userObj },
+        error: userError,
+      } = await userClient.auth.getUser();
+      if (!userError && userObj) user = userObj;
     }
 
     let result;
 
     switch (action) {
       case 'list':
+        if (!user) throw new Error('Unauthorized');
         let query = supabaseClient.from('appointments').select('*');
 
         // Apply filters if provided
@@ -79,30 +75,35 @@ serve(async (req) => {
         break;
 
       case 'create':
-        const { appointment_date, service_type, notes } = data;
+        // Accept public (unauthenticated) requests
+        const { appointment_date, service_type, notes, name, email } = data;
         if (!appointment_date || !service_type) {
           throw new Error('Missing required fields');
         }
-
+        // If not authenticated, require name/email
+        if (!user && (!name || !email)) {
+          throw new Error('Name and email are required for public requests');
+        }
+        const insertData = {
+          user_id: user ? user.id : null,
+          appointment_date,
+          service_type,
+          notes,
+          status: 'pending',
+          name: user ? null : name,
+          email: user ? null : email,
+        };
         const { data: newAppointment, error: createError } = await supabaseClient
           .from('appointments')
-          .insert([
-            {
-              user_id: user.id,
-              appointment_date,
-              service_type,
-              notes,
-              status: 'pending',
-            },
-          ])
+          .insert([insertData])
           .select()
           .single();
-
         if (createError) throw createError;
         result = { appointment: newAppointment };
         break;
 
       case 'update':
+        if (!user) throw new Error('Unauthorized');
         const { id, ...updateData } = data;
         if (!id) {
           throw new Error('Missing appointment ID');
@@ -139,8 +140,8 @@ serve(async (req) => {
         if (updateError) throw updateError;
         result = { appointment: updatedAppointment };
         break;
-
       case 'delete':
+        if (!user) throw new Error('Unauthorized');
         const { id: deleteId } = data;
         if (!deleteId) {
           throw new Error('Missing appointment ID');
