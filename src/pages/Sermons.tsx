@@ -120,9 +120,11 @@ const Sermons: React.FC = () => {
       setLoading(true);
       setError(null);
       const data = await api.sermons.getSermons();
-      setSermons(data || []);
+      const validatedData = Array.isArray(data) ? data : [];
+      setSermons(validatedData);
     } catch (err) {
       console.error("Error fetching sermons:", err);
+      setSermons([]);
       setError(
         language === "en"
           ? "Failed to load sermons. Please try again later."

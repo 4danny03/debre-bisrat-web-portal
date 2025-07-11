@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { ErrorHandler } from "@/utils/errorHandling";
 
 // Types for admin actions and error logging
 interface AdminAction {
@@ -143,9 +144,15 @@ class AdminActionTracker {
   private ensureArraysInitialized(): void {
     if (!Array.isArray(this.actions)) {
       this.actions = [];
+      console.warn(
+        "AdminActionTracker: actions array was not initialized, creating new array",
+      );
     }
     if (!Array.isArray(this.errors)) {
       this.errors = [];
+      console.warn(
+        "AdminActionTracker: errors array was not initialized, creating new array",
+      );
     }
   }
 
@@ -207,42 +214,58 @@ class AdminActionTracker {
 
   getRecentActions(limit = 10): AdminAction[] {
     this.ensureArraysInitialized();
-    return this.actions.slice(0, limit);
+    const safeActions = ErrorHandler.safeArrayAccess(this.actions, []);
+    const validLimit = Math.max(0, Math.min(limit, safeActions.length));
+    return safeActions.slice(0, validLimit);
   }
 
   getRecentErrors(limit = 10): ErrorLog[] {
     this.ensureArraysInitialized();
-    return this.errors.slice(0, limit);
+    const safeErrors = ErrorHandler.safeArrayAccess(this.errors, []);
+    const validLimit = Math.max(0, Math.min(limit, safeErrors.length));
+    return safeErrors.slice(0, validLimit);
   }
 
   getActionsByTable(table: string, limit = 10): AdminAction[] {
     this.ensureArraysInitialized();
-    return this.actions
-      .filter((action) => action.table === table)
-      .slice(0, limit);
+    const safeActions = ErrorHandler.safeArrayAccess(this.actions, []);
+    return safeActions
+      .filter((action) => action && action.table === table)
+      .slice(0, Math.min(limit, safeActions.length));
   }
 
   getActionsByUser(userId: string, limit = 10): AdminAction[] {
     this.ensureArraysInitialized();
-    return this.actions
-      .filter((action) => action.userId === userId)
-      .slice(0, limit);
+    const safeActions = ErrorHandler.safeArrayAccess(this.actions, []);
+    return safeActions
+      .filter((action) => action && action.userId === userId)
+      .slice(0, Math.min(limit, safeActions.length));
   }
 
   getStats() {
     this.ensureArraysInitialized();
     const actionsByTable: Record<string, number> = {};
     const errorsByContext: Record<string, number> = {};
-    this.actions.forEach((action) => {
-      actionsByTable[action.table] = (actionsByTable[action.table] || 0) + 1;
+
+    const safeActions = ErrorHandler.safeArrayAccess(this.actions, []);
+    const safeErrors = ErrorHandler.safeArrayAccess(this.errors, []);
+
+    safeActions.forEach((action) => {
+      if (action && action.table) {
+        actionsByTable[action.table] = (actionsByTable[action.table] || 0) + 1;
+      }
     });
-    this.errors.forEach((error) => {
-      const context = error.context || "unknown";
-      errorsByContext[context] = (errorsByContext[context] || 0) + 1;
+
+    safeErrors.forEach((error) => {
+      if (error) {
+        const context = error.context || "unknown";
+        errorsByContext[context] = (errorsByContext[context] || 0) + 1;
+      }
     });
+
     return {
-      totalActions: this.actions.length,
-      totalErrors: this.errors.length,
+      totalActions: ErrorHandler.safeLength(this.actions),
+      totalErrors: ErrorHandler.safeLength(this.errors),
       actionsByTable,
       errorsByContext,
     };
@@ -250,9 +273,11 @@ class AdminActionTracker {
 
   exportData() {
     this.ensureArraysInitialized();
+    const safeActions = ErrorHandler.safeArrayAccess(this.actions, []);
+    const safeErrors = ErrorHandler.safeArrayAccess(this.errors, []);
     return {
-      actions: [...this.actions],
-      errors: [...this.errors],
+      actions: [...safeActions],
+      errors: [...safeErrors],
       exportedAt: new Date().toISOString(),
     };
   }

@@ -229,7 +229,7 @@ const Home: React.FC = () => {
       setLoadingEvents(true);
       const data = await api.events.getUpcomingEvents(3);
 
-      if (data && data.length > 0) {
+      if (Array.isArray(data) && data.length > 0) {
         setUpcomingEvents(data);
       } else {
         // Use fallback events if no database events
@@ -242,7 +242,7 @@ const Home: React.FC = () => {
     } finally {
       setLoadingEvents(false);
     }
-  }, []);
+  }, [fallbackEvents]);
 
   useEffect(() => {
     fetchUpcomingEvents();

@@ -118,7 +118,7 @@ export default function Donation() {
       console.log("Invoking create-checkout function with data:", checkoutData);
 
       const { data, error } = await supabase.functions.invoke(
-        "create-checkout",
+        "supabase-functions-create-checkout",
         {
           body: checkoutData,
         },

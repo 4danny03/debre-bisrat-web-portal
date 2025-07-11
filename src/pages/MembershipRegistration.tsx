@@ -199,7 +199,9 @@ const MembershipRegistration: FC = () => {
   };
 
   useEffect(() => {
-    setFormData((prev) => ({ ...prev, children }));
+    if (Array.isArray(children)) {
+      setFormData((prev) => ({ ...prev, children }));
+    }
   }, [children]);
 
   const handleSubmit = async () => {
@@ -276,9 +278,12 @@ const MembershipRegistration: FC = () => {
         membershipFee,
       );
 
-      const response = await supabase.functions.invoke("create-checkout", {
-        body: checkoutData,
-      });
+      const response = await supabase.functions.invoke(
+        "supabase-functions-create-checkout",
+        {
+          body: checkoutData,
+        },
+      );
 
       console.log("Checkout function response:", response);
       console.log("Response data:", response.data);

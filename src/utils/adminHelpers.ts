@@ -304,20 +304,24 @@ const loadDashboardStatsFallback = async () => {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const recentDonations =
-      donationsRes?.data?.filter(
-        (d: any) => d?.created_at && new Date(d.created_at) >= thirtyDaysAgo,
-      ) || [];
+    const validDonationsData = Array.isArray(donations?.data)
+      ? donations.data
+      : [];
+    const recentDonations = validDonationsData.filter(
+      (d: any) => d?.created_at && new Date(d.created_at) >= thirtyDaysAgo,
+    );
 
     const recentDonationAmount = recentDonations.reduce(
-      (sum: number, d: any) => sum + (d?.amount || 0),
+      (sum: number, d: any) => sum + (Number(d?.amount) || 0),
       0,
     );
 
     return {
       totalEvents: eventsRes?.count || 0,
       totalMembers: membersRes?.count || 0,
-      totalDonations: donationsRes?.data?.length || 0,
+      totalDonations: Array.isArray(donations?.data)
+        ? donations.data.length
+        : 0,
       totalTestimonials: testimonialsRes?.count || 0,
       totalPrayerRequests: prayerRequestsRes?.count || 0,
       totalSermons: sermonsRes?.count || 0,

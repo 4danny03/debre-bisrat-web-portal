@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { ErrorHandler } from "@/utils/errorHandling";
 import {
   Card,
   CardContent,
@@ -156,6 +157,12 @@ export default function AdminDiagnostics({
   };
 
   const groupResultsByCategory = (results: TestResult[]) => {
+    const safeResults = ErrorHandler.safeArrayAccess(results, []);
+    if (!Array.isArray(safeResults) || safeResults.length === 0) {
+      console.warn("groupResultsByCategory: no valid results to categorize");
+      return {};
+    }
+
     const categories: Record<string, TestResult[]> = {
       Database: [],
       API: [],
@@ -163,10 +170,11 @@ export default function AdminDiagnostics({
       "Edge Functions": [],
       "Admin Helpers": [],
       "Data Sync": [],
+      "Email Marketing": [],
       Other: [],
     };
 
-    results.forEach((result) => {
+    safeResults.forEach((result) => {
       if (
         result.name.includes("Database") ||
         result.name.includes("Table Access")

@@ -108,8 +108,18 @@ export default function AdminDashboard() {
         loadRecentActivity(6),
       ]);
 
-      setStats(statsData);
-      setRecentActivity(activityData);
+      setStats(
+        statsData || {
+          totalEvents: 0,
+          totalMembers: 0,
+          totalDonations: 0,
+          totalTestimonials: 0,
+          totalPrayerRequests: 0,
+          totalSermons: 0,
+          recentDonationAmount: 0,
+        },
+      );
+      setRecentActivity(Array.isArray(activityData) ? activityData : []);
     } catch (error) {
       console.error("Error loading dashboard data:", error);
       toast({

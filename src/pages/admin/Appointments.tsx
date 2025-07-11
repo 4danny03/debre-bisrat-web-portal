@@ -107,7 +107,8 @@ export default function Appointments() {
       } else {
         data = await api.appointments.getAppointmentsByStatus(statusFilter);
       }
-      setAppointments(data || []);
+      const validatedData = Array.isArray(data) ? data : [];
+      setAppointments(validatedData);
     } catch (error) {
       console.error("Error loading appointments:", error);
       toast({
