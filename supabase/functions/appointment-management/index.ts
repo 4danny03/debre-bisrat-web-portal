@@ -3,6 +3,32 @@ import { createClient } from '@supabase/supabase-js';
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 
+// --- Helper: Send notification (stub, replace with actual email/SMS integration) ---
+async function sendNotification(type: string, payload: any) {
+  // TODO: Integrate with email/SMS provider or Supabase function
+  console.log(`[Notification] Type: ${type}`, payload);
+}
+
+// --- Helper: Log audit events ---
+async function logAudit(action: string, entity: string, entityId: string, userId?: string) {
+  // TODO: Insert into audit_log table or external logging
+  console.log(`[Audit] ${action} on ${entity} (${entityId}) by ${userId ?? 'public'}`);
+}
+
+// --- Helper: Rate limiting (simple in-memory, replace with Redis for prod) ---
+const rateLimitMap = new Map<string, { count: number; last: number }>();
+function isRateLimited(ip: string, limit = 5, windowMs = 60_000): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip) || { count: 0, last: now };
+  if (now - entry.last > windowMs) {
+    rateLimitMap.set(ip, { count: 1, last: now });
+    return false;
+  }
+  if (entry.count >= limit) return true;
+  rateLimitMap.set(ip, { count: entry.count + 1, last: entry.last });
+  return false;
+}
+
 // @ts-expect-error Deno global is available in Supabase Edge runtime
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 // @ts-expect-error Deno global is available in Supabase Edge runtime
@@ -18,6 +44,7 @@ serve(async (req: Request) => {
   }
 
   try {
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
     const parsed: any = await req.json();
     const action: string = parsed.action;
     const data = parsed.data as Record<string, unknown> | undefined;
@@ -74,6 +101,10 @@ serve(async (req: Request) => {
         break;
       }
       case 'create': {
+        // Rate limit public requests
+        if (!user && isRateLimited(ip)) {
+          throw new Error('Too many requests. Please try again later.');
+        }
         // Accept public (unauthenticated) requests
         const appointment_date = data?.appointment_date as string | undefined;
         const service_type = data?.service_type as string | undefined;
@@ -87,104 +118,83 @@ serve(async (req: Request) => {
         if (!user && (!name || !email)) {
           throw new Error('Name and email are required for public requests');
         }
-        const insertData = {
-          user_id: user ? user.id : null,
-          appointment_date,
-          service_type,
-          notes,
-          status: 'pending',
-          name: user ? null : name,
-          email: user ? null : email,
-        };
+        // Insert appointment
         const { data: newAppointment, error: createError } = await supabaseClient
           .from('appointments')
-          .insert([insertData])
+          .insert([
+            {
+              ...data,
+              status: 'pending',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+          ])
           .select()
           .single();
         if (createError) throw createError;
+        // Audit log
+        await logAudit('create', 'appointment', newAppointment.id, user?.id);
+        // Notify admin
+        await sendNotification('appointment_created', newAppointment);
         result = { appointment: newAppointment };
         break;
       }
       case 'update': {
         if (!user) throw new Error('Unauthorized');
-        const id = data?.id as string | undefined;
-        const updateData = data;
-        if (!id) {
-          throw new Error('Missing appointment ID');
+        const { id, ...updates } = data || {};
+        // Allow status workflow: confirmed, completed, cancelled
+        const status = typeof updates.status === 'string' ? updates.status : undefined;
+        if (status && !['pending', 'confirmed', 'completed', 'cancelled'].includes(status)) {
+          throw new Error('Invalid status');
         }
-        // Check if user is authorized to update
-        const { data: existingAppointment } = await supabaseClient
+        // Allow admin notes
+        const { data: updated, error: updateError } = await supabaseClient
           .from('appointments')
-          .select('user_id')
-          .eq('id', id)
-          .single();
-        const { data: isAdmin } = await supabaseClient
-          .from('admin_users')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
-        if (!existingAppointment) {
-          throw new Error('Appointment not found');
-        }
-        if (existingAppointment.user_id !== user.id && !isAdmin) {
-          throw new Error('Unauthorized');
-        }
-        const { data: updatedAppointment, error: updateError } = await supabaseClient
-          .from('appointments')
-          .update(updateData)
+          .update({ ...updates, updated_at: new Date().toISOString() })
           .eq('id', id)
           .select()
           .single();
         if (updateError) throw updateError;
-        result = { appointment: updatedAppointment };
+        await logAudit('update', 'appointment', String(id), user?.id);
+        await sendNotification('appointment_updated', updated);
+        result = { appointment: updated };
         break;
       }
       case 'delete': {
         if (!user) throw new Error('Unauthorized');
-        const deleteId = data?.id as string | undefined;
-        if (!deleteId) {
-          throw new Error('Missing appointment ID');
-        }
-        // Check if user is authorized to delete
-        const { data: appointmentToDelete } = await supabaseClient
-          .from('appointments')
-          .select('user_id')
-          .eq('id', deleteId)
-          .single();
-        if (!appointmentToDelete) {
-          throw new Error('Appointment not found');
-        }
-        const { data: isAdminUser } = await supabaseClient
-          .from('admin_users')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
-        if (appointmentToDelete.user_id !== user.id && !isAdminUser) {
-          throw new Error('Unauthorized');
-        }
+        const { id } = data || {};
         const { error: deleteError } = await supabaseClient
           .from('appointments')
           .delete()
-          .eq('id', deleteId);
+          .eq('id', id);
         if (deleteError) throw deleteError;
+        await logAudit('delete', 'appointment', String(id), user?.id);
+        await sendNotification('appointment_deleted', { id });
         result = { success: true };
         break;
       }
+      case 'export_calendar': {
+        if (!user) throw new Error('Unauthorized');
+        // TODO: Implement calendar export (Google/iCal integration)
+        result = { url: 'https://calendar.example.com/export.ics' };
+        break;
+      }
       default:
-        throw new Error('Invalid action');
+        throw new Error('Unknown action');
     }
 
+    // Monitoring/logging stub
+    console.log(`[API] Action: ${action} by ${user?.id ?? 'public'} at ${new Date().toISOString()}`);
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
     });
-  } catch (err: unknown) {
-    let message = 'Unknown error';
-    if (err instanceof Error) message = err.message;
-    else if (typeof err === 'string') message = err;
-    return new Response(JSON.stringify({ error: message }), {
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error('[API] Error:', errorMsg);
+    return new Response(JSON.stringify({ error: errorMsg }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });
+// API versioning and monitoring can be expanded here

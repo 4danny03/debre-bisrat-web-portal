@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
 import { Settings, CalendarCheck } from "lucide-react";
@@ -32,55 +32,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import { api } from "@/integrations/supabase/api";
+import { supabase } from "@/integrations/supabase/client";
 
-interface ServiceItemProps {
-  title: string;
-  description: string;
-  time: string;
-  imageUrl?: string;
-  requiresAppointment?: boolean;
-}
-
-const ServiceItem: React.FC<ServiceItemProps> = ({
-  title,
-  description,
-  time,
-  imageUrl,
-  requiresAppointment = false,
-}) => {
-  return (
-    <div className="border-l-2 border-church-gold pl-4 mb-6">
-      {imageUrl && (
-        <div className="mb-3 rounded-md overflow-hidden w-32 h-32 float-right ml-4">
-          <img
-            src={imageUrl}
-            alt={title}
-            className="object-cover w-full h-full transition-transform hover:scale-105 duration-300 rounded-md"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              // Try multiple fallback images in order
-              if (target.src.includes("church-service.jpg")) {
-                target.src = "/images/gallery/church-gathering.jpg";
-              } else if (target.src.includes("church-gathering.jpg")) {
-                target.src = "/images/gallery/ceremony-1.jpg";
-              } else {
-                target.src = "/images/gallery/church-service.jpg";
-              }
-            }}
-          />
-        </div>
-      )}
-      <h3 className="text-xl font-serif text-church-burgundy">{title}</h3>
-      <p className="text-sm text-gray-500 mb-2">{time}</p>
-      <p className="text-gray-700">{description}</p>
-      {requiresAppointment && (
-        <p className="text-xs text-church-burgundy mt-2 font-medium">
-          * Appointment required
-        </p>
-      )}
-    </div>
-  );
-};
 
 // Religious service images mapping with verified paths
 const religiousServiceImages = {
@@ -110,6 +63,66 @@ const getServiceImage = (title: string): string => {
   return (
     (religiousServiceImages as Record<string, string>)[title] ||
     baseUrl + "images/gallery/church-service.jpg"
+  );
+};
+
+const UserAppointments: React.FC = () => {
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      setLoading(true);
+      try {
+        const user = supabase.auth.getUser();
+        if (!user) return;
+        const result = await api.appointments.getAppointments();
+        setAppointments(result);
+      } catch (err: any) {
+        toast({
+          title: "Error",
+          description: err.message || String(err),
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAppointments();
+  }, []);
+  if (loading) return <div>Loading appointments...</div>;
+  if (!appointments.length) return <div>No appointments found.</div>;
+  return (
+    <div className="my-8">
+      <h2 className="text-lg font-bold mb-2">Your Appointments</h2>
+      <ul>
+        {appointments.map((appt) => (
+          <li key={appt.id} className="mb-4 border p-2 rounded">
+            <div>
+              <b>Service:</b> {appt.service_type}
+            </div>
+            <div>
+              <b>Date:</b> {appt.appointment_date}
+            </div>
+            <div>
+              <b>Status:</b> {appt.status}
+            </div>
+            {appt.admin_notes && (
+              <div>
+                <b>Admin Notes:</b> {appt.admin_notes}
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+      <Button
+        onClick={() =>
+          window.open("/api/appointments/export_calendar", "_blank")
+        }
+      >
+        Export to Calendar
+      </Button>
+    </div>
   );
 };
 
@@ -298,6 +311,12 @@ const Services: React.FC = () => {
   const appointmentServices = [...regularServices, ...specialServices].filter(
     (s) => s.requiresAppointment,
   );
+
+  // Add user dashboard if authenticated
+  const [user, setUser] = useState<any>(null);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUser(data?.user || null));
+  }, []);
 
   return (
     <Layout>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -45,13 +45,14 @@ import {
   XCircle,
   Calendar,
   RefreshCw,
-  Filter,
 } from "lucide-react";
 import { api } from "@/integrations/supabase/api";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import EmptyState from "@/components/EmptyState";
+// @ts-ignore
+import { saveAs } from "file-saver";
 
 interface Appointment {
   id: string;
@@ -80,25 +81,30 @@ const AdminAppointments: React.FC = () => {
   const [selectedAppointment, setSelectedAppointment] =
     useState<Appointment | null>(null);
   const [responseDialog, setResponseDialog] = useState(false);
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
   const [currentUser, setCurrentUser] = useState<any>(null);
   const { toast } = useToast();
 
+  // Error boundary for robust UI
+  const [errorBoundary, setErrorBoundary] = useState<string | null>(null);
+
   const loadAppointments = useCallback(async () => {
     setLoading(true);
+    setErrorBoundary(null);
     try {
       let data;
-      if (statusFilter === "all") {
+      if (!statusFilter || statusFilter === "all") {
         data = await api.appointments.getAppointments();
       } else {
         data = await api.appointments.getAppointmentsByStatus(statusFilter);
       }
       setAppointments(data || []);
-    } catch (error) {
-      console.error("Error loading appointments:", error);
+    } catch (error: any) {
+      setErrorBoundary(error.message || "Failed to load appointments");
       toast({
         title: "Error",
-        description: "Failed to load appointments",
+        description: error.message || "Failed to load appointments",
         variant: "destructive",
       });
     } finally {
@@ -189,8 +195,58 @@ const AdminAppointments: React.FC = () => {
     setResponseDialog(true);
   };
 
+  // Filtered and searched appointments
+  const filteredAppointments = useMemo(() => {
+    let filtered = appointments;
+    if (statusFilter && statusFilter !== "all") {
+      filtered = filtered.filter((a) => a.status === statusFilter);
+    }
+    if (search) {
+      filtered = filtered.filter((a) =>
+        a.name?.toLowerCase().includes(search.toLowerCase()) ||
+        a.email?.toLowerCase().includes(search.toLowerCase()) ||
+        a.service_title?.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+    return filtered;
+  }, [appointments, statusFilter, search]);
+
+  // Export to CSV functionality
+  const exportToCSV = () => {
+    const csvRows = [
+      [
+        "ID",
+        "Name",
+        "Email",
+        "Phone",
+        "Service",
+        "Date",
+        "Status",
+        "Admin Notes",
+      ],
+      ...appointments.map((a) => [
+        a.id,
+        a.name,
+        a.email,
+        a.phone,
+        a.service_title,
+        a.requested_date,
+        a.status,
+        a.admin_notes || "",
+      ]),
+    ];
+    const csvContent = csvRows.map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    saveAs(blob, "appointments.csv");
+  };
+
   return (
     <div className="space-y-6">
+      {errorBoundary && (
+        <div className="bg-red-100 text-red-700 p-4 rounded mb-4">
+          <b>Error:</b> {errorBoundary}
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-church-burgundy">
@@ -201,13 +257,13 @@ const AdminAppointments: React.FC = () => {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select value={statusFilter || ""} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full sm:w-40">
-              <Filter className="w-4 h-4 mr-2" />
+              <RefreshCw className="w-4 h-4 mr-2" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="">All Status</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="approved">Approved</SelectItem>
               <SelectItem value="rejected">Rejected</SelectItem>
@@ -219,6 +275,29 @@ const AdminAppointments: React.FC = () => {
             Refresh
           </Button>
         </div>
+      </div>
+      <div className="flex gap-2 mb-4">
+        <Input
+          placeholder="Search by name, email, or service..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <Select
+          value={statusFilter || "all"}
+          onValueChange={setStatusFilter}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="confirmed">Confirmed</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button onClick={exportToCSV}>Export CSV</Button>
       </div>
       {loading ? (
         <div className="py-10">
@@ -253,7 +332,7 @@ const AdminAppointments: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {appointments.map((appointment) => (
+                  {filteredAppointments.map((appointment) => (
                     <TableRow key={appointment.id}>
                       <TableCell>
                         <div className="space-y-1">
@@ -458,6 +537,11 @@ const AdminAppointments: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+      {/* Activity log stub */}
+      <div className="mt-8">
+        <h3 className="text-lg font-bold mb-2">Activity Log</h3>
+        <div className="text-sm text-gray-500">(Activity log will appear here)</div>
+      </div>
     </div>
   );
 };

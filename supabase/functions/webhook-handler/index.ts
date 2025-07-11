@@ -31,7 +31,7 @@ app.post("/webhook", async (req: Request, res: Response) => {
   if (!signature) {
     return res.status(400).send("Missing Stripe signature");
   }
-  let event;
+  let event: Stripe.Event;
   try {
     event = stripe.webhooks.constructEvent(
       (req as any).rawBody,
@@ -62,18 +62,41 @@ app.post("/webhook", async (req: Request, res: Response) => {
     }
 
     // Get donation details for email
-    const { data: donation } = await supabaseClient
+    const { data: donation, error: donationError } = await supabaseClient
       .from("donations")
       .select("*")
       .eq("payment_id", session.id)
       .single();
 
+    if (donationError) {
+      console.error("Error fetching donation:", donationError);
+    }
+
+    // --- AUTOMATE MEMBERSHIP FEE PAID FLAG ---
+    if (
+      donation &&
+      donation.purpose === "membership_fee" &&
+      donation.memberId
+    ) {
+      const { error: memberError } = await supabaseClient
+        .from("members")
+        .update({ membership_fee_paid: true })
+        .eq("id", donation.memberId);
+      if (memberError) {
+        console.error("Error updating member as paid:", memberError);
+      }
+    }
+    // --- END AUTOMATION ---
+
     if (donation) {
       // Get site settings
-      const { data: settings } = await supabaseClient
+      const { data: settings, error: settingsError } = await supabaseClient
         .from("site_settings")
         .select("admin_email, enable_email_notifications")
         .single();
+      if (settingsError) {
+        console.error("Error fetching site settings:", settingsError);
+      }
 
       // Send confirmation email to donor
       if (donation.donor_email && !donation.is_anonymous) {
@@ -109,6 +132,9 @@ app.post("/webhook", async (req: Request, res: Response) => {
         });
       }
     }
+  } else {
+    // For unsupported event types, just acknowledge
+    return res.status(200).json({ received: true, ignored: true });
   }
 
   res.status(200).json({ received: true });

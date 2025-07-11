@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
@@ -46,6 +46,76 @@ interface FormData {
   agreeToTerms: boolean;
 }
 
+// Member dashboard for authenticated users
+const MemberDashboard: React.FC = () => {
+  const [member, setMember] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  useEffect(() => {
+    const fetchMember = async () => {
+      setLoading(true);
+      try {
+        const user = await supabase.auth.getUser();
+        if (!user?.data?.user) return;
+        const { data: memberData, error } = await supabase
+          .from("members")
+          .select("*")
+          .eq("email", user.data.user.email)
+          .single();
+        if (error) throw error;
+        setMember(memberData);
+      } catch (err: any) {
+        toast({
+          title: "Error",
+          description: err.message || String(err),
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMember();
+  }, []);
+  if (loading) return <div>Loading membership info...</div>;
+  if (!member) return <div>No membership record found.</div>;
+  return (
+    <div className="my-8">
+      <h2 className="text-lg font-bold mb-2">Your Membership</h2>
+      <div>
+        <b>Name:</b> {member.full_name}
+      </div>
+      <div>
+        <b>Email:</b> {member.email}
+      </div>
+      <div>
+        <b>Status:</b> {member.membership_status}
+      </div>
+      <div>
+        <b>Type:</b> {member.membership_type}
+      </div>
+      <div>
+        <b>Renewal Due:</b> {member.next_renewal_date || "N/A"}
+      </div>
+      {member.membership_card_number && (
+        <div>
+          <b>Membership Card:</b> {member.membership_card_number}
+        </div>
+      )}
+      {member.orientation_completed && (
+        <div>
+          <b>Orientation:</b> Completed
+        </div>
+      )}
+      {member.integration_status === "integrated" && (
+        <div>
+          <b>Integration:</b> Complete
+        </div>
+      )}
+      <Button onClick={() => window.location.reload()}>Refresh</Button>
+    </div>
+  );
+};
+
 const MembershipRegistration = () => {
   const { t } = useLanguage();
   const { toast } = useToast();
@@ -72,6 +142,12 @@ const MembershipRegistration = () => {
     emailUpdates: true,
     agreeToTerms: false,
   });
+
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUser(data?.user || null));
+  }, []);
 
   const totalSteps = 3;
   const progressPercentage = (currentStep / totalSteps) * 100;
@@ -723,6 +799,7 @@ const MembershipRegistration = () => {
           </CardContent>
         </Card>
       </div>
+      {user && <MemberDashboard />}
     </Layout>
   );
 };
