@@ -1,4 +1,4 @@
-import { type FC, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
@@ -23,40 +23,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  CheckCircle,
-  User,
-  CreditCard,
-  FileText,
-  AlertCircle,
-  Phone,
-  Mail,
-  MapPin,
-  Calendar,
-  Users,
-  Heart,
-} from "lucide-react";
+import { CheckCircle, User, CreditCard, MapPin, Users } from "lucide-react";
 
 interface FormData {
-  // Personal Information
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
   dateOfBirth: string;
   gender: string;
-
-  // Address Information
   streetAddress: string;
   city: string;
   stateProvinceRegion: string;
   postalZipCode: string;
   country: string;
-
-  // Membership Information
   membershipType: string;
   ministryInterests: string;
   preferredLanguage: string;
@@ -64,15 +46,83 @@ interface FormData {
   agreeToTerms: boolean;
 }
 
-const MembershipRegistration: FC = () => {
-  const { t, language } = useLanguage();
+// Member dashboard for authenticated users
+const MemberDashboard: React.FC = () => {
+  const [member, setMember] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  useEffect(() => {
+    const fetchMember = async () => {
+      setLoading(true);
+      try {
+        const user = await supabase.auth.getUser();
+        if (!user?.data?.user) return;
+        const { data: memberData, error } = await supabase
+          .from("members")
+          .select("*")
+          .eq("email", user.data.user.email)
+          .single();
+        if (error) throw error;
+        setMember(memberData);
+      } catch (err: any) {
+        toast({
+          title: "Error",
+          description: err.message || String(err),
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMember();
+  }, []);
+  if (loading) return <div>Loading membership info...</div>;
+  if (!member) return <div>No membership record found.</div>;
+  return (
+    <div className="my-8">
+      <h2 className="text-lg font-bold mb-2">Your Membership</h2>
+      <div>
+        <b>Name:</b> {member.full_name}
+      </div>
+      <div>
+        <b>Email:</b> {member.email}
+      </div>
+      <div>
+        <b>Status:</b> {member.membership_status}
+      </div>
+      <div>
+        <b>Type:</b> {member.membership_type}
+      </div>
+      <div>
+        <b>Renewal Due:</b> {member.next_renewal_date || "N/A"}
+      </div>
+      {member.membership_card_number && (
+        <div>
+          <b>Membership Card:</b> {member.membership_card_number}
+        </div>
+      )}
+      {member.orientation_completed && (
+        <div>
+          <b>Orientation:</b> Completed
+        </div>
+      )}
+      {member.integration_status === "integrated" && (
+        <div>
+          <b>Integration:</b> Complete
+        </div>
+      )}
+      <Button onClick={() => window.location.reload()}>Refresh</Button>
+    </div>
+  );
+};
+
+const MembershipRegistration = () => {
+  const { t } = useLanguage();
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [children, setChildren] = useState<
-    Array<{ name: string; age: string }>
-  >([{ name: "", age: "" }]);
+  const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
@@ -93,34 +143,14 @@ const MembershipRegistration: FC = () => {
     agreeToTerms: false,
   });
 
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUser(data?.user || null));
+  }, []);
+
   const totalSteps = 3;
   const progressPercentage = (currentStep / totalSteps) * 100;
-
-  const ministryOptions = [
-    "Sunday School",
-    "Youth Ministry",
-    "Music Ministry",
-    "Prayer Ministry",
-    "Outreach Ministry",
-    "Women's Ministry",
-    "Men's Ministry",
-    "Children's Ministry",
-    "Hospitality Ministry",
-    "Media Ministry",
-  ];
-
-  const volunteerOptions = [
-    "Event Planning",
-    "Cleaning & Maintenance",
-    "Food Service",
-    "Transportation",
-    "Translation Services",
-    "Technical Support",
-    "Administrative Support",
-    "Fundraising",
-    "Community Outreach",
-    "Teaching",
-  ];
 
   const validateStep = (step: number): boolean => {
     const errors: Record<string, string> = {};
@@ -178,6 +208,7 @@ const MembershipRegistration: FC = () => {
     }
   };
 
+<<<<<<< HEAD
   const handleArrayChange = (field: keyof FormData, values: string[]) => {
     setFormData((prev) => ({ ...prev, [field]: values }));
   };
@@ -204,47 +235,54 @@ const MembershipRegistration: FC = () => {
     }
   }, [children]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!validateStep(currentStep)) return;
-
+=======
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+>>>>>>> main
     setIsSubmitting(true);
-
+    setError(null);
     try {
-      // Create member record
-      const { data: memberData, error: memberError } = await supabase
-        .from("members")
-        .insert([
-          {
-            full_name: `${formData.firstName} ${formData.lastName}`,
-            email: formData.email,
-            phone: formData.phone,
-            address: `${formData.streetAddress}, ${formData.city}, ${formData.stateProvinceRegion} ${formData.postalZipCode}`,
-            membership_type: formData.membershipType,
-            membership_status: "pending",
-            join_date: new Date().toISOString(),
-            registration_date: new Date().toISOString().split("T")[0],
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            street_address: formData.streetAddress,
-            city: formData.city,
-            state_province_region: formData.stateProvinceRegion,
-            postal_zip_code: formData.postalZipCode,
-            country: formData.country,
-            date_of_birth: formData.dateOfBirth,
-            gender: formData.gender,
-            preferred_language: formData.preferredLanguage,
-            ministry_interests: formData.ministryInterests
-              ? [formData.ministryInterests]
-              : [],
-            email_updates: formData.emailUpdates,
-          },
-        ])
-        .select()
-        .single();
+      // Prepare member data for Edge Function
+      const memberPayload = {
+        full_name: `${formData.firstName} ${formData.lastName}`.trim(),
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        address: `${formData.streetAddress}, ${formData.city}, ${formData.stateProvinceRegion} ${formData.postalZipCode}`.trim(),
+        street_address: formData.streetAddress,
+        city: formData.city,
+        state_province_region: formData.stateProvinceRegion,
+        postal_zip_code: formData.postalZipCode,
+        country: formData.country,
+        date_of_birth: formData.dateOfBirth,
+        gender: formData.gender,
+        membership_type: formData.membershipType,
+        preferred_language: formData.preferredLanguage,
+        ministry_interests: formData.ministryInterests ? [formData.ministryInterests] : [],
+        email_updates: formData.emailUpdates,
+        agree_to_terms: formData.agreeToTerms,
+        newsletter_consent: formData.emailUpdates,
+        terms_accepted: formData.agreeToTerms,
+        privacy_accepted: true,
+        data_processing_consent: true,
+        // Add any other fields as needed
+      };
 
-      if (memberError) {
-        throw memberError;
+      // Call Edge Function for registration
+      const response = await fetch("/functions/v1/membership-management", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(memberPayload),
+      });
+      const result = await response.json();
+      if (!response.ok || result.error) {
+        throw new Error(result.error || "Registration failed");
       }
+      const memberData = result.member;
 
       // Determine membership fee based on type
       const membershipFees = {
@@ -270,6 +308,7 @@ const MembershipRegistration: FC = () => {
         membershipType: formData.membershipType,
       };
 
+<<<<<<< HEAD
       console.log("Invoking create-checkout function with data:", checkoutData);
       console.log(
         "Membership fee for type",
@@ -284,34 +323,35 @@ const MembershipRegistration: FC = () => {
           body: checkoutData,
         },
       );
+=======
+      const checkoutResponse = await supabase.functions.invoke("create-checkout", {
+        body: checkoutData,
+      });
+>>>>>>> main
 
-      console.log("Checkout function response:", response);
-      console.log("Response data:", response.data);
-      console.log("Response error:", response.error);
-
-      if (response.error) {
-        console.error("Function error:", response.error);
+      if (checkoutResponse.error) {
         throw new Error(
-          `Payment initiation failed: ${response.error.message || "Unknown error"}`,
+          `Payment initiation failed: ${checkoutResponse.error.message || "Unknown error"}`,
         );
       }
 
-      if (!response.data?.url) {
-        console.error("No checkout URL in response:", response.data);
+      if (!checkoutResponse.data?.url) {
         throw new Error("No checkout URL received");
       }
 
-      // Redirect to Stripe checkout
-      console.log("Redirecting to checkout URL:", response.data.url);
-      window.location.href = response.data.url;
-    } catch (error) {
+      window.location.href = checkoutResponse.data.url;
+    } catch (error: any) {
       console.error("Membership registration error:", error);
+      let errorMsg =
+        (error && (error.message || error.error_description || error.toString())) ||
+        (typeof error === "object" ? JSON.stringify(error) : String(error));
       toast({
         variant: "destructive",
         title: "Registration Error",
         description:
-          "There was an error processing your membership registration. Please try again.",
+          "There was an error processing your membership registration. " + errorMsg,
       });
+      setError(error.message || "Registration failed. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -705,190 +745,22 @@ const MembershipRegistration: FC = () => {
     }
   };
 
-  // Amharic translations for membership registration
-  const translations = {
-    en: {
-      title: "Membership Registration",
-      description: "Join our church community by registering as a member",
-      personal: "Personal Information",
-      firstName: "First Name",
-      lastName: "Last Name",
-      email: "Email Address",
-      phone: "Phone Number",
-      dateOfBirth: "Date of Birth",
-      gender: "Gender",
-      male: "Male",
-      female: "Female",
-      address: "Address Information",
-      streetAddress: "Street Address",
-      city: "City",
-      state: "State",
-      zipCode: "ZIP Code",
-      country: "Country",
-      membershipInfo: "Membership & Family Information",
-      membershipType: "Membership Type",
-      regularMember: "Regular Member ($100/year)",
-      studentMember: "Student Member ($50/year)",
-      seniorMember: "Senior Member ($75/year)",
-      familyMember: "Family Member ($200/year)",
-      previousMember: "I was previously a member of another Orthodox church",
-      previousChurch: "Previous Church Name",
-      baptized: "I have been baptized",
-      baptismDate: "Baptism Date",
-      maritalStatus: "Marital Status",
-      single: "Single",
-      married: "Married",
-      divorced: "Divorced",
-      widowed: "Widowed",
-      spouseName: "Spouse's Name",
-      children: "Children",
-      addChild: "Add Child",
-      childName: "Child's name",
-      age: "Age",
-      remove: "Remove",
-      ministryInterests: "Ministry Interests & Emergency Contact",
-      selectMinistries: "Ministry Interests (Select all that apply)",
-      volunteerInterests: "Volunteer Interests (Select all that apply)",
-      skills: "Special Skills or Talents",
-      skillsPlaceholder:
-        "Please describe any special skills, talents, or professional expertise you'd like to share...",
-      emergencyContact: "Emergency Contact Information",
-      emergencyName: "Emergency Contact Name",
-      emergencyPhone: "Emergency Contact Phone",
-      emergencyRelation: "Relationship to Emergency Contact",
-      emergencyRelationPlaceholder: "e.g., Spouse, Parent, Sibling, Friend",
-      finalDetails: "Final Details & Review",
-      preferredLanguage: "Preferred Language",
-      english: "English",
-      amharic: "Amharic",
-      contactMethod: "Preferred Contact Method",
-      emailUpdates:
-        "I would like to receive email updates about church events and news",
-      smsUpdates:
-        "I would like to receive SMS updates for urgent announcements",
-      howDidYouHear: "How did you hear about our church?",
-      additionalNotes: "Additional Notes or Comments",
-      notesPlaceholder: "Please share anything else you'd like us to know...",
-      agreeToTerms:
-        "I agree to the church's terms and conditions, and I understand that membership requires an annual fee. I commit to participating in church activities and supporting the church community.",
-      agreeToPhotos:
-        "I consent to having my photo taken during church events and activities for use in church publications, website, and social media.",
-      membershipFee: "Membership Fee",
-      annualFee: "Annual membership fee: ",
-      paymentRedirect:
-        "After submitting this form, you will be redirected to a secure payment page to complete your membership registration.",
-      previous: "Previous",
-      next: "Next",
-      processing: "Processing...",
-      completeRegistration: "Complete Registration & Pay $100",
-      personal_step: "Personal",
-      address_step: "Address",
-      membership_step: "Membership",
-      ministry_step: "Ministry",
-      review_step: "Review",
-    },
-    am: {
-      title: "የአባልነት ምዝገባ",
-      description: "እንደ አባል በመመዝገብ የቤተክርስቲያን ማህበረሰባችንን ይቀላቀሉ",
-      personal: "የግል መረጃ",
-      firstName: "መጠሪያ ስም",
-      lastName: "የአባት ስም",
-      email: "የኢሜይል አድራሻ",
-      phone: "ስልክ ቁጥር",
-      dateOfBirth: "የትውልድ ቀን",
-      gender: "ፆታ",
-      male: "ወንድ",
-      female: "ሴት",
-      address: "የአድራሻ መረጃ",
-      streetAddress: "የመንገድ አድራሻ",
-      city: "ከተማ",
-      state: "ግዛት",
-      zipCode: "ዚፕ ኮድ",
-      country: "ሀገር",
-      membershipInfo: "የአባልነት እና የቤተሰብ መረጃ",
-      membershipType: "የአባልነት አይነት",
-      regularMember: "መደበኛ አባል ($100/አመት)",
-      studentMember: "የተማሪ አባል ($50/አመት)",
-      seniorMember: "የአዛውንት አባል ($75/አመት)",
-      familyMember: "የቤተሰብ አባል ($200/አመት)",
-      previousMember: "ከዚህ በፊት የሌላ ኦርቶዶክስ ቤተክርስቲያን አባል ነበርኩ",
-      previousChurch: "የቀድሞ ቤተክርስቲያን ስም",
-      baptized: "ተጠምቄአለሁ",
-      baptismDate: "የጥምቀት ቀን",
-      maritalStatus: "የጋብቻ ሁኔታ",
-      single: "ያላገባ",
-      married: "ያገባ",
-      divorced: "የተፋታ",
-      widowed: "የትዳር አጋሩ የሞተበት",
-      spouseName: "የትዳር አጋር ስም",
-      children: "ልጆች",
-      addChild: "ልጅ ጨምር",
-      childName: "የልጅ ስም",
-      age: "እድሜ",
-      remove: "አስወግድ",
-      ministryInterests: "የአገልግሎት ፍላጎቶች እና የአደጋ ጊዜ ተጠሪ",
-      selectMinistries: "የአገልግሎት ፍላጎቶች (የሚመለከትዎትን ሁሉ ይምረጡ)",
-      volunteerInterests: "የበጎ ፈቃድ ፍላጎቶች (የሚመለከትዎትን ሁሉ ይምረጡ)",
-      skills: "ልዩ ችሎታዎች ወይም ተሰጥኦዎች",
-      skillsPlaceholder:
-        "እባክዎን ማካፈል የሚፈልጓቸውን ልዩ ችሎታዎች፣ ተሰጥኦዎች ወይም ሙያዊ ብቃቶች ይግለጹ...",
-      emergencyContact: "የአደጋ ጊዜ ተጠሪ መረጃ",
-      emergencyName: "የአደጋ ጊዜ ተጠሪ ስም",
-      emergencyPhone: "የአደጋ ጊዜ ተጠሪ ስልክ",
-      emergencyRelation: "ከአደጋ ጊዜ ተጠሪ ጋር ያለዎት ግንኙነት",
-      emergencyRelationPlaceholder: "ለምሳሌ፣ ባል/ሚስት፣ ወላጅ፣ ወንድም/እህት፣ ጓደኛ",
-      finalDetails: "የመጨረሻ ዝርዝሮች እና ግምገማ",
-      preferredLanguage: "የመረጡት ቋንቋ",
-      english: "እንግሊዝኛ",
-      amharic: "አማርኛ",
-      contactMethod: "የመረጡት የመገናኛ ዘዴ",
-      emailUpdates: "ስለ ቤተክርስቲያን ዝግጅቶች እና ዜናዎች በኢሜይል መረጃዎችን መቀበል እፈልጋለሁ",
-      smsUpdates: "ለአስቸኳይ ማስታወቂያዎች በኤስኤምኤስ መረጃዎችን መቀበል እፈልጋለሁ",
-      howDidYouHear: "ስለ ቤተክርስቲያናችን እንዴት ሰሙ?",
-      additionalNotes: "ተጨማሪ ማስታወሻዎች ወይም አስተያየቶች",
-      notesPlaceholder: "እባክዎን እኛ እንድናውቅ የሚፈልጉትን ማንኛውንም ነገር ያካፍሉ...",
-      agreeToTerms:
-        "የቤተክርስቲያኑን ውሎች እና ሁኔታዎች እስማማለሁ፣ እና አባልነት አመታዊ ክፍያ እንደሚጠይቅ ተረድቻለሁ። በቤተክርስቲያን እንቅስቃሴዎች ለመሳተፍ እና የቤተክርስቲያን ማህበረሰብን ለመደገፍ እቃጠራለሁ።",
-      agreeToPhotos:
-        "በቤተክርስቲያን ዝግጅቶች እና እንቅስቃሴዎች ወቅት ፎቶዬ እንዲነሳ እና በቤተክርስቲያን ህትመቶች፣ ድህረ ገጽ እና ማህበራዊ ሚዲያ ላይ እንዲውል ፈቃዴን እሰጣለሁ።",
-      membershipFee: "የአባልነት ክፍያ",
-      annualFee: "አመታዊ የአባልነት ክፍያ: ",
-      paymentRedirect:
-        "ይህንን ቅጽ ካስገቡ በኋላ፣ የአባልነት ምዝገባዎን ለማጠናቀቅ ወደ ደህንነቱ የተጠበቀ የክፍያ ገጽ ይዞረዛሉ።",
-      previous: "ቀዳሚ",
-      next: "ቀጣይ",
-      processing: "በሂደት ላይ...",
-      completeRegistration: "ምዝገባን አጠናቅቅ እና $100 ክፈል",
-      personal_step: "የግል",
-      address_step: "አድራሻ",
-      membership_step: "አባልነት",
-      ministry_step: "አገልግሎት",
-      review_step: "ግምገማ",
-    },
-  };
-
-  // Get translations based on current language
-  const getTranslation = (key: string): string => {
-    if (
-      language === "am" &&
-      translations.am[key as keyof typeof translations.am]
-    ) {
-      return translations.am[key as keyof typeof translations.am];
-    }
-    return translations.en[key as keyof typeof translations.en];
-  };
-
   return (
     <Layout>
       <div className="container mx-auto p-4 max-w-4xl">
         <Card className="bg-white shadow-lg">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl text-church-burgundy">
-              {t("membership_registration_title")}
-            </CardTitle>
-            <CardDescription className="text-lg">
-              {t("membership_registration_description")}
-            </CardDescription>
+          <CardHeader className="text-center bg-gradient-to-r from-church-gold/10 to-church-burgundy/10 rounded-t-lg py-8 mb-4">
+            <div className="flex flex-col items-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-church-gold/80 rounded-full mb-4 shadow-lg">
+                <Users size={36} className="text-church-burgundy" />
+              </div>
+              <CardTitle className="text-3xl md:text-4xl font-serif text-church-burgundy mb-2">
+                {t("membership_registration_title")}
+              </CardTitle>
+              <CardDescription className="text-lg text-gray-700 max-w-2xl mx-auto">
+                {t("membership_registration_description")}
+              </CardDescription>
+            </div>
           </CardHeader>
 
           <CardContent>
@@ -916,6 +788,13 @@ const MembershipRegistration: FC = () => {
 
             {/* Step Content */}
             <div className="min-h-[400px]">{renderStepContent()}</div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="text-red-600 bg-red-50 border border-red-200 rounded p-2 mb-4">
+                {error}
+              </div>
+            )}
 
             {/* Navigation Buttons */}
             <div className="flex justify-between mt-8 pt-6 border-t">
@@ -969,6 +848,7 @@ const MembershipRegistration: FC = () => {
           </CardContent>
         </Card>
       </div>
+      {user && <MemberDashboard />}
     </Layout>
   );
 };

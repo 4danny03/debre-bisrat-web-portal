@@ -1,22 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
+import { Settings, CalendarCheck } from "lucide-react";
 import {
-  Settings,
-  Calendar,
-  Clock,
-  User,
-  Mail,
-  Phone,
-  CalendarCheck,
-} from "lucide-react";
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+const baseUrl = import.meta.env.BASE_URL;
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import {
   Accordion,
@@ -24,72 +25,15 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import { api } from "@/integrations/supabase/api";
+import { supabase } from "@/integrations/supabase/client";
 
-interface ServiceItemProps {
-  title: string;
-  description: string;
-  time: string;
-  imageUrl?: string;
-  requiresAppointment?: boolean;
-}
-
-const ServiceItem: React.FC<ServiceItemProps> = ({
-  title,
-  description,
-  time,
-  imageUrl,
-  requiresAppointment = false,
-}) => {
-  return (
-    <div className="border-l-2 border-church-gold pl-4 mb-6">
-      {imageUrl && (
-        <div className="mb-3 rounded-md overflow-hidden w-32 h-32 float-right ml-4">
-          <img
-            src={imageUrl}
-            alt={title}
-            className="object-cover w-full h-full transition-transform hover:scale-105 duration-300 rounded-md"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              // Try multiple fallback images in order
-              if (target.src.includes("church-service.jpg")) {
-                target.src = "/images/gallery/church-gathering.jpg";
-              } else if (target.src.includes("church-gathering.jpg")) {
-                target.src = "/images/gallery/ceremony-1.jpg";
-              } else {
-                target.src = "/images/gallery/church-service.jpg";
-              }
-            }}
-          />
-        </div>
-      )}
-      <h3 className="text-xl font-serif text-church-burgundy">{title}</h3>
-      <p className="text-sm text-gray-500 mb-2">{time}</p>
-      <p className="text-gray-700">{description}</p>
-      {requiresAppointment && (
-        <p className="text-xs text-church-burgundy mt-2 font-medium">
-          * Appointment required
-        </p>
-      )}
-    </div>
-  );
-};
 
 // Religious service images mapping with verified paths
 const religiousServiceImages = {
@@ -115,15 +59,78 @@ const religiousServiceImages = {
   ቅዳሴ: "/images/gallery/church-service.jpg",
 };
 
-// Function to get a religious image based on service title with fallback
 const getServiceImage = (title: string): string => {
-  return religiousServiceImages[title] || "/images/gallery/church-service.jpg";
+  return (
+    (religiousServiceImages as Record<string, string>)[title] ||
+    baseUrl + "images/gallery/church-service.jpg"
+  );
+};
+
+const UserAppointments: React.FC = () => {
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      setLoading(true);
+      try {
+        const user = supabase.auth.getUser();
+        if (!user) return;
+        const result = await api.appointments.getAppointments();
+        setAppointments(result);
+      } catch (err: any) {
+        toast({
+          title: "Error",
+          description: err.message || String(err),
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAppointments();
+  }, []);
+  if (loading) return <div>Loading appointments...</div>;
+  if (!appointments.length) return <div>No appointments found.</div>;
+  return (
+    <div className="my-8">
+      <h2 className="text-lg font-bold mb-2">Your Appointments</h2>
+      <ul>
+        {appointments.map((appt) => (
+          <li key={appt.id} className="mb-4 border p-2 rounded">
+            <div>
+              <b>Service:</b> {appt.service_type}
+            </div>
+            <div>
+              <b>Date:</b> {appt.appointment_date}
+            </div>
+            <div>
+              <b>Status:</b> {appt.status}
+            </div>
+            {appt.admin_notes && (
+              <div>
+                <b>Admin Notes:</b> {appt.admin_notes}
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+      <Button
+        onClick={() =>
+          window.open("/api/appointments/export_calendar", "_blank")
+        }
+      >
+        Export to Calendar
+      </Button>
+    </div>
+  );
 };
 
 const Services: React.FC = () => {
   const { t, language } = useLanguage();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
+  const [showModal, setShowModal] = useState(false);
 
   const handleAppointmentSubmit = async (
     e: React.FormEvent<HTMLFormElement>,
@@ -135,23 +142,36 @@ const Services: React.FC = () => {
     const phone = formData.get("phone") as string;
     const date = formData.get("date") as string;
     const time = formData.get("time") as string;
-    const service = formData.get("service") as string;
+    const service = formData.get("service") as string || formData.get("serviceType") as string;
     const notes = formData.get("notes") as string;
 
     try {
-      // Save appointment to database
-      await api.appointments.createAppointment({
+      // Prepare appointment data for Edge Function (if you have one) or direct insert
+      const appointmentPayload = {
         name,
         email,
         phone,
-        service_title: service,
-        requested_date: date,
-        requested_time: time,
+        service_type: service,
+        appointment_date: date,
+        appointment_time: time,
         notes,
         status: "pending",
-      });
+      };
 
-      // Show success message
+      // Direct insert using Supabase client (current method)
+      // await api.appointments.createAppointment(appointmentPayload);
+
+      // Use Edge Function if available (recommended for validation, logging, etc.)
+      const response = await fetch("/functions/v1/appointment-management", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(appointmentPayload),
+      });
+      const result = await response.json();
+      if (!response.ok || result.error) {
+        throw new Error(result.error || "Appointment request failed");
+      }
+
       toast({
         title: language === "en" ? "Appointment Request Sent" : "የቀጠሮ ጥያቄ ተልኳል",
         description:
@@ -162,20 +182,23 @@ const Services: React.FC = () => {
 
       setIsDialogOpen(false);
       (e.target as HTMLFormElement).reset();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error submitting appointment:", error);
+      let errorMsg =
+        (error && (error.message || error.error_description || error.toString())) ||
+        (typeof error === "object" ? JSON.stringify(error) : String(error));
       toast({
         title: language === "en" ? "Error" : "ስህተት",
         description:
-          language === "en"
-            ? "Failed to submit appointment request. Please try again."
-            : "የቀጠሮ ጥያቄ ማስገባት አልተሳካም። እባክዎ እንደገና ይሞክሩ።",
+          (language === "en"
+            ? "Failed to submit appointment request. "
+            : "የቀጠሮ ጥያቄ ማስገባት አልተሳካም። ") + errorMsg,
         variant: "destructive",
       });
     }
   };
 
-  // Service data based on the provided church services
+  // Service data
   const regularServices = [
     {
       title: language === "en" ? "Holy Water Baptism" : "ጸበል መጠመቅ",
@@ -283,6 +306,17 @@ const Services: React.FC = () => {
       requiresAppointment: false,
     },
   ];
+
+  // Collect all services that require appointments
+  const appointmentServices = [...regularServices, ...specialServices].filter(
+    (s) => s.requiresAppointment,
+  );
+
+  // Add user dashboard if authenticated
+  const [user, setUser] = useState<any>(null);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUser(data?.user || null));
+  }, []);
 
   return (
     <Layout>
@@ -455,6 +489,106 @@ const Services: React.FC = () => {
             </Dialog>
           </div>
 
+          {/* Modal Dialog for Appointment Form */}
+          {showModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+              <div className="bg-white rounded-lg shadow-lg max-w-lg w-full p-6 relative animate-fade-in">
+                <button
+                  className="absolute top-2 right-2 text-gray-500 hover:text-church-burgundy text-2xl font-bold"
+                  onClick={() => setShowModal(false)}
+                  aria-label="Close"
+                >
+                  ×
+                </button>
+                <CardTitle className="mb-2">
+                  {language === "en" ? "Request an Appointment" : "ቀጠሮ ይጠይቁ"}
+                </CardTitle>
+                <CardDescription className="mb-4">
+                  {language === "en"
+                    ? "Select a service and fill out the form to request an appointment."
+                    : "አገልግሎት ይምረጡ እና ቅጹን ይሙሉ ለቀጠሮ ለመጠየቅ።"}
+                </CardDescription>
+                <form onSubmit={handleAppointmentSubmit} className="space-y-4">
+                  <div>
+                    <Label htmlFor="serviceType">
+                      {language === "en" ? "Service Type" : "የአገልግሎት አይነት"}
+                    </Label>
+                    <select
+                      id="serviceType"
+                      name="serviceType"
+                      className="w-full border rounded px-3 py-2 mt-1"
+                      required
+                    >
+                      {appointmentServices.map((service, idx) => (
+                        <option key={service.title + idx} value={service.title}>
+                          {service.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="name">
+                        {language === "en" ? "Name" : "ስም"}
+                      </Label>
+                      <Input id="name" name="name" required />
+                    </div>
+                    <div>
+                      <Label htmlFor="email">
+                        {language === "en" ? "Email" : "ኢሜይል"}
+                      </Label>
+                      <Input id="email" name="email" type="email" required />
+                    </div>
+                    <div>
+                      <Label htmlFor="phone">
+                        {language === "en" ? "Phone" : "ስልክ"}
+                      </Label>
+                      <Input id="phone" name="phone" type="tel" required />
+                    </div>
+                    <div>
+                      <Label htmlFor="date">
+                        {language === "en" ? "Date" : "ቀን"}
+                      </Label>
+                      <Input
+                        id="date"
+                        name="date"
+                        type="date"
+                        min={format(new Date(), "yyyy-MM-dd")}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="time">
+                        {language === "en" ? "Time" : "ሰዓት"}
+                      </Label>
+                      <Input id="time" name="time" type="time" required />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="notes">
+                      {language === "en" ? "Notes" : "ማስታወሻዎች"}
+                    </Label>
+                    <Textarea
+                      id="notes"
+                      name="notes"
+                      placeholder={
+                        language === "en"
+                          ? "Any additional information..."
+                          : "ማንኛውም ተጨማሪ መረጃ..."
+                      }
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    className="bg-church-burgundy hover:bg-church-burgundy/90"
+                  >
+                    {language === "en" ? "Submit Request" : "ጥያቄ አስገባ"}
+                  </Button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Service lists (no appointment buttons) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
             <Card>
               <CardHeader className="bg-church-burgundy text-white">
@@ -469,18 +603,26 @@ const Services: React.FC = () => {
               </CardHeader>
               <CardContent className="pt-6">
                 {regularServices.map((service, index) => (
-                  <ServiceItem
+                  <div
                     key={`regular-${index}`}
-                    title={service.title}
-                    description={service.description}
-                    time={service.time}
-                    imageUrl={getServiceImage(service.title)}
-                    requiresAppointment={service.requiresAppointment}
-                  />
+                    className="border-l-2 border-church-gold pl-4 mb-6"
+                  >
+                    <div className="mb-3 rounded-md overflow-hidden w-32 h-32 float-right ml-4">
+                      <img
+                        src={getServiceImage(service.title)}
+                        alt={service.title}
+                        className="object-cover w-full h-full transition-transform hover:scale-105 duration-300 rounded-md"
+                      />
+                    </div>
+                    <h3 className="text-xl font-serif text-church-burgundy">
+                      {service.title}
+                    </h3>
+                    <p className="text-sm text-gray-500 mb-2">{service.time}</p>
+                    <p className="text-gray-700">{service.description}</p>
+                  </div>
                 ))}
               </CardContent>
             </Card>
-
             <Card>
               <CardHeader className="bg-church-burgundy text-white">
                 <CardTitle className="text-church-gold">
@@ -494,14 +636,23 @@ const Services: React.FC = () => {
               </CardHeader>
               <CardContent className="pt-6">
                 {specialServices.map((service, index) => (
-                  <ServiceItem
+                  <div
                     key={`special-${index}`}
-                    title={service.title}
-                    description={service.description}
-                    time={service.time}
-                    imageUrl={getServiceImage(service.title)}
-                    requiresAppointment={service.requiresAppointment}
-                  />
+                    className="border-l-2 border-church-gold pl-4 mb-6"
+                  >
+                    <div className="mb-3 rounded-md overflow-hidden w-32 h-32 float-right ml-4">
+                      <img
+                        src={getServiceImage(service.title)}
+                        alt={service.title}
+                        className="object-cover w-full h-full transition-transform hover:scale-105 duration-300 rounded-md"
+                      />
+                    </div>
+                    <h3 className="text-xl font-serif text-church-burgundy">
+                      {service.title}
+                    </h3>
+                    <p className="text-sm text-gray-500 mb-2">{service.time}</p>
+                    <p className="text-gray-700">{service.description}</p>
+                  </div>
                 ))}
               </CardContent>
             </Card>
@@ -531,7 +682,7 @@ const Services: React.FC = () => {
                   <AccordionContent>
                     {language === "en"
                       ? "Our youth program for teenagers (13-18) provides spiritual guidance, church service training, community service opportunities, and cultural activities every Saturday from 3:00 PM to 6:00 PM. Youth also participate in choir and traditional Ethiopian Orthodox church music training."
-                      : "ለወጣቶች (13-18) የሚሰጠው የወጣቶች ፕሮግራማችን መንፈሳዊ መመሪያ፣ የቤተክርስቲያን አገልግሎት ስልጠና፣ የማህበረሰብ አገልግሎት እድሎች እና በየሳምንቱ ቅዳሜ ከ3፡00 ምሽት እስከ 6፡00 ምሽት የባህል ስራዎችን ይሰጣል። ወጣቶች በዘማሪ ቡድን እና በባህላዊ የኢትዮጵያ ኦርቶዶክስ ቤተክርስቲያን ሙዚቃ ስልጠናም ይሳተፋሉ።"}
+                      : "ለወጣቶች (13-18) የሚሰጠው የወጣቶች ፕሮግራም መንፈሳዊ መመሪያ፣ የቤተክርስቲያን አገልግሎት ስልጠና፣ የማህበረሰብ አገልግሎት እድሎች እና በየሳምንቱ ቅዳሜ ከ3፡00 ምሽት እስከ 6፡00 ምሽት የባህል ስራዎችን ይሰጣል። ወጣቶች በዘማሪ ቡድን እና በባህላዊ የኢትዮጵያ ኦርቶዶክስ ቤተክርስቲያን ሙዚቃ ስልጠናም ይሳተፋሉ።"}
                   </AccordionContent>
                 </AccordionItem>
 
