@@ -236,12 +236,16 @@ export default function Events() {
     try {
       setLoading(true);
       const data = await api.events.getEvents();
-      setEvents(data || []);
-    } catch (error) {
-      console.error("Error loading events:", error);
-      // Don't show error to user for background refreshes
-      // Only show error if we have no events to display
-      // (events.length is not needed as a dependency)
+      const validatedData = Array.isArray(data) ? data : [];
+      setEvents(validatedData);
+      } catch (error) {
+        console.error("Error loading events:", error);
+        // Only show error if we have no events to display
+        if (events.length === 0) {
+          console.error("Failed to load events on initial load");
+          setEvents([]);
+        }
+      }
     } finally {
       setLoading(false);
     }

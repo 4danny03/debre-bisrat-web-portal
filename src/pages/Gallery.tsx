@@ -226,10 +226,12 @@ const Gallery: React.FC = () => {
   const fetchGalleryImages = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       const data = await api.gallery.getGalleryImages();
+      const validatedData = Array.isArray(data) ? data : [];
 
-      if (data && data.length > 0) {
-        setGalleryImages(data);
+      if (validatedData.length > 0) {
+        setGalleryImages(validatedData);
       } else {
         setGalleryImages(fallbackImages);
       }

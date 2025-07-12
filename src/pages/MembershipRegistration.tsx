@@ -208,8 +208,40 @@ const MembershipRegistration = () => {
     }
   };
 
+<<<<<<< HEAD
+  const handleArrayChange = (field: keyof FormData, values: string[]) => {
+    setFormData((prev) => ({ ...prev, [field]: values }));
+  };
+
+  const addChild = () => {
+    setChildren((prev) => [...prev, { name: "", age: "" }]);
+  };
+
+  const removeChild = (index: number) => {
+    setChildren((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const updateChild = (index: number, field: "name" | "age", value: string) => {
+    setChildren((prev) =>
+      prev.map((child, i) =>
+        i === index ? { ...child, [field]: value } : child,
+      ),
+    );
+  };
+
+  useEffect(() => {
+    if (Array.isArray(children)) {
+      setFormData((prev) => ({ ...prev, children }));
+    }
+  }, [children]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateStep(currentStep)) return;
+=======
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+>>>>>>> main
     setIsSubmitting(true);
     setError(null);
     try {
@@ -276,9 +308,26 @@ const MembershipRegistration = () => {
         membershipType: formData.membershipType,
       };
 
+<<<<<<< HEAD
+      console.log("Invoking create-checkout function with data:", checkoutData);
+      console.log(
+        "Membership fee for type",
+        formData.membershipType,
+        ":",
+        membershipFee,
+      );
+
+      const response = await supabase.functions.invoke(
+        "supabase-functions-create-checkout",
+        {
+          body: checkoutData,
+        },
+      );
+=======
       const checkoutResponse = await supabase.functions.invoke("create-checkout", {
         body: checkoutData,
       });
+>>>>>>> main
 
       if (checkoutResponse.error) {
         throw new Error(

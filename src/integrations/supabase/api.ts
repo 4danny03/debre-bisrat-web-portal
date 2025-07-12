@@ -1,9 +1,13 @@
 import { supabase } from "./client";
 import { dataSyncService } from "@/services/DataSyncService";
+<<<<<<< HEAD
+import { validateArrayData, validateApiData } from "@/utils/dataValidation";
+=======
 import type { Database } from '@/types/supabase';
 
 type Appointment = Database['public']['Tables']['appointments']['Row'];
 type AppointmentCreateInput = Database['public']['Tables']['appointments']['Insert'];
+>>>>>>> main
 
 export const api = {
   // Events API
@@ -15,7 +19,19 @@ export const api = {
         .order("event_date", { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data || [];
+    },
+    getUpcomingEvents: async (limit = 10) => {
+      const today = new Date().toISOString().split("T")[0];
+      const { data, error } = await supabase
+        .from("events")
+        .select("*")
+        .gte("event_date", today)
+        .order("event_date", { ascending: true })
+        .limit(limit);
+
+      if (error) throw error;
+      return data || [];
     },
     createEvent: async (event: any) => {
       const { data, error } = await supabase
@@ -726,10 +742,11 @@ export const api = {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-        const recentDonations =
-          donations.data?.filter(
-            (d) => d?.created_at && new Date(d.created_at) >= thirtyDaysAgo,
-          ) || [];
+        const recentDonations = Array.isArray(donations.data)
+          ? donations.data.filter(
+              (d) => d?.created_at && new Date(d.created_at) >= thirtyDaysAgo,
+            )
+          : [];
 
         const recentDonationAmount = recentDonations.reduce(
           (sum, d) => sum + (d?.amount || 0),
@@ -739,7 +756,9 @@ export const api = {
         return {
           totalEvents: events.count || 0,
           totalMembers: members.count || 0,
-          totalDonations: donations.data?.length || 0,
+          totalDonations: Array.isArray(donations.data)
+            ? donations.data.length
+            : 0,
           totalTestimonials: testimonials.count || 0,
           totalPrayerRequests: prayerRequests.count || 0,
           totalSermons: sermons.count || 0,
@@ -761,17 +780,19 @@ export const api = {
           .order("created_at", { ascending: false })
           .limit(3);
 
-        events?.forEach((event) => {
-          if (event?.id && event?.title && event?.created_at) {
-            activities.push({
-              id: event.id,
-              type: "event",
-              title: `New Event: ${event.title}`,
-              description: event.description || "No description",
-              created_at: event.created_at,
-            });
-          }
-        });
+        if (Array.isArray(events)) {
+          events.forEach((event) => {
+            if (event?.id && event?.title && event?.created_at) {
+              activities.push({
+                id: event.id,
+                type: "event",
+                title: `New Event: ${event.title}`,
+                description: event.description || "No description",
+                created_at: event.created_at,
+              });
+            }
+          });
+        }
 
         // Get recent members
         const { data: members } = await supabase
@@ -780,17 +801,19 @@ export const api = {
           .order("created_at", { ascending: false })
           .limit(3);
 
-        members?.forEach((member) => {
-          if (member?.id && member?.full_name && member?.created_at) {
-            activities.push({
-              id: member.id,
-              type: "member",
-              title: `New Member: ${member.full_name}`,
-              description: "Joined the church community",
-              created_at: member.created_at,
-            });
-          }
-        });
+        if (Array.isArray(members)) {
+          members.forEach((member) => {
+            if (member?.id && member?.full_name && member?.created_at) {
+              activities.push({
+                id: member.id,
+                type: "member",
+                title: `New Member: ${member.full_name}`,
+                description: "Joined the church community",
+                created_at: member.created_at,
+              });
+            }
+          });
+        }
 
         // Sort by creation date and take the most recent
         activities.sort(

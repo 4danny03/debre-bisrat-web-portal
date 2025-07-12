@@ -124,6 +124,7 @@ const AdminAppointments: React.FC = () => {
     setCurrentUser(session?.user);
   };
 
+// ...existing code...
   const handleResponse = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!selectedAppointment || !currentUser) return;

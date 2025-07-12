@@ -115,7 +115,8 @@ class DebugSyncClass {
 
   triggerForceRefresh(): void {
     this.log("DebugSync", "Triggering force refresh");
-    DataSyncService.forceRefresh();
+    // Trigger a manual refresh by dispatching a custom event
+    window.dispatchEvent(new CustomEvent("forceRefresh"));
   }
 
   getSystemInfo(): any {

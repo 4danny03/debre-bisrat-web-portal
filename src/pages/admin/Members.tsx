@@ -101,7 +101,23 @@ export default function AdminMembers() {
       });
       setMembers([]);
     } else {
+// ...existing code...
+      // Ensure data has proper structure with safe array validation
+      const validatedData = Array.isArray(data) ? data : [];
+      const processedData = validatedData.map((member) => ({
+        ...member,
+        membership_type: member?.membership_type || "regular",
+        membership_status: member?.membership_status || "pending",
+        join_date:
+          member?.join_date || member?.created_at || new Date().toISOString(),
+        updated_at:
+          member?.updated_at || member?.created_at || new Date().toISOString(),
+      }));
+
+      setMembers(processedData);
+// ...existing code...
       setMembers(data as Member[]);
+>>>>>>> main
     }
     setLoading(false);
   };
