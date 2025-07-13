@@ -63,10 +63,6 @@ export default function Settings() {
     smtp_username: "",
     smtp_password: "",
   });
-  const [subscribers, setSubscribers] = useState([]);
-  const [templates, setTemplates] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [stripeStatus, setStripeStatus] = useState("unconfigured");
 
   useEffect(() => {
@@ -79,7 +75,6 @@ export default function Settings() {
 
   const loadSettings = async () => {
     try {
-      setLoading(true);
       let { data, error } = await supabase
         .from("site_settings")
         .select("*")
@@ -115,31 +110,60 @@ export default function Settings() {
       }
       // Load Stripe settings
       const stripeData = await api.stripeSettings.getSettings();
-      if (stripeData) {
-        setStripeSettings(stripeData);
+      let mappedStripeSettings;
+      if (stripeData && typeof stripeData === "object" && stripeData !== null) {
+        mappedStripeSettings = {
+          enable_stripe: "enable_stripe" in stripeData ? (stripeData as any).enable_stripe : false,
+          stripe_mode: "stripe_mode" in stripeData ? (stripeData as any).stripe_mode : "test",
+          stripe_publishable_key: "stripe_publishable_key" in stripeData ? (stripeData as any).stripe_publishable_key : "",
+          stripe_secret_key: "stripe_secret_key" in stripeData ? (stripeData as any).stripe_secret_key : "",
+          stripe_webhook_secret: "stripe_webhook_secret" in stripeData ? (stripeData as any).stripe_webhook_secret : "",
+          default_currency: "default_currency" in stripeData ? (stripeData as any).default_currency : "USD",
+        };
+      } else {
+        mappedStripeSettings = {
+          enable_stripe: false,
+          stripe_mode: "test",
+          stripe_publishable_key: "",
+          stripe_secret_key: "",
+          stripe_webhook_secret: "",
+          default_currency: "USD",
+        };
       }
+      setStripeSettings(mappedStripeSettings);
       // Load Email settings
       const emailData = await api.emailSettings.getSettings();
-      if (emailData) {
-        setEmailSettings(emailData);
+      let mappedEmailSettings;
+      if (emailData && typeof emailData === "object" && emailData !== null) {
+        mappedEmailSettings = {
+          enable_newsletters: "enable_newsletters" in emailData ? (emailData as any).enable_newsletters : false,
+          from_email: "from_email" in emailData ? (emailData as any).from_email : "",
+          from_name: "from_name" in emailData ? (emailData as any).from_name : "",
+          newsletter_frequency: "newsletter_frequency" in emailData ? (emailData as any).newsletter_frequency : "monthly",
+          auto_welcome_email: "auto_welcome_email" in emailData ? (emailData as any).auto_welcome_email : false,
+          smtp_host: "smtp_host" in emailData ? (emailData as any).smtp_host : "",
+          smtp_port: "smtp_port" in emailData ? (emailData as any).smtp_port : 587,
+          smtp_username: "smtp_username" in emailData ? (emailData as any).smtp_username : "",
+          smtp_password: "smtp_password" in emailData ? (emailData as any).smtp_password : "",
+        };
+      } else {
+        mappedEmailSettings = {
+          enable_newsletters: false,
+          from_email: "",
+          from_name: "",
+          newsletter_frequency: "monthly",
+          auto_welcome_email: false,
+          smtp_host: "",
+          smtp_port: 587,
+          smtp_username: "",
+          smtp_password: "",
+        };
       }
-      // Load subscribers and templates
-      const [subscribersData, templatesData] = await Promise.all([
-        api.emailSubscribers.getSubscribers(),
-        api.emailTemplates.getTemplates(),
-      ]);
-      setSubscribers(subscribersData || []);
-      setTemplates(templatesData || []);
+      setEmailSettings(mappedEmailSettings);
       checkStripeConfiguration();
     } catch (error) {
       console.error("Error loading settings:", error);
-      toast({
-        title: "Error loading settings",
-        description: "Failed to load settings data",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      toast.error("Failed to load settings data");
     }
   };
 
@@ -174,15 +198,10 @@ export default function Settings() {
       settings.enable_stripe &&
       !validateStripeKey(settings.stripe_publishable_key)
     ) {
-      toast({
-        title: "Invalid Stripe Key",
-        description: "Please enter a valid Stripe publishable key.",
-        variant: "destructive",
-      });
+      toast.error("Please enter a valid Stripe publishable key.");
       return;
     }
     try {
-      setSaving(true);
       await supabase
         .from("site_settings")
         .upsert([
@@ -194,39 +213,10 @@ export default function Settings() {
         .select();
       await api.stripeSettings.updateSettings(stripeSettings);
       await api.emailSettings.updateSettings(emailSettings);
-      toast({
-        title: "Settings saved",
-        description: "Your settings have been updated successfully",
-        variant: "success",
-      });
+      toast.success("Your settings have been updated successfully");
     } catch (error) {
       console.error("Error saving settings:", error);
-      toast({
-        title: "Error saving settings",
-        description: "Failed to save settings data",
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDeleteSubscriber = async (id: string) => {
-    try {
-      await api.emailSubscribers.deleteSubscriber(id);
-      setSubscribers((prev) => prev.filter((sub) => sub.id !== id));
-      toast({
-        title: "Subscriber deleted",
-        description: "The subscriber has been removed",
-        variant: "success",
-      });
-    } catch (error) {
-      console.error("Error deleting subscriber:", error);
-      toast({
-        title: "Error deleting subscriber",
-        description: "Failed to delete subscriber",
-        variant: "destructive",
-      });
+      toast.error("Failed to save settings data");
     }
   };
 
@@ -361,7 +351,7 @@ export default function Settings() {
                   </div>
                   <Switch
                     checked={emailSettings.enable_newsletters}
-                    onCheckedChange={(checked) =>
+                    onCheckedChange={(checked: boolean) =>
                       handleEmailChange("enable_newsletters", checked)
                     }
                   />
@@ -376,7 +366,7 @@ export default function Settings() {
                   </div>
                   <Switch
                     checked={emailSettings.auto_welcome_email}
-                    onCheckedChange={(checked) =>
+                    onCheckedChange={(checked: boolean) =>
                       handleEmailChange("auto_welcome_email", checked)
                     }
                   />
@@ -463,7 +453,7 @@ export default function Settings() {
                   </div>
                   <Switch
                     checked={emailSettings.auto_welcome_email}
-                    onCheckedChange={(checked) =>
+                    onCheckedChange={(checked: boolean) =>
                       handleEmailChange("auto_welcome_email", checked)
                     }
                   />
@@ -498,7 +488,7 @@ export default function Settings() {
                   </div>
                   <Switch
                     checked={settings.enable_stripe}
-                    onCheckedChange={(checked) =>
+                    onCheckedChange={(checked: boolean) =>
                       handleChange("enable_stripe", checked)
                     }
                   />
@@ -608,7 +598,7 @@ export default function Settings() {
                       </div>
                       <Switch
                         checked={settings.enable_donations}
-                        onCheckedChange={(checked) =>
+                        onCheckedChange={(checked: boolean) =>
                           handleChange("enable_donations", checked)
                         }
                       />
@@ -622,7 +612,7 @@ export default function Settings() {
                       </div>
                       <Switch
                         checked={settings.enable_membership}
-                        onCheckedChange={(checked) =>
+                        onCheckedChange={(checked: boolean) =>
                           handleChange("enable_membership", checked)
                         }
                       />
@@ -636,7 +626,7 @@ export default function Settings() {
                       </div>
                       <Switch
                         checked={settings.maintenance_mode}
-                        onCheckedChange={(checked) =>
+                        onCheckedChange={(checked: boolean) =>
                           handleChange("maintenance_mode", checked)
                         }
                       />
@@ -700,7 +690,7 @@ export default function Settings() {
                   </div>
                   <Switch
                     checked={settings.enable_donations}
-                    onCheckedChange={(checked) =>
+                    onCheckedChange={(checked: boolean) =>
                       handleChange("enable_donations", checked)
                     }
                   />
@@ -714,7 +704,7 @@ export default function Settings() {
                   </div>
                   <Switch
                     checked={settings.enable_membership}
-                    onCheckedChange={(checked) =>
+                    onCheckedChange={(checked: boolean) =>
                       handleChange("enable_membership", checked)
                     }
                   />
@@ -728,7 +718,7 @@ export default function Settings() {
                   </div>
                   <Switch
                     checked={settings.enable_email_notifications}
-                    onCheckedChange={(checked) =>
+                    onCheckedChange={(checked: boolean) =>
                       handleChange("enable_email_notifications", checked)
                     }
                   />
@@ -742,7 +732,7 @@ export default function Settings() {
                   </div>
                   <Switch
                     checked={settings.enable_newsletter}
-                    onCheckedChange={(checked) =>
+                    onCheckedChange={(checked: boolean) =>
                       handleChange("enable_newsletter", checked)
                     }
                   />
@@ -756,7 +746,7 @@ export default function Settings() {
                   </div>
                   <Switch
                     checked={settings.maintenance_mode}
-                    onCheckedChange={(checked) =>
+                    onCheckedChange={(checked: boolean) =>
                       handleChange("maintenance_mode", checked)
                     }
                   />
@@ -767,8 +757,8 @@ export default function Settings() {
         </Tabs>
 
         <div className="mt-6">
-          <Button type="submit" disabled={saving}>
-            {saving ? "Saving..." : "Save Settings"}
+          <Button type="submit">
+            Save Settings
           </Button>
         </div>
       </form>
