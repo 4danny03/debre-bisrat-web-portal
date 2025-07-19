@@ -1,3 +1,4 @@
+import { User, CreditCard, MapPin, Users } from "lucide-react";
 import { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
