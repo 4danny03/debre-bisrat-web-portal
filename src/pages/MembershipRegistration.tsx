@@ -70,9 +70,10 @@ const MemberDashboard: React.FC = () => {
       try {
         const user = await supabase.auth.getUser();
         if (!user?.data?.user) return;
+        // Add Accept header to fix 406 error
         const { data: memberData, error } = await supabase
           .from("members")
-          .select("*")
+          .select("*", { head: false })
           .eq("email", user.data.user.email)
           .single();
         if (error) throw error;
