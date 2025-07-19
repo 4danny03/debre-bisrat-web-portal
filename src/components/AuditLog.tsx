@@ -28,12 +28,13 @@ import {
 import { dataSyncService } from "@/services/DataSyncService";
 import { format } from "date-fns";
 import { useToast } from "@/components/ui/use-toast";
+import { Json } from "@/types/supabase";
 
 interface AuditLogEntry {
   id: string;
   action: string;
   table: string;
-  data?: any;
+  data?: Json;
   user_id?: string;
   userId?: string;
   timestamp: string;
@@ -312,9 +313,9 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
                           <p className="text-sm text-gray-600">
                             Table: {action.table}
                           </p>
-                          {action.data?.preview && (
+                          {typeof action.data === "object" && action.data !== null && "preview" in action.data && (
                             <p className="text-xs text-gray-500 truncate">
-                              Data: {action.data.preview}
+                              Data: {(action.data as { preview?: string }).preview}
                             </p>
                           )}
                           <div className="flex items-center space-x-4 text-xs text-gray-400 mt-1">
@@ -365,9 +366,9 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
                           <p className="text-sm text-gray-600">
                             Table: {action.table}
                           </p>
-                          {action.data?.preview && (
+                          {typeof action.data === "object" && action.data !== null && "preview" in action.data && (
                             <p className="text-xs text-gray-500 truncate">
-                              Data: {action.data.preview}
+                              Data: {(action.data as { preview?: string }).preview}
                             </p>
                           )}
                           <div className="flex items-center space-x-4 text-xs text-gray-400 mt-1">

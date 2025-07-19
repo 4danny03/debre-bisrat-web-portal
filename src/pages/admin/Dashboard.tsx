@@ -130,7 +130,6 @@ export default function Dashboard() {
         supabase.from("sermons").select("*", { count: "exact", head: true }),
       ]);
 
-// ...existing code...
       // Extract results with fallbacks
       const [
         eventsRes,
@@ -189,66 +188,7 @@ export default function Dashboard() {
 
       // Load recent activity
       await loadRecentActivity();
-// ...existing code...
-      // Extract results with fallbacks
-      const [
-        eventsRes,
-        membersRes,
-        donationsRes,
-        testimonialsRes,
-        prayerRequestsRes,
-        sermonsRes,
-      ] = results.map((result, index) => {
-        const tableNames = [
-          "events",
-          "members",
-          "donations",
-          "testimonials",
-          "prayer_requests",
-          "sermons",
-        ];
-        if (result.status === "rejected") {
-          console.error(
-            `Dashboard data load failed for ${tableNames[index]}:`,
-            result.reason,
-          );
-          toast({
-            title: "Warning",
-            description: `Failed to load ${tableNames[index]} data`,
-            variant: "destructive",
-          });
-          return { data: null, count: 0, error: result.reason };
-        }
-        return result.value;
-      });
-
-      // Calculate recent donation amount (last 30 days)
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-      const recentDonations =
-        donationsRes?.data?.filter(
-          (d) => d?.created_at && new Date(d.created_at) >= thirtyDaysAgo,
-        ) || [];
-
-      const recentDonationAmount = recentDonations.reduce(
-        (sum, d) => sum + (d?.amount || 0),
-        0,
-      );
-
-      setStats({
-        totalEvents: eventsRes?.count || 0,
-        totalMembers: membersRes?.count || 0,
-        totalDonations: donationsRes?.data?.length || 0,
-        totalTestimonials: testimonialsRes?.count || 0,
-        totalPrayerRequests: prayerRequestsRes?.count || 0,
-        totalSermons: sermonsRes?.count || 0,
-        recentDonationAmount,
-      });
-
-      // Load recent activity
-      await loadRecentActivity();
->>>>>>> main
+      // Resolved merge conflict: removed conflict marker and retained main branch logic
     } catch (error) {
       console.error("Error loading dashboard data:", error);
       toast({

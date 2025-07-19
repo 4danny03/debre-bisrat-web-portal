@@ -26,6 +26,18 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle, User, CreditCard, MapPin, Users } from "lucide-react";
+import { User as SupabaseUser } from "@supabase/supabase-js";
+
+interface Member {
+  full_name?: string;
+  email?: string;
+  membership_status?: string;
+  membership_type?: string;
+  next_renewal_date?: string;
+  membership_card_number?: string;
+  orientation_completed?: boolean;
+  integration_status?: string;
+}
 
 interface FormData {
   firstName: string;
@@ -44,11 +56,12 @@ interface FormData {
   preferredLanguage: string;
   emailUpdates: boolean;
   agreeToTerms: boolean;
+  children?: Array<{ name: string; age: string }>;
 }
 
 // Member dashboard for authenticated users
 const MemberDashboard: React.FC = () => {
-  const [member, setMember] = useState<any>(null);
+  const [member, setMember] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   useEffect(() => {
@@ -64,10 +77,14 @@ const MemberDashboard: React.FC = () => {
           .single();
         if (error) throw error;
         setMember(memberData);
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const errorMessage =
+          typeof err === "object" && err !== null && "message" in err
+            ? (err as { message?: string }).message
+            : String(err);
         toast({
           title: "Error",
-          description: err.message || String(err),
+          description: errorMessage,
           variant: "destructive",
         });
       } finally {
@@ -82,26 +99,26 @@ const MemberDashboard: React.FC = () => {
     <div className="my-8">
       <h2 className="text-lg font-bold mb-2">Your Membership</h2>
       <div>
-        <b>Name:</b> {member.full_name}
+        <b>Name:</b> {String(member?.full_name ?? "")}
       </div>
       <div>
-        <b>Email:</b> {member.email}
+        <b>Email:</b> {String(member?.email ?? "")}
       </div>
       <div>
-        <b>Status:</b> {member.membership_status}
+        <b>Status:</b> {String(member?.membership_status ?? "")}
       </div>
       <div>
-        <b>Type:</b> {member.membership_type}
+        <b>Type:</b> {String(member?.membership_type ?? "")}
       </div>
       <div>
-        <b>Renewal Due:</b> {member.next_renewal_date || "N/A"}
+        <b>Renewal Due:</b> {String(member?.next_renewal_date ?? "N/A")}
       </div>
-      {member.membership_card_number && (
+      {member?.membership_card_number && (
         <div>
-          <b>Membership Card:</b> {member.membership_card_number}
+          <b>Membership Card:</b> {String(member.membership_card_number)}
         </div>
       )}
-      {member.orientation_completed && (
+      {member?.orientation_completed && (
         <div>
           <b>Orientation:</b> Completed
         </div>
@@ -143,7 +160,8 @@ const MembershipRegistration = () => {
     agreeToTerms: false,
   });
 
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  // Removed unused children state
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data?.user || null));
@@ -200,7 +218,7 @@ const MembershipRegistration = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
   };
 
-  const handleInputChange = (field: keyof FormData, value: any) => {
+  const handleInputChange = (field: keyof FormData, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (formErrors[field]) {
@@ -208,40 +226,13 @@ const MembershipRegistration = () => {
     }
   };
 
-<<<<<<< HEAD
-  const handleArrayChange = (field: keyof FormData, values: string[]) => {
-    setFormData((prev) => ({ ...prev, [field]: values }));
-  };
+  // Removed unused child management functions
 
-  const addChild = () => {
-    setChildren((prev) => [...prev, { name: "", age: "" }]);
-  };
-
-  const removeChild = (index: number) => {
-    setChildren((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const updateChild = (index: number, field: "name" | "age", value: string) => {
-    setChildren((prev) =>
-      prev.map((child, i) =>
-        i === index ? { ...child, [field]: value } : child,
-      ),
-    );
-  };
-
-  useEffect(() => {
-    if (Array.isArray(children)) {
-      setFormData((prev) => ({ ...prev, children }));
-    }
-  }, [children]);
+  // Removed useEffect for children state
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateStep(currentStep)) return;
-=======
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
->>>>>>> main
     setIsSubmitting(true);
     setError(null);
     try {
@@ -273,13 +264,13 @@ const MembershipRegistration = () => {
       };
 
       // Call Edge Function for registration
-      const response = await fetch("/functions/v1/membership-management", {
+      const fetchResponse = await fetch("/functions/v1/membership-management", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(memberPayload),
       });
-      const result = await response.json();
-      if (!response.ok || result.error) {
+      const result = await fetchResponse.json();
+      if (!fetchResponse.ok || result.error) {
         throw new Error(result.error || "Registration failed");
       }
       const memberData = result.member;
@@ -308,7 +299,6 @@ const MembershipRegistration = () => {
         membershipType: formData.membershipType,
       };
 
-<<<<<<< HEAD
       console.log("Invoking create-checkout function with data:", checkoutData);
       console.log(
         "Membership fee for type",
@@ -317,41 +307,45 @@ const MembershipRegistration = () => {
         membershipFee,
       );
 
-      const response = await supabase.functions.invoke(
+      const supabaseResponse = await supabase.functions.invoke(
         "supabase-functions-create-checkout",
         {
           body: checkoutData,
         },
       );
-=======
-      const checkoutResponse = await supabase.functions.invoke("create-checkout", {
-        body: checkoutData,
-      });
->>>>>>> main
 
-      if (checkoutResponse.error) {
+      if ((supabaseResponse as any).error) {
         throw new Error(
-          `Payment initiation failed: ${checkoutResponse.error.message || "Unknown error"}`,
+          `Payment initiation failed: ${(supabaseResponse as any).error.message || "Unknown error"}`,
         );
       }
 
-      if (!checkoutResponse.data?.url) {
+      if (!(supabaseResponse as any).data?.url) {
         throw new Error("No checkout URL received");
       }
 
-      window.location.href = checkoutResponse.data.url;
-    } catch (error: any) {
+      window.location.href = (supabaseResponse as any).data.url;
+    } catch (error: unknown) {
+      let errorMessage = "Registration failed. Please try again.";
+      if (typeof error === "object" && error !== null) {
+        if ("message" in error && typeof (error as any).message === "string") {
+          errorMessage = (error as any).message;
+        } else if ("error_description" in error && typeof (error as any).error_description === "string") {
+          errorMessage = (error as any).error_description;
+        } else {
+          errorMessage = JSON.stringify(error);
+        }
+      } else if (typeof error === "string") {
+        errorMessage = error;
+      }
       console.error("Membership registration error:", error);
-      let errorMsg =
-        (error && (error.message || error.error_description || error.toString())) ||
-        (typeof error === "object" ? JSON.stringify(error) : String(error));
       toast({
         variant: "destructive",
         title: "Registration Error",
         description:
-          "There was an error processing your membership registration. " + errorMsg,
+          "There was an error processing your membership registration. " + errorMessage,
       });
-      setError(error.message || "Registration failed. Please try again.");
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
