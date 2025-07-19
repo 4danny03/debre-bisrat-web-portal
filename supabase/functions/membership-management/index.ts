@@ -59,6 +59,10 @@ function isRateLimited(ip: string, limit = 5, windowMs = 60_000): boolean {
 // @ts-expect-error Deno global is available in Supabase Edge runtime
 Deno.serve(async (req: Request) => {
   const url = new URL(req.url);
+  // Robust CORS: handle OPTIONS preflight
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { status: 200, headers: corsHeaders });
+  }
   if (url.pathname === "/health") {
     // Health check endpoint
     return new Response(
@@ -84,19 +88,19 @@ Deno.serve(async (req: Request) => {
     if (req.method === "POST") {
       // Rate limit public registration
       if (isRateLimited(ip)) {
-        throw new Error('Too many requests. Please try again later.');
+        return new Response(JSON.stringify({ error: 'Too many requests. Please try again later.' }), { status: 429, headers: corsHeaders });
       }
       // Create new member registration
       const memberData = (await req.json()) as MemberData;
 
       // Validate required fields
       if (!memberData.full_name || !memberData.email) {
-        throw new Error("Full name and email are required");
+        return new Response(JSON.stringify({ error: "Full name and email are required" }), { status: 400, headers: corsHeaders });
       }
 
       // Validate email format
       if (!validateEmail(memberData.email)) {
-        throw new Error("Invalid email format");
+        return new Response(JSON.stringify({ error: "Invalid email format" }), { status: 400, headers: corsHeaders });
       }
 
       // Sanitize input data
@@ -133,7 +137,7 @@ Deno.serve(async (req: Request) => {
         .single();
 
       if (existingMember) {
-        throw new Error("A member with this email already exists");
+        return new Response(JSON.stringify({ error: "A member with this email already exists" }), { status: 409, headers: corsHeaders });
       }
 
       // Insert new member
@@ -143,7 +147,9 @@ Deno.serve(async (req: Request) => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: corsHeaders });
+      }
 
       // Audit log
       await logAudit('create', 'member', newMember.id);
@@ -161,7 +167,7 @@ Deno.serve(async (req: Request) => {
         ]);
       }
 
-      return formatSuccessResponse({ member: newMember }, 201);
+      return new Response(JSON.stringify({ member: newMember }), { status: 201, headers: corsHeaders });
     } else if (req.method === "PUT" && memberId) {
       // Update member
       const updates = (await req.json()) as MemberUpdate;
@@ -176,7 +182,7 @@ Deno.serve(async (req: Request) => {
         sanitizedUpdates.full_name = sanitizeString(updates.full_name, 100);
       }
       if (updates.email && !validateEmail(updates.email)) {
-        throw new Error("Invalid email format");
+        return new Response(JSON.stringify({ error: "Invalid email format" }), { status: 400, headers: corsHeaders });
       }
 
       const { data: updatedMember, error } = await supabaseClient
@@ -186,16 +192,18 @@ Deno.serve(async (req: Request) => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: corsHeaders });
+      }
       await logAudit('update', 'member', memberId);
       // Send profile update notification
       await sendNotification('profile_updated', { email: updatedMember.email, name: updatedMember.full_name });
-      return formatSuccessResponse({ member: updatedMember });
+      return new Response(JSON.stringify({ member: updatedMember }), { status: 200, headers: corsHeaders });
     } else if (req.method === "PATCH" && memberId && action) {
       // Special actions on members
       const authHeader = req.headers.get("Authorization");
       if (!authHeader) {
-        throw new Error("Authorization required");
+        return new Response(JSON.stringify({ error: "Authorization required" }), { status: 401, headers: corsHeaders });
       }
 
       const token = authHeader.replace("Bearer ", "");
@@ -205,7 +213,7 @@ Deno.serve(async (req: Request) => {
       } = await supabaseClient.auth.getUser(token);
 
       if (authError || !user) {
-        throw new Error("Unauthorized");
+        return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
       }
 
       let updateData: any = { updated_at: new Date().toISOString() };
@@ -248,7 +256,7 @@ Deno.serve(async (req: Request) => {
           await sendNotification('integration_completed', { memberId });
           break;
         default:
-          throw new Error(`Unknown action: ${action}`);
+          return new Response(JSON.stringify({ error: `Unknown action: ${action}` }), { status: 400, headers: corsHeaders });
       }
       const { data: updatedMember, error } = await supabaseClient
         .from("members")
@@ -257,14 +265,16 @@ Deno.serve(async (req: Request) => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: corsHeaders });
+      }
       await logAudit('patch', 'member', memberId);
-      return formatSuccessResponse({ member: updatedMember });
+      return new Response(JSON.stringify({ member: updatedMember }), { status: 200, headers: corsHeaders });
     }
 
-    return formatErrorResponse(new Error("Method not allowed"), 405);
+    return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: corsHeaders });
   } catch (error) {
-    return formatErrorResponse(error as Error);
+    return new Response(JSON.stringify({ error: (error as Error).message }), { status: 500, headers: corsHeaders });
   }
 });
 // API versioning, monitoring, and renewal reminders can be expanded here

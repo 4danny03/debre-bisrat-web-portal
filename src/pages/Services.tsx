@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+// import React, { useState, useEffect } from "react"; // removed duplicate and unused
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
 import { Settings, CalendarCheck } from "lucide-react";
@@ -31,8 +32,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
-import { api } from "@/integrations/supabase/api";
-import { supabase } from "@/integrations/supabase/client";
 
 
 // Religious service images mapping with verified paths
@@ -63,66 +62,6 @@ const getServiceImage = (title: string): string => {
   return (
     (religiousServiceImages as Record<string, string>)[title] ||
     baseUrl + "images/gallery/church-service.jpg"
-  );
-};
-
-const UserAppointments: React.FC = () => {
-  const [appointments, setAppointments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-  useEffect(() => {
-    const fetchAppointments = async () => {
-      setLoading(true);
-      try {
-        const user = supabase.auth.getUser();
-        if (!user) return;
-        const result = await api.appointments.getAppointments();
-        setAppointments(result);
-      } catch (err: any) {
-        toast({
-          title: "Error",
-          description: err.message || String(err),
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAppointments();
-  }, []);
-  if (loading) return <div>Loading appointments...</div>;
-  if (!appointments.length) return <div>No appointments found.</div>;
-  return (
-    <div className="my-8">
-      <h2 className="text-lg font-bold mb-2">Your Appointments</h2>
-      <ul>
-        {appointments.map((appt) => (
-          <li key={appt.id} className="mb-4 border p-2 rounded">
-            <div>
-              <b>Service:</b> {appt.service_type}
-            </div>
-            <div>
-              <b>Date:</b> {appt.appointment_date}
-            </div>
-            <div>
-              <b>Status:</b> {appt.status}
-            </div>
-            {appt.admin_notes && (
-              <div>
-                <b>Admin Notes:</b> {appt.admin_notes}
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
-      <Button
-        onClick={() =>
-          window.open("/api/appointments/export_calendar", "_blank")
-        }
-      >
-        Export to Calendar
-      </Button>
-    </div>
   );
 };
 
@@ -161,11 +100,15 @@ const Services: React.FC = () => {
       // Direct insert using Supabase client (current method)
       // await api.appointments.createAppointment(appointmentPayload);
 
-      // Use Edge Function if available (recommended for validation, logging, etc.)
+
+      // Use Edge Function with required action/data format
       const response = await fetch("/functions/v1/appointment-management", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(appointmentPayload),
+        body: JSON.stringify({
+          action: "create",
+          data: appointmentPayload,
+        }),
       });
       const result = await response.json();
       if (!response.ok || result.error) {
@@ -311,12 +254,6 @@ const Services: React.FC = () => {
   const appointmentServices = [...regularServices, ...specialServices].filter(
     (s) => s.requiresAppointment,
   );
-
-  // Add user dashboard if authenticated
-  const [user, setUser] = useState<any>(null);
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data?.user || null));
-  }, []);
 
   return (
     <Layout>
