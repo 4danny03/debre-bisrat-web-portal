@@ -62,6 +62,17 @@ interface BulkOperation {
   createdAt: Date;
 }
 
+type TableName =
+  | "members"
+  | "appointments"
+  | "profiles"
+  | "donations"
+  | "events"
+  | "gallery"
+  | "prayer_requests"
+  | "sermons"
+  | "testimonials";
+
 export default function BulkOperations() {
   const [operations, setOperations] = useState<BulkOperation[]>([]);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -93,7 +104,7 @@ export default function BulkOperations() {
           .slice(1)
           .map((line) => {
             const values = line.split(",");
-            const obj: any = {};
+            const obj: Record<string, string> = {};
             headers.forEach((header, index) => {
               obj[header.trim()] = values[index]?.trim();
             });
@@ -106,7 +117,7 @@ export default function BulkOperations() {
     reader.readAsText(file);
   };
 
-  const handleBulkImport = async (table: string) => {
+  const handleBulkImport = async (table: TableName) => {
     if (!importData.trim()) {
       toast({
         title: "Error",
@@ -192,7 +203,7 @@ export default function BulkOperations() {
     }
   };
 
-  const handleBulkExport = async (table: string) => {
+  const handleBulkExport = async (table: TableName) => {
     try {
       const { data, error } = await supabase.from(table).select("*");
 
@@ -224,7 +235,7 @@ export default function BulkOperations() {
     }
   };
 
-  const handleBulkDelete = async (table: string, ids: string[]) => {
+  const handleBulkDelete = async (table: TableName, ids: string[]) => {
     if (ids.length === 0) {
       toast({
         title: "Error",
@@ -255,6 +266,7 @@ export default function BulkOperations() {
     }
   };
 
+  // Fix for bulk email logic
   const handleBulkEmail = async () => {
     if (!bulkEmailContent.subject || !bulkEmailContent.content) {
       toast({
@@ -267,9 +279,11 @@ export default function BulkOperations() {
 
     try {
       // Get all active email subscribers
-      const subscribers = await api.emailSubscribers.getSubscribers();
+      const subscribers = (await api.emailSubscribers.getSubscribers()) as Array<{ status: string }>;
       const activeSubscribers =
-        subscribers?.filter((s) => s.status === "active") || [];
+        Array.isArray(subscribers)
+          ? subscribers.filter((s) => s.status === "active")
+          : [];
 
       if (activeSubscribers.length === 0) {
         toast({

@@ -80,6 +80,20 @@ interface AnalyticsData {
   };
 }
 
+interface Donation {
+  amount: number;
+  purpose?: string;
+  created_at: string;
+}
+interface Member {
+  created_at: string;
+}
+interface Trend {
+  thisMonth: number;
+  lastMonth: number;
+  growth: number;
+}
+
 const COLORS = ["#7d2224", "#d4af37", "#228b22", "#4169e1", "#ff6347"];
 
 export default function Analytics() {
@@ -195,7 +209,7 @@ export default function Analytics() {
   };
 
   const processMonthlyData = (
-    items: any[],
+    items: unknown[],
     dateField: string,
     valueField?: string,
   ) => {
@@ -219,15 +233,13 @@ export default function Analytics() {
     }));
   };
 
-  const processPurposeData = (donations: any[]) => {
-    const purposeData: Record<string, number> = {};
+  const processPurposeData = (donations: Donation[]) => {
     const total = donations.reduce((sum, d) => sum + d.amount, 0);
-
+    const purposeData: Record<string, number> = {};
     donations.forEach((donation) => {
       const purpose = donation.purpose || "General Fund";
       purposeData[purpose] = (purposeData[purpose] || 0) + donation.amount;
     });
-
     return Object.entries(purposeData).map(([purpose, amount]) => ({
       purpose,
       amount,
@@ -235,7 +247,7 @@ export default function Analytics() {
     }));
   };
 
-  const processTypeData = (members: any[], typeField: string) => {
+  const processTypeData = (members: Member[], typeField: string) => {
     const typeData: Record<string, number> = {};
     const total = members.length;
 
@@ -251,26 +263,24 @@ export default function Analytics() {
     }));
   };
 
-  const calculateTrends = (items: any[], valueField?: string) => {
+  const calculateTrends = (items: { created_at: string }[], valueField?: string): Trend => {
     const now = new Date();
-    const thisMonthStart = startOfMonth(now);
-    const lastMonthStart = startOfMonth(subDays(now, 30));
-    const lastMonthEnd = endOfMonth(subDays(now, 30));
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
 
-    const thisMonth = items.filter(
-      (item) => new Date(item.created_at) >= thisMonthStart,
-    );
-    const lastMonth = items.filter((item) => {
+    const thisMonthItems = items.filter((item) => new Date(item.created_at) >= thisMonthStart);
+    const lastMonthItems = items.filter((item) => {
       const date = new Date(item.created_at);
       return date >= lastMonthStart && date <= lastMonthEnd;
     });
 
     const thisMonthValue = valueField
-      ? thisMonth.reduce((sum, item) => sum + (item[valueField] || 0), 0)
-      : thisMonth.length;
+      ? thisMonthItems.reduce((sum, item) => sum + (item as any)[valueField], 0)
+      : thisMonthItems.length;
     const lastMonthValue = valueField
-      ? lastMonth.reduce((sum, item) => sum + (item[valueField] || 0), 0)
-      : lastMonth.length;
+      ? lastMonthItems.reduce((sum, item) => sum + (item as any)[valueField], 0)
+      : lastMonthItems.length;
 
     const growth =
       lastMonthValue > 0

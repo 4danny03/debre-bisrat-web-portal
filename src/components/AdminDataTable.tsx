@@ -16,14 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Search, ChevronLeft, ChevronRight, Filter } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
 
 interface Column<T> {
@@ -46,7 +40,7 @@ interface AdminDataTableProps<T> {
   onRefresh?: () => void;
 }
 
-export default function AdminDataTable<T extends Record<string, any>>({
+export default function AdminDataTable<T extends Record<string, unknown>>({
   data,
   columns,
   title,
@@ -57,8 +51,8 @@ export default function AdminDataTable<T extends Record<string, any>>({
   loading = false,
   onRefresh,
 }: AdminDataTableProps<T>) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState<number>(1);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [filters, setFilters] = useState<Record<string, string>>({});

@@ -6,13 +6,13 @@
  * Safely access nested object properties
  */
 export function safeGet<T>(
-  obj: any,
+  obj: unknown,
   path: string,
   defaultValue?: T,
 ): T | undefined {
   try {
     const keys = path.split(".");
-    let result = obj;
+    let result: unknown = obj;
 
     for (const key of keys) {
       if (result == null || typeof result !== "object") {
@@ -21,7 +21,7 @@ export function safeGet<T>(
       result = result[key];
     }
 
-    return result !== undefined ? result : defaultValue;
+    return result !== undefined ? (result as T) : defaultValue;
   } catch {
     return defaultValue;
   }
@@ -45,7 +45,7 @@ export function safeJsonParse<T>(jsonString: string, fallback: T): T {
 /**
  * Safely stringify JSON
  */
-export function safeJsonStringify(obj: any, fallback = "{}"): string {
+export function safeJsonStringify(obj: unknown, fallback = "{}"): string {
   try {
     return JSON.stringify(obj) || fallback;
   } catch {
@@ -70,7 +70,7 @@ export function safeArrayAccess<T>(
 /**
  * Safely convert to string
  */
-export function safeString(value: any, fallback = ""): string {
+export function safeString(value: unknown, fallback = ""): string {
   if (value == null) return fallback;
   if (typeof value === "string") return value;
   try {
@@ -83,7 +83,7 @@ export function safeString(value: any, fallback = ""): string {
 /**
  * Safely convert to number
  */
-export function safeNumber(value: any, fallback = 0): number {
+export function safeNumber(value: unknown, fallback = 0): number {
   if (typeof value === "number" && !isNaN(value)) return value;
   if (typeof value === "string") {
     const parsed = parseFloat(value);
@@ -95,7 +95,7 @@ export function safeNumber(value: any, fallback = 0): number {
 /**
  * Safely check if object has property
  */
-export function safeHasProperty(obj: any, prop: string): boolean {
+export function safeHasProperty(obj: unknown, prop: string): boolean {
   return (
     obj != null &&
     typeof obj === "object" &&
@@ -106,7 +106,7 @@ export function safeHasProperty(obj: any, prop: string): boolean {
 /**
  * Safely get object keys
  */
-export function safeObjectKeys(obj: any): string[] {
+export function safeObjectKeys(obj: unknown): string[] {
   if (obj == null || typeof obj !== "object") {
     return [];
   }
@@ -120,12 +120,12 @@ export function safeObjectKeys(obj: any): string[] {
 /**
  * Safely get object entries
  */
-export function safeObjectEntries(obj: any): [string, any][] {
+export function safeObjectEntries(obj: unknown): [string, unknown][] {
   if (obj == null || typeof obj !== "object") {
     return [];
   }
   try {
-    return Object.entries(obj);
+    return Object.entries(obj) as [string, unknown][];
   } catch {
     return [];
   }

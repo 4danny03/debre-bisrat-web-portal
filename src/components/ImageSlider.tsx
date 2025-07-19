@@ -1,4 +1,4 @@
-import { useState, useEffect, type FC } from "react";
+import { useState, useEffect } from "react";
 
 interface SlideProps {
   image: string;
@@ -12,8 +12,6 @@ interface ImageSliderProps {
 
 const ImageSlider: React.FC<ImageSliderProps> = ({ slides }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [imageLoaded, setImageLoaded] = useState<{ [key: number]: boolean }>(
     {},
   );
@@ -56,19 +54,11 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ slides }) => {
 
   const handleImageLoad = (index: number) => {
     setImageLoaded((prev) => ({ ...prev, [index]: true }));
-    if (index === 0) {
-      setIsLoading(false);
-      setError(null);
-    }
   };
 
   const handleImageError = (index: number) => {
     console.error(`Failed to load image at index ${index}`);
     setImageLoaded((prev) => ({ ...prev, [index]: false }));
-    if (index === 0) {
-      setIsLoading(false);
-      setError("Failed to load image");
-    }
   };
 
   if (!slides || slides.length === 0) {

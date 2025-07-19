@@ -266,7 +266,7 @@ const MembershipRegistration: FC = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
   };
 
-  const handleInputChange = (field: keyof FormData, value: any) => {
+  const handleInputChange = (field: keyof FormData, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (formErrors[field]) {
@@ -1514,7 +1514,7 @@ const MembershipRegistration: FC = () => {
       english: "እንግሊዝኛ",
       amharic: "አማርኛ",
       contactMethod: "የመረጡት የመገናኛ ዘዴ",
-      emailUpdates: "ስለ ቤተክርስቲያን ዝግጅቶች እና ዜናዎች በኢሜይል መረጃዎችን መቀበል እፈልጋለሁ",
+      emailUpdates: "ስለ ቤተክርስቲያናችን ዝግጅቶች እና ዜናዎች በኢሜይል መረጃዎችን መቀበል እፈልጋለሁ",
       smsUpdates: "ለአስቸኳይ ማስታወቂያዎች በኤስኤምኤስ መረጃዎችን መቀበል እፈልጋለሁ",
       howDidYouHear: "ስለ ቤተክርስቲያናችን እንዴት ሰሙ?",
       additionalNotes: "ተጨማሪ ማስታወሻዎች ወይም አስተያየቶች",

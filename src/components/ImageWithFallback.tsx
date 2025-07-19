@@ -15,8 +15,8 @@ const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
   className = "",
   onError,
 }) => {
-  const [imgSrc, setImgSrc] = useState(src);
-  const [hasError, setHasError] = useState(false);
+  const [imgSrc, setImgSrc] = useState<string>(src);
+  const [hasError, setHasError] = useState<boolean>(false);
 
   const handleError = () => {
     if (!hasError && imgSrc !== fallbackSrc) {

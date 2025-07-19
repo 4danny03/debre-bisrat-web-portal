@@ -11,7 +11,6 @@ const ENV_DEFAULTS = {
 if (typeof window !== "undefined") {
   Object.entries(ENV_DEFAULTS).forEach(([key, value]) => {
     if (!import.meta.env[key]) {
-      // @ts-ignore
       import.meta.env[key] = value;
     }
   });
@@ -70,7 +69,6 @@ export const validateEnv = (): void => {
     // Ensure defaults are set
     Object.entries(ENV_DEFAULTS).forEach(([key, value]) => {
       if (!import.meta.env[key]) {
-        // @ts-ignore
         import.meta.env[key] = value;
       }
     });

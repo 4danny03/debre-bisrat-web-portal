@@ -10,6 +10,17 @@ export interface DatabaseHealthCheck {
   tables: Record<string, boolean>;
 }
 
+type TableName =
+  | "profiles"
+  | "events"
+  | "members"
+  | "donations"
+  | "sermons"
+  | "gallery"
+  | "testimonials"
+  | "prayer_requests"
+  | "appointments";
+
 /**
  * Check the health of all database tables used by the admin system
  */
@@ -20,7 +31,7 @@ export async function checkDatabaseHealth(): Promise<DatabaseHealthCheck> {
     tables: {},
   };
 
-  const tables = [
+  const tables: TableName[] = [
     "profiles",
     "events",
     "members",
@@ -38,15 +49,15 @@ export async function checkDatabaseHealth(): Promise<DatabaseHealthCheck> {
 
       if (error) {
         result.tables[table] = false;
-        result.errors.push(`${table}: ${error.message}`);
+        result.errors.push(`${table}: ${(error as Error).message ?? String(error)}`);
         result.isHealthy = false;
       } else {
         result.tables[table] = true;
       }
-    } catch (err) {
+    } catch (err: unknown) {
       result.tables[table] = false;
       result.errors.push(
-        `${table}: ${err instanceof Error ? err.message : "Unknown error"}`,
+        `${table}: ${err instanceof Error ? err.message : String(err)}`,
       );
       result.isHealthy = false;
     }
@@ -59,11 +70,11 @@ export async function checkDatabaseHealth(): Promise<DatabaseHealthCheck> {
  * Safe data loader with error handling and retries
  */
 export async function safeDataLoader<T>(
-  operation: () => Promise<{ data: T[] | null; error: any }>,
+  operation: () => Promise<{ data: T[] | null; error: unknown }>,
   tableName: string,
   retries: number = 2,
 ): Promise<{ data: T[]; error: string | null }> {
-  let lastError: any = null;
+  let lastError: unknown = null;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
@@ -126,7 +137,7 @@ export async function safeDataLoader<T>(
  */
 export async function validateAdminAuth(): Promise<{
   isValid: boolean;
-  user: any;
+  user: unknown;
   error?: string;
 }> {
   try {
@@ -207,17 +218,17 @@ export async function safeOperation<T>(
 /**
  * Format error messages for user display
  */
-export function formatErrorMessage(error: any, context?: string): string {
+export function formatErrorMessage(error: unknown, context?: string): string {
   if (!error) return "Unknown error occurred";
 
   let message = "";
 
   if (typeof error === "string") {
     message = error;
-  } else if (error.message) {
-    message = error.message;
-  } else if (error.error_description) {
-    message = error.error_description;
+  } else if ((error as Error).message) {
+    message = (error as Error).message;
+  } else if ((error as { error_description?: string }).error_description) {
+    message = (error as { error_description?: string }).error_description;
   } else {
     message = "An unexpected error occurred";
   }
@@ -242,7 +253,7 @@ export function formatErrorMessage(error: any, context?: string): string {
 /**
  * Debounce function to prevent rapid successive calls
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number,
 ): (...args: Parameters<T>) => void {
@@ -256,7 +267,7 @@ export function debounce<T extends (...args: any[]) => any>(
 /**
  * Log admin actions for audit trail
  */
-export function logAdminAction(action: string, table: string, details?: any) {
+export function logAdminAction(action: string, table: string, details?: unknown) {
   const logEntry = {
     timestamp: new Date().toISOString(),
     action,

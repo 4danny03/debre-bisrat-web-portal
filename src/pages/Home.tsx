@@ -242,7 +242,7 @@ const Home: React.FC = () => {
     } finally {
       setLoadingEvents(false);
     }
-  }, []);
+  }, [language]);
 
   useEffect(() => {
     fetchUpcomingEvents();

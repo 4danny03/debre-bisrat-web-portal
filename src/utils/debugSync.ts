@@ -71,7 +71,7 @@ export default DebugSyncService;
 
 // Simplified global debug functions
 if (typeof window !== "undefined") {
-  (window as any).debugSync = {
+  (window as unknown as { debugSync: unknown }).debugSync = {
     capture: () => debugSyncService.captureDebugInfo(),
     log: () => debugSyncService.getDebugLog(),
     export: () => debugSyncService.exportDebugInfo(),

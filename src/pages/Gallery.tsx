@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
 import { Image, X, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
@@ -215,7 +215,7 @@ const Gallery: React.FC = () => {
     },
   ];
 
-  const fetchGalleryImages = async () => {
+  const fetchGalleryImages = useCallback(async () => {
     try {
       setLoading(true);
       const data = await api.gallery.getGalleryImages();
@@ -238,11 +238,11 @@ const Gallery: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [api.gallery, fallbackImages, language]);
 
   useEffect(() => {
     fetchGalleryImages();
-  }, [language]);
+  }, [fetchGalleryImages]);
 
   // Removed data refresh hook to prevent circular dependencies
 

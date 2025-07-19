@@ -2,11 +2,16 @@
  * Git synchronization service for handling repository operations
  * This service helps with git-related issues in the Tempo platform
  */
+interface GitSyncData {
+  // Define properties as needed for git sync operations
+}
 class GitSyncService {
   private static instance: GitSyncService;
   private syncInProgress = false;
   private lastSyncTime: Date | null = null;
   private syncErrors: string[] = [];
+  private syncQueue: Array<GitSyncData> = [];
+  private lastSyncData?: GitSyncData;
 
   private constructor() {}
 
@@ -24,8 +29,8 @@ class GitSyncService {
     // Check if we're in the Tempo platform environment
     return (
       typeof window !== "undefined" &&
-      (window as any).tempo &&
-      (window as any).tempo.git
+      typeof (window as any).tempo === "object" &&
+      typeof (window as any).tempo.git === "object"
     );
   }
 
@@ -44,8 +49,8 @@ class GitSyncService {
       }
 
       // Use Tempo's git API if available
-      const tempoGit = (window as any).tempo.git;
-      const status = await tempoGit.getStatus();
+      const tempoGit = (window as any).tempo?.git;
+      const status = await tempoGit?.getStatus();
 
       return {
         hasChanges: status.hasChanges || false,
@@ -81,7 +86,7 @@ class GitSyncService {
         throw new Error("Git sync not available in current environment");
       }
 
-      const tempoGit = (window as any).tempo.git;
+      const tempoGit = (window as any).tempo?.git;
 
       // Stage files
       if (files && files.length > 0) {
@@ -123,8 +128,8 @@ class GitSyncService {
         throw new Error("Git sync not available in current environment");
       }
 
-      const tempoGit = (window as any).tempo.git;
-      await tempoGit.push();
+      const tempoGit = (window as any).tempo?.git;
+      await tempoGit?.push();
 
       console.log("Successfully pushed changes to remote");
       return true;
@@ -155,8 +160,8 @@ class GitSyncService {
         throw new Error("Git sync not available in current environment");
       }
 
-      const tempoGit = (window as any).tempo.git;
-      await tempoGit.pull();
+      const tempoGit = (window as any).tempo?.git;
+      await tempoGit?.pull();
 
       console.log("Successfully pulled changes from remote");
       return true;

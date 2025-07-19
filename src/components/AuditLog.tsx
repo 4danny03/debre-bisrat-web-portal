@@ -23,7 +23,6 @@ import {
   Database,
   Download,
   RefreshCw,
-  Filter,
   Eye,
 } from "lucide-react";
 import { dataSyncService } from "@/services/DataSyncService";
@@ -35,22 +34,35 @@ interface AuditLogProps {
 }
 
 const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
-  const [actions, setActions] = useState<any[]>([]);
-  const [criticalActions, setCriticalActions] = useState<any[]>([]);
-  const [statistics, setStatistics] = useState<any>(null);
+  interface AuditAction {
+    action: string;
+    table: string;
+    data?: { preview?: string };
+    userId?: string;
+    sessionId?: string;
+    timestamp?: string;
+    details?: string;
+  }
+
+  interface AuditStatistics {
+    today?: number;
+    thisWeek?: number;
+    criticalCount?: number;
+    total?: number;
+    byAction?: Record<string, number>;
+    byUser?: Record<string, number>;
+  }
+
+  const [actions, setActions] = useState<AuditAction[]>([]);
+  const [criticalActions, setCriticalActions] = useState<AuditAction[]>([]);
+  const [statistics, setStatistics] = useState<AuditStatistics>({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [timeRange, setTimeRange] = useState("week");
   const [activeTab, setActiveTab] = useState("recent");
   const { toast } = useToast();
 
-  useEffect(() => {
-    loadAuditData();
-    const interval = setInterval(loadAuditData, 30000); // Refresh every 30 seconds
-    return () => clearInterval(interval);
-  }, [filter, timeRange]);
-
-  const loadAuditData = async () => {
+  const loadAuditData = React.useCallback(async () => {
     try {
       setLoading(true);
 
@@ -80,8 +92,15 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
       const critical = dataSyncService.getCriticalActions(20);
       const stats = dataSyncService.getActionStatistics();
 
-      setActions(filter === "all" ? recentActions : filteredActions);
-      setCriticalActions(critical);
+      // Convert timestamp to string for AuditAction compatibility
+      const convertTimestamp = (arr: any[]): AuditAction[] =>
+        arr.map((item) => ({
+          ...item,
+          timestamp: item.timestamp ? String(item.timestamp) : undefined,
+        }));
+
+      setActions(filter === "all" ? convertTimestamp(recentActions) : convertTimestamp(filteredActions));
+      setCriticalActions(convertTimestamp(critical));
       setStatistics(stats);
     } catch (error) {
       console.error("Error loading audit data:", error);
@@ -93,7 +112,13 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter, timeRange, toast]);
+
+  useEffect(() => {
+    loadAuditData();
+    const interval = setInterval(loadAuditData, 30000); // Refresh every 30 seconds
+    return () => clearInterval(interval);
+  }, [loadAuditData]);
 
   const exportAuditLog = () => {
     const exportData = {
@@ -376,7 +401,7 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      {Object.entries(statistics.byAction).map(
+                      {Object.entries(statistics.byAction ?? {}).map(
                         ([action, count]) => (
                           <div
                             key={action}
@@ -400,7 +425,7 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      {Object.entries(statistics.byUser).map(
+                      {Object.entries(statistics.byUser ?? {}).map(
                         ([user, count]) => (
                           <div
                             key={user}

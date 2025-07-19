@@ -76,6 +76,11 @@ interface Appointment {
   responded_by_profile?: { email: string } | null;
 }
 
+interface User {
+  id: string;
+  // Add other properties as needed
+}
+
 export default function Appointments() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +88,7 @@ export default function Appointments() {
     useState<Appointment | null>(null);
   const [responseDialog, setResponseDialog] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {

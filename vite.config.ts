@@ -22,7 +22,6 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
     strictPort: true,
-    // @ts-ignore
     allowedHosts: process.env.TEMPO === "true" ? true : undefined,
   },
   build: {
@@ -33,6 +32,9 @@ export default defineConfig(({ mode }) => ({
         // Exclude all supabase functions from the build
         /^supabase\/functions/,
       ],
+      output: {
+        assetFileNames: '[name].[ext]'
+      }
     },
   },
   // Define globals for compatibility

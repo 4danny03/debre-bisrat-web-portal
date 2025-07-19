@@ -69,14 +69,24 @@ export default function ErrorDiagnostics() {
 
     for (const table of requiredTables) {
       try {
-        const { error } = await supabase.from(table).select("*").limit(1);
+        // Use only valid table names (string literal types)
+        const validTable = table as
+          | "profiles"
+          | "events"
+          | "members"
+          | "sermons"
+          | "gallery"
+          | "testimonials"
+          | "prayer_requests"
+          | "donations";
+        const { error } = await supabase.from(validTable).select("*").limit(1);
         diagnostics.push({
           name: `Table: ${table}`,
           status: error ? "fail" : "pass",
           message: error
             ? `Table access failed: ${error.message || "Unknown error"}`
             : "Table accessible",
-          details: error?.details || undefined,
+          details: error?.message || undefined,
         });
       } catch (error) {
         diagnostics.push({
@@ -99,7 +109,7 @@ export default function ErrorDiagnostics() {
         message: error
           ? `Storage error: ${error.message || "Unknown error"}`
           : "Storage accessible",
-        details: error?.details || undefined,
+        details: error?.message || undefined,
       });
     } catch (error) {
       diagnostics.push({
@@ -251,7 +261,7 @@ export default function ErrorDiagnostics() {
         (window as any).__consoleErrors = [];
       }
 
-      console.error = (...args: any[]) => {
+      console.error = (...args: unknown[]) => {
         try {
           const errorMessage = args
             .filter(Boolean)
@@ -273,7 +283,7 @@ export default function ErrorDiagnostics() {
               ).__consoleErrors.slice(-50);
             }
           }
-        } catch (e) {
+        } catch {
           // Ignore errors in error handling to prevent infinite loops
         }
         originalError.apply(console, args);

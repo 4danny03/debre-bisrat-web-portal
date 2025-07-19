@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
@@ -8,15 +8,11 @@ interface AdminAuthGuardProps {
 }
 
 export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
-  const [loading, setLoading] = useState(true);
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    checkAdminAuth();
-  }, []);
-
-  const checkAdminAuth = async () => {
+  const checkAdminAuth = React.useCallback(async () => {
     try {
       const {
         data: { session },
@@ -46,7 +42,11 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    checkAdminAuth();
+  }, [checkAdminAuth]);
 
   if (loading) {
     return (

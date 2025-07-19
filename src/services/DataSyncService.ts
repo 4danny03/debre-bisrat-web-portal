@@ -1,18 +1,29 @@
 /**
  * Enhanced data synchronization service with admin action tracking
  */
+interface SyncData {
+  id?: string;
+  type?: string;
+  preview?: string;
+  timestamp?: string | number | Date;
+  database?: boolean;
+  authentication?: boolean;
+  startTime?: number;
+  [key: string]: any;
+}
 class DataSyncService {
   private static instance: DataSyncService;
   private isInitialized = false;
+  private startTime: number = Date.now();
   private adminActions: Array<{
     action: string;
     table: string;
     timestamp: Date;
-    data?: any;
+    data?: SyncData;
     userId?: string;
     details?: string;
   }> = [];
-  private syncStatus: Record<string, any> = {};
+  private syncStatus: Record<string, SyncData> = {};
   private errorLog: Array<{
     error: string;
     timestamp: Date;
@@ -71,7 +82,7 @@ class DataSyncService {
   notifyAdminAction(
     action: string,
     table: string,
-    data?: any,
+    data?: SyncData,
     userId?: string,
     details?: string,
   ) {
@@ -115,6 +126,10 @@ class DataSyncService {
     if (this.isCriticalAction(action)) {
       this.persistCriticalAction(actionRecord);
     }
+  }
+
+  sync(data?: SyncData) {
+    // ...existing code...
   }
 
   getRecentAdminActions(limit = 10) {
@@ -170,7 +185,7 @@ class DataSyncService {
 
   private calculateUptime(): string {
     // Simple uptime calculation (would be more sophisticated in production)
-    const uptimeMs = Date.now() - (this.syncStatus.startTime || Date.now());
+    const uptimeMs = Date.now() - this.startTime;
     const hours = Math.floor(uptimeMs / (1000 * 60 * 60));
     const minutes = Math.floor((uptimeMs % (1000 * 60 * 60)) / (1000 * 60));
     return `${hours}h ${minutes}m`;
@@ -195,7 +210,7 @@ class DataSyncService {
   }
 
   private startHealthMonitoring() {
-    this.syncStatus.startTime = Date.now();
+    this.startTime = Date.now();
 
     // Run health check every 10 minutes to reduce frequency
     setInterval(
@@ -221,12 +236,12 @@ class DataSyncService {
     console.log("DataSyncService logs cleared");
   }
 
-  private getDataPreview(data: any): string {
+  private getDataPreview(data: unknown): string {
     if (!data) return "N/A";
     if (typeof data === "string") return data.substring(0, 50);
-    if (data.title) return data.title.substring(0, 50);
-    if (data.name) return data.name.substring(0, 50);
-    if (data.email) return data.email;
+    if ((data as any).title) return (data as any).title.substring(0, 50);
+    if ((data as any).name) return (data as any).name.substring(0, 50);
+    if ((data as any).email) return (data as any).email;
     return JSON.stringify(data).substring(0, 50);
   }
 
@@ -261,7 +276,7 @@ class DataSyncService {
     );
   }
 
-  private persistCriticalAction(actionRecord: any) {
+  private persistCriticalAction(actionRecord: unknown) {
     try {
       if (
         typeof window === "undefined" ||
@@ -272,7 +287,7 @@ class DataSyncService {
       }
 
       const stored = localStorage.getItem("critical_admin_actions");
-      let criticalActions: any[] = [];
+      let criticalActions: unknown[] = [];
 
       if (stored) {
         try {
@@ -312,12 +327,13 @@ class DataSyncService {
 
       return criticalActions
         .slice(0, limit)
-        .map((action: any) => {
-          if (!action) return null;
+        .map((action: unknown) => {
+          if (!action || typeof action !== 'object' || action === null) return null;
+          const act = action as { [key: string]: any };
           return {
-            ...action,
-            timestamp: action.timestamp
-              ? new Date(action.timestamp)
+            ...act,
+            timestamp: act.timestamp
+              ? new Date(act.timestamp)
               : new Date(),
           };
         })

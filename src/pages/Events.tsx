@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
 import { api } from "@/integrations/supabase/api";
@@ -231,26 +231,24 @@ export default function Events() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const loadEvents = async () => {
+  const loadEvents = useCallback(async () => {
     try {
       setLoading(true);
       const data = await api.events.getEvents();
       setEvents(data || []);
     } catch (error) {
       console.error("Error loading events:", error);
-      // Don't show error to user for background refreshes
       if (events.length === 0) {
-        // Only show error if we have no events to display
         console.error("Failed to load events on initial load");
       }
     } finally {
       setLoading(false);
     }
-  };
+  }, [api.events, events]);
 
   useEffect(() => {
     loadEvents();
-  }, []);
+  }, [loadEvents]);
 
   // Removed data refresh hook to prevent circular dependencies
 

@@ -1,20 +1,8 @@
 import * as React from "react";
-import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { BrowserRouter, Routes, Route, useRoutes } from "react-router-dom";
-
-// Simple component to handle tempo routes without causing recursion
-function TempoRoutesHandler() {
-  // Only render tempo routes if in tempo environment
-  if (!import.meta.env.VITE_TEMPO || import.meta.env.VITE_TEMPO !== "true") {
-    return null;
-  }
-
-  // Return a simple route that will be handled by the main Routes component
-  return null;
-}
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import About from "./pages/About";
 import Events from "./pages/Events";

@@ -4,8 +4,17 @@ export interface DiagnosticResult {
   component: string;
   status: "success" | "warning" | "error";
   message: string;
-  details?: any;
+  details?: unknown;
 }
+
+type TableName =
+  | "events"
+  | "members"
+  | "gallery"
+  | "donations"
+  | "testimonials"
+  | "prayer_requests"
+  | "sermons";
 
 export class AdminDiagnostics {
   static async runFullDiagnostics(): Promise<DiagnosticResult[]> {
@@ -80,7 +89,7 @@ export class AdminDiagnostics {
     }
 
     // Test each table
-    const tables = [
+    const tables: TableName[] = [
       "events",
       "members",
       "gallery",

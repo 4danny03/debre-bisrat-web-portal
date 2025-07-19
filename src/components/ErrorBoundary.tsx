@@ -1,5 +1,5 @@
 import React from "react";
-import { AlertTriangle, RefreshCw, Home, Bug } from "lucide-react";
+import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,7 +9,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { dataSyncService } from "@/services/DataSyncService";
-import { useToast } from "@/components/ui/use-toast";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -51,7 +50,7 @@ class ErrorBoundary extends React.Component<
     dataSyncService.logError(
       "React Error Boundary",
       error,
-      `Component: ${errorInfo.componentStack?.split("\n")[1]?.trim()}`,
+      `Component: ${typeof errorInfo.componentStack === 'string' ? errorInfo.componentStack.split("\n")[1]?.trim() : ''}`,
     );
 
     // Call custom error handler if provided
@@ -65,7 +64,10 @@ class ErrorBoundary extends React.Component<
     }
   }
 
-  private logToExternalService = (error: Error, errorInfo: React.ErrorInfo) => {
+  private logToExternalService = (
+    error: Error,
+    errorInfo: React.ErrorInfo,
+  ) => {
     // In production, integrate with error tracking service like Sentry
     const errorData = {
       message: error.message,
