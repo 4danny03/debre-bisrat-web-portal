@@ -56,7 +56,7 @@ interface FormData {
   preferredLanguage: string;
   emailUpdates: boolean;
   agreeToTerms: boolean;
-  children?: Array<{ name: string; age: string }>;
+  // Removed unused children field for cleanup
 }
 
 // Member dashboard for authenticated users
@@ -134,6 +134,10 @@ const MemberDashboard: React.FC = () => {
 };
 
 const MembershipRegistration = () => {
+  // Deployment check: Ensure Supabase Edge Functions 'membership-management' and 'supabase-functions-create-checkout' are deployed and accessible at:
+  //   ${import.meta.env.VITE_SUPABASE_URL}/functions/v1/membership-management
+  //   supabase.functions.invoke('supabase-functions-create-checkout')
+  // Also verify HTTPS and CORS settings for production.
   const { t } = useLanguage();
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
@@ -264,11 +268,14 @@ const MembershipRegistration = () => {
       };
 
       // Call Edge Function for registration
-      const fetchResponse = await fetch("/functions/v1/membership-management", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(memberPayload),
-      });
+      const fetchResponse = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/membership-management`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(memberPayload),
+        }
+      );
       const result = await fetchResponse.json();
       if (!fetchResponse.ok || result.error) {
         throw new Error(result.error || "Registration failed");
