@@ -1,13 +1,9 @@
 import { supabase } from "./client";
 import { dataSyncService } from "@/services/DataSyncService";
-<<<<<<< HEAD
-import { validateArrayData, validateApiData } from "@/utils/dataValidation";
-=======
 import type { Database } from '@/types/supabase';
 
 type Appointment = Database['public']['Tables']['appointments']['Row'];
 type AppointmentCreateInput = Database['public']['Tables']['appointments']['Insert'];
->>>>>>> main
 
 export const api = {
   // Events API

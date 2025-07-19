@@ -53,6 +53,7 @@ import { supabase } from "@/integrations/supabase/client";
 import EmptyState from "@/components/EmptyState";
 // @ts-ignore
 import { saveAs } from "file-saver";
+import { User as SupabaseUser } from "@supabase/supabase-js";
 
 interface Appointment {
   id: string;
@@ -83,7 +84,7 @@ const AdminAppointments: React.FC = () => {
   const [responseDialog, setResponseDialog] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<SupabaseUser | null>(null);
   const { toast } = useToast();
 
   // Error boundary for robust UI
@@ -100,11 +101,15 @@ const AdminAppointments: React.FC = () => {
         data = await api.appointments.getAppointmentsByStatus(statusFilter);
       }
       setAppointments(data || []);
-    } catch (error: any) {
-      setErrorBoundary(error.message || "Failed to load appointments");
+    } catch (error: unknown) {
+      const errorMessage =
+        typeof error === "object" && error !== null && "message" in error
+          ? (error as { message?: string }).message
+          : String(error);
+      setErrorBoundary(errorMessage || "Failed to load appointments");
       toast({
         title: "Error",
-        description: error.message || "Failed to load appointments",
+        description: errorMessage || "Failed to load appointments",
         variant: "destructive",
       });
     } finally {
@@ -121,10 +126,9 @@ const AdminAppointments: React.FC = () => {
     const {
       data: { session },
     } = await supabase.auth.getSession();
-    setCurrentUser(session?.user);
+    setCurrentUser(session?.user ?? null);
   };
 
-// ...existing code...
   const handleResponse = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!selectedAppointment || !currentUser) return;
@@ -141,7 +145,7 @@ const AdminAppointments: React.FC = () => {
         admin_notes: admin_notes || undefined,
         confirmed_date: confirmed_date || undefined,
         confirmed_time: confirmed_time || undefined,
-        responded_by: currentUser.id,
+        responded_by: currentUser?.id,
       });
       toast({ title: "Success", description: "Response sent successfully" });
       setResponseDialog(false);

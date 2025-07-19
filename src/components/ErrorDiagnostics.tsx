@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -24,6 +24,11 @@ interface DiagnosticCheck {
   status: "pass" | "fail" | "warning";
   message: string;
   details?: string;
+}
+
+// Extend window type for __consoleErrors
+interface WindowWithConsoleErrors extends Window {
+  __consoleErrors?: unknown[];
 }
 
 export default function ErrorDiagnostics() {
@@ -99,7 +104,7 @@ export default function ErrorDiagnostics() {
         message: error
           ? `Storage error: ${error.message || "Unknown error"}`
           : "Storage accessible",
-        details: error?.details || undefined,
+        details: (error && "details" in error ? (error as any).details : undefined),
       });
     } catch (error) {
       diagnostics.push({
@@ -138,7 +143,7 @@ export default function ErrorDiagnostics() {
 
     // Check browser console errors
     if (typeof window !== "undefined") {
-      const consoleErrors = (window as any).__consoleErrors || [];
+      const consoleErrors = (window as WindowWithConsoleErrors).__consoleErrors || [];
       if (Array.isArray(consoleErrors) && consoleErrors.length > 0) {
         diagnostics.push({
           name: "Console Errors",
@@ -247,8 +252,8 @@ export default function ErrorDiagnostics() {
       const originalError = console.error;
 
       // Initialize console errors array safely
-      if (!(window as any).__consoleErrors) {
-        (window as any).__consoleErrors = [];
+      if (!(window as WindowWithConsoleErrors).__consoleErrors) {
+        (window as WindowWithConsoleErrors).__consoleErrors = [];
       }
 
       console.error = (...args: any[]) => {
@@ -264,13 +269,11 @@ export default function ErrorDiagnostics() {
             })
             .join(" ");
 
-          if (errorMessage && (window as any).__consoleErrors) {
-            (window as any).__consoleErrors.push(errorMessage);
-            // Keep only last 50 errors to prevent memory issues
-            if ((window as any).__consoleErrors.length > 50) {
-              (window as any).__consoleErrors = (
-                window as any
-              ).__consoleErrors.slice(-50);
+          // Safely push errorMessage if __consoleErrors is defined
+          if ((window as WindowWithConsoleErrors).__consoleErrors) {
+            (window as WindowWithConsoleErrors).__consoleErrors!.push(errorMessage);
+            if ((window as WindowWithConsoleErrors).__consoleErrors!.length > 50) {
+              (window as WindowWithConsoleErrors).__consoleErrors = (window as WindowWithConsoleErrors).__consoleErrors!.slice(-50);
             }
           }
         } catch (e) {

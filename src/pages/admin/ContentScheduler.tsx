@@ -51,7 +51,7 @@ interface ScheduledContent {
   id: string;
   type: "event" | "email";
   title: string;
-  content: any;
+  content: Record<string, unknown>;
   scheduledFor: Date;
   status: "scheduled" | "published" | "failed" | "cancelled";
   recurring?: {
@@ -113,17 +113,13 @@ export default function ContentScheduler() {
   const loadScheduledContent = async () => {
     try {
       setLoading(true);
-      // In a real app, this would be stored in a dedicated table
-      // For now, we'll simulate with localStorage
       const stored = localStorage.getItem("scheduledContent");
       if (stored) {
-        const parsed = JSON.parse(stored).map((item: any) => ({
+        const parsed: ScheduledContent[] = JSON.parse(stored).map((item: Record<string, unknown>) => ({
           ...item,
-          scheduledFor: new Date(item.scheduledFor),
-          createdAt: new Date(item.createdAt),
-          publishedAt: item.publishedAt
-            ? new Date(item.publishedAt)
-            : undefined,
+          scheduledFor: new Date(item.scheduledFor as string),
+          createdAt: new Date(item.createdAt as string),
+          publishedAt: item.publishedAt ? new Date(item.publishedAt as string) : undefined,
         }));
         setScheduledContent(parsed);
       }
@@ -251,7 +247,7 @@ export default function ContentScheduler() {
       `${newContent.scheduledFor}T${newContent.scheduledTime || "09:00"}`,
     );
 
-    let contentData: any = {};
+    let contentData: Record<string, unknown> = {};
 
     switch (newContent.type) {
       case "event":

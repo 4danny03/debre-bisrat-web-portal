@@ -16,14 +16,12 @@ import {
   RefreshCw,
   Database,
   Server,
-  Wifi,
   HardDrive,
   Activity,
   Clock,
   AlertCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 
 interface HealthCheck {
@@ -32,7 +30,7 @@ interface HealthCheck {
   message: string;
   lastChecked: Date;
   responseTime?: number;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 interface SystemMetrics {
@@ -69,7 +67,6 @@ export default function SystemHealth() {
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  const { toast } = useToast();
 
   useEffect(() => {
     runHealthChecks();
@@ -108,7 +105,7 @@ export default function SystemHealth() {
     // Storage bucket check
     try {
       const start = Date.now();
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from("images")
         .list("", { limit: 1 });
       const responseTime = Date.now() - start;
@@ -345,7 +342,7 @@ export default function SystemHealth() {
                         <div className="text-xs text-gray-500 mt-1">
                           {Object.entries(check.details).map(([key, value]) => (
                             <span key={key} className="mr-3">
-                              {key}: {value}
+                              {key}: {typeof value === "object" ? JSON.stringify(value) : String(value)}
                             </span>
                           ))}
                         </div>

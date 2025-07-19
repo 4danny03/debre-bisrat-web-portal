@@ -117,7 +117,6 @@ export default function AdminMembers() {
       setMembers(processedData);
 // ...existing code...
       setMembers(data as Member[]);
->>>>>>> main
     }
     setLoading(false);
   };

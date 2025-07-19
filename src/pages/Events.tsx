@@ -238,17 +238,15 @@ export default function Events() {
       const data = await api.events.getEvents();
       const validatedData = Array.isArray(data) ? data : [];
       setEvents(validatedData);
-      } catch (error) {
-        console.error("Error loading events:", error);
-        // Only show error if we have no events to display
-        if (events.length === 0) {
-          console.error("Failed to load events on initial load");
-          setEvents([]);
-        }
+    } catch (error) {
+      console.error("Error loading events:", error);
+      // Only show error if we have no events to display
+      if (events.length === 0) {
+        console.error("Failed to load events on initial load");
+        setEvents([]);
       }
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   }, []);
 
   useEffect(() => {
