@@ -40,7 +40,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
-import { api } from "@/integrations/supabase/api";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ServiceItemProps {
   title: string;
@@ -139,17 +139,27 @@ const Services: React.FC = () => {
     const notes = formData.get("notes") as string;
 
     try {
-      // Save appointment to database
-      await api.appointments.createAppointment({
-        name,
-        email,
-        phone,
-        service_title: service,
-        requested_date: date,
-        requested_time: time,
-        notes,
-        status: "pending",
-      });
+      // Use the appointment-request edge function for better validation and processing
+      const { data, error } = await supabase.functions.invoke(
+        "supabase-functions-appointment-request",
+        {
+          body: {
+            name,
+            email,
+            phone,
+            service_title: service,
+            requested_date: date,
+            requested_time: time,
+            notes,
+          },
+        },
+      );
+
+      if (error) {
+        throw new Error(
+          error.message || "Failed to submit appointment request",
+        );
+      }
 
       // Show success message
       toast({
