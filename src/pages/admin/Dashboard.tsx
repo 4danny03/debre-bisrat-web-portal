@@ -175,20 +175,8 @@ export default function Dashboard() {
         (sum, d) => sum + (d?.amount || 0),
         0,
       );
-
-      setStats({
-        totalEvents: eventsRes?.count || 0,
-        totalMembers: membersRes?.count || 0,
-        totalDonations: donationsRes?.data?.length || 0,
-        totalTestimonials: testimonialsRes?.count || 0,
-        totalPrayerRequests: prayerRequestsRes?.count || 0,
-        totalSermons: sermonsRes?.count || 0,
-        recentDonationAmount,
-      });
-
-      // Load recent activity
-      await loadRecentActivity();
-      // Resolved merge conflict: removed conflict marker and retained main branch logic
+      const safeActivityData = Array.isArray(activityData) ? activityData : [];
+      setRecentActivity(safeActivityData);
     } catch (error) {
       console.error("Error loading dashboard data:", error);
       toast({
@@ -777,32 +765,38 @@ export default function Dashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4 max-h-96 overflow-y-auto">
-              {recentActivity.length > 0 ? (
-                recentActivity.map((activity) => (
-                  <div
-                    key={activity.id}
-                    className="flex items-start space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
-                  >
-                    <div className="flex-shrink-0 mt-1">
-                      {getActivityIcon(activity.type)}
+            <div className="space-y-4">
+              {Array.isArray(recentActivity) && recentActivity.length > 0 ? (
+                recentActivity.map((activity) => {
+                  if (!activity || !activity.id) {
+                    console.warn("Invalid activity object:", activity);
+                    return null;
+                  }
+
+                  return (
+                    <div
+                      key={activity.id}
+                      className="flex items-start space-x-3 p-3 rounded-lg border"
+                    >
+                      <div className="flex-shrink-0 mt-1">
+                        {getActivityIcon(activity.type)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900">
+                          {activity.title || "No title"}
+                        </p>
+                        <p className="text-sm text-gray-500 truncate">
+                          {activity.description || "No description"}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {activity.created_at
+                            ? new Date(activity.created_at).toLocaleDateString()
+                            : "No date"}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 line-clamp-1">
-                        {activity.title}
-                      </p>
-                      <p className="text-sm text-gray-500 line-clamp-2">
-                        {activity.description}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {format(
-                          new Date(activity.created_at),
-                          "MMM d, yyyy h:mm a",
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <p className="text-gray-500 text-center py-4">
                   No recent activity

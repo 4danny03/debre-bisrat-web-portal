@@ -43,11 +43,15 @@ export const safeArrayApiCall = async <T>(
     const result = await apiCall();
     const validation = validateArrayData(result, fallback);
 
-    if (!validation.isValid && validation.errors.length > 0) {
+    if (
+      !validation.isValid &&
+      Array.isArray(validation.errors) &&
+      validation.errors.length > 0
+    ) {
       console.warn("Array validation failed:", validation.errors);
     }
 
-    return validation.data;
+    return Array.isArray(validation.data) ? validation.data : fallback;
   } catch (error) {
     console.error("Array API call failed:", error);
 
@@ -165,6 +169,10 @@ export const batchApiCalls = async <T>(
 ): Promise<Array<{ success: boolean; data?: T; error?: Error }>> => {
   const { failFast = false, maxConcurrent = 5 } = options;
   const results: Array<{ success: boolean; data?: T; error?: Error }> = [];
+
+  if (!Array.isArray(apiCalls) || apiCalls.length === 0) {
+    return results;
+  }
 
   // Process in batches to avoid overwhelming the API
   for (let i = 0; i < apiCalls.length; i += maxConcurrent) {
