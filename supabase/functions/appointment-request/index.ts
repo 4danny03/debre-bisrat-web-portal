@@ -21,7 +21,19 @@ Deno.serve(async (req)=>{
       });
     }
     // Create Supabase client with anonymous access
-    const supabase = createClient(Deno.env.get('SUPABASE_URL'), Deno.env.get('SUPABASE_ANON_KEY'));
+    // Use service role key for backend operations
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!supabaseKey) {
+      return new Response(JSON.stringify({
+        error: 'SUPABASE_SERVICE_ROLE_KEY is not set in environment'
+      }), {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        status: 500
+      });
+    }
+    const supabase = createClient(Deno.env.get('SUPABASE_URL'), supabaseKey);
     // Insert appointment request
     const { data, error } = await supabase.from('apointment').insert({
       client_full_name,
