@@ -304,8 +304,8 @@ const loadDashboardStatsFallback = async () => {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const validDonationsData = Array.isArray(donations?.data)
-      ? donations.data
+    const validDonationsData = Array.isArray(donationsRes?.data)
+      ? donationsRes.data
       : [];
     const recentDonations = validDonationsData.filter(
       (d: any) => d?.created_at && new Date(d.created_at) >= thirtyDaysAgo,
@@ -319,8 +319,8 @@ const loadDashboardStatsFallback = async () => {
     return {
       totalEvents: eventsRes?.count || 0,
       totalMembers: membersRes?.count || 0,
-      totalDonations: Array.isArray(donations?.data)
-        ? donations.data.length
+      totalDonations: Array.isArray(donationsRes?.data)
+        ? donationsRes.data.length
         : 0,
       totalTestimonials: testimonialsRes?.count || 0,
       totalPrayerRequests: prayerRequestsRes?.count || 0,
@@ -347,8 +347,9 @@ const loadDashboardStatsFallback = async () => {
 export const loadRecentActivity = async (limit = 6) => {
   try {
     const activity = await api.analytics.getRecentActivity(limit);
-    logAdminAction("load", "recent_activity", { count: activity.length });
-    return activity;
+    const safeActivity = Array.isArray(activity) ? activity : [];
+    logAdminAction("load", "recent_activity", { count: safeActivity.length });
+    return safeActivity;
   } catch (error) {
     console.error("Failed to load recent activity:", error);
     return [];
@@ -501,11 +502,11 @@ export const performHealthCheck = async () => {
  * Export data to CSV format
  */
 export const exportToCSV = (data: any[], filename: string) => {
-  if (!data || data.length === 0) {
+  if (!Array.isArray(data) || data.length === 0) {
     throw new Error("No data to export");
   }
 
-  const headers = Object.keys(data[0]);
+  const headers = Object.keys(data[0] || {});
   const csvContent = [
     headers.join(","),
     ...data.map((row) =>

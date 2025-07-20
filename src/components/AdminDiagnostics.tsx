@@ -157,8 +157,16 @@ export default function AdminDiagnostics({
   };
 
   const groupResultsByCategory = (results: TestResult[]) => {
+    if (!Array.isArray(results)) {
+      console.warn("groupResultsByCategory: results is not an array");
+      return {};
+    }
+
     const safeResults = ErrorHandler.safeArrayAccess(results, []);
-    if (!Array.isArray(safeResults) || safeResults.length === 0) {
+    if (
+      !Array.isArray(safeResults) ||
+      ErrorHandler.safeLength(safeResults) === 0
+    ) {
       console.warn("groupResultsByCategory: no valid results to categorize");
       return {};
     }
@@ -175,6 +183,11 @@ export default function AdminDiagnostics({
     };
 
     safeResults.forEach((result) => {
+      if (!result || typeof result.name !== "string") {
+        console.warn("Invalid result object:", result);
+        return;
+      }
+
       if (
         result.name.includes("Database") ||
         result.name.includes("Table Access")
@@ -203,7 +216,10 @@ export default function AdminDiagnostics({
 
     // Remove empty categories
     Object.keys(categories).forEach((key) => {
-      if (categories[key].length === 0) {
+      if (
+        !Array.isArray(categories[key]) ||
+        ErrorHandler.safeLength(categories[key]) === 0
+      ) {
         delete categories[key];
       }
     });
@@ -301,11 +317,23 @@ export default function AdminDiagnostics({
         <div className="space-y-4">
           {Object.entries(categorizedResults).map(
             ([category, categoryResults]) => {
-              const categoryStatus = categoryResults.some(
-                (r) => r.status === "fail",
+              if (!Array.isArray(categoryResults)) {
+                console.warn(
+                  `Category ${category} results is not an array:`,
+                  categoryResults,
+                );
+                return null;
+              }
+
+              const safeResults = ErrorHandler.safeArrayAccess(
+                categoryResults,
+                [],
+              );
+              const categoryStatus = safeResults.some(
+                (r) => r && r.status === "fail",
               )
                 ? "fail"
-                : categoryResults.some((r) => r.status === "warning")
+                : safeResults.some((r) => r && r.status === "warning")
                   ? "warning"
                   : "pass";
 
@@ -322,7 +350,7 @@ export default function AdminDiagnostics({
                             {getCategoryIcon(category)}
                             <span className="ml-2">{category}</span>
                             <span className="ml-2 text-sm text-gray-500">
-                              ({categoryResults.length} tests)
+                              ({ErrorHandler.safeLength(categoryResults)} tests)
                             </span>
                           </span>
                           <div className="flex items-center space-x-2">
@@ -339,32 +367,42 @@ export default function AdminDiagnostics({
                     <CollapsibleContent>
                       <CardContent>
                         <div className="space-y-2">
-                          {categoryResults.map((result, index) => (
-                            <div
-                              key={index}
-                              className="flex items-center justify-between p-3 border rounded-lg"
-                            >
-                              <div className="flex items-center space-x-3">
-                                {getStatusIcon(result.status)}
-                                <div>
-                                  <div className="font-medium">
-                                    {result.name}
-                                  </div>
-                                  <div className="text-sm text-gray-600">
-                                    {result.message}
-                                  </div>
-                                  {result.error && (
-                                    <div className="text-xs text-red-600 mt-1">
-                                      Error:{" "}
-                                      {result.error.message ||
-                                        String(result.error)}
+                          {ErrorHandler.safeArrayAccess(
+                            categoryResults,
+                            [],
+                          ).map((result, index) => {
+                            if (!result) {
+                              console.warn(`Invalid result at index ${index}`);
+                              return null;
+                            }
+
+                            return (
+                              <div
+                                key={index}
+                                className="flex items-center justify-between p-3 border rounded-lg"
+                              >
+                                <div className="flex items-center space-x-3">
+                                  {getStatusIcon(result.status)}
+                                  <div>
+                                    <div className="font-medium">
+                                      {result.name || "Unknown Test"}
                                     </div>
-                                  )}
+                                    <div className="text-sm text-gray-600">
+                                      {result.message || "No message"}
+                                    </div>
+                                    {result.error && (
+                                      <div className="text-xs text-red-600 mt-1">
+                                        Error:{" "}
+                                        {result.error.message ||
+                                          String(result.error)}
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
+                                {getStatusBadge(result.status)}
                               </div>
-                              {getStatusBadge(result.status)}
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </CardContent>
                     </CollapsibleContent>

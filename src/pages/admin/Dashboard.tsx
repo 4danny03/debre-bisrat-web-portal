@@ -119,7 +119,8 @@ export default function AdminDashboard() {
           recentDonationAmount: 0,
         },
       );
-      setRecentActivity(Array.isArray(activityData) ? activityData : []);
+      const safeActivityData = Array.isArray(activityData) ? activityData : [];
+      setRecentActivity(safeActivityData);
     } catch (error) {
       console.error("Error loading dashboard data:", error);
       toast({
@@ -381,28 +382,37 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentActivity.length > 0 ? (
-                recentActivity.map((activity) => (
-                  <div
-                    key={activity.id}
-                    className="flex items-start space-x-3 p-3 rounded-lg border"
-                  >
-                    <div className="flex-shrink-0 mt-1">
-                      {getActivityIcon(activity.type)}
+              {Array.isArray(recentActivity) && recentActivity.length > 0 ? (
+                recentActivity.map((activity) => {
+                  if (!activity || !activity.id) {
+                    console.warn("Invalid activity object:", activity);
+                    return null;
+                  }
+
+                  return (
+                    <div
+                      key={activity.id}
+                      className="flex items-start space-x-3 p-3 rounded-lg border"
+                    >
+                      <div className="flex-shrink-0 mt-1">
+                        {getActivityIcon(activity.type)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900">
+                          {activity.title || "No title"}
+                        </p>
+                        <p className="text-sm text-gray-500 truncate">
+                          {activity.description || "No description"}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {activity.created_at
+                            ? new Date(activity.created_at).toLocaleDateString()
+                            : "No date"}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900">
-                        {activity.title}
-                      </p>
-                      <p className="text-sm text-gray-500 truncate">
-                        {activity.description}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {new Date(activity.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <div className="text-center py-8 text-gray-500">
                   <Activity className="w-12 h-12 mx-auto mb-4 text-gray-300" />
