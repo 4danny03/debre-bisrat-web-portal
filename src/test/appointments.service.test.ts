@@ -5,7 +5,7 @@ vi.mock("../lib/supabase", () => ({
   supabase: {
     functions: {
       invoke: vi.fn(async (fn, { body }) => {
-        if (fn === "appointment-management") {
+        if (fn === "supabase-functions-appointment-request") {
           if (body.action === "create") {
             return {
               data: { appointment: { ...body.data, id: "test-id" } },
