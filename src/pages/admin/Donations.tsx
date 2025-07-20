@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Table,
   TableBody,
@@ -73,26 +73,18 @@ export default function AdminDonations() {
   const [dateRange, setDateRange] = useState({ from: "", to: "" });
   const { toast } = useToast();
 
-  useEffect(() => {
-    loadDonations();
-  }, []);
-
-  useEffect(() => {
-    filterDonations();
-  }, [donations, searchTerm, statusFilter, purposeFilter, dateRange]);
-
-  const loadDonations = async () => {
+  // useCallback for stable function references
+  // Clean up: use await for supabase query, remove unnecessary Promise.resolve
+  const loadDonations = useCallback(async () => {
     setLoading(true);
-
     const { data, error } = await safeDataLoader(
-      () =>
-        supabase
+      async () =>
+        await supabase
           .from("donations")
           .select("*")
           .order("created_at", { ascending: false }),
       "donations",
     );
-
     if (error) {
       toast({
         title: "Error",
@@ -101,8 +93,7 @@ export default function AdminDonations() {
       });
       setDonations([]);
     } else {
-      // Ensure data has proper structure
-      const processedData = data.map((donation) => ({
+      const processedData = (data || []).map((donation: any) => ({
         ...donation,
         amount: Number(donation.amount) || 0,
         payment_status: donation.payment_status || "pending",
@@ -111,18 +102,14 @@ export default function AdminDonations() {
         donor_email: donation.donor_email || "",
         purpose: donation.purpose || "general_fund",
       }));
-
       setDonations(processedData);
       logAdminAction("load", "donations", { count: processedData.length });
     }
-
     setLoading(false);
-  };
+  }, [toast]);
 
-  const filterDonations = () => {
+  const filterDonations = useCallback(() => {
     let filtered = donations;
-
-    // Search filter
     if (searchTerm) {
       filtered = filtered.filter(
         (donation) =>
@@ -135,22 +122,16 @@ export default function AdminDonations() {
           donation.purpose.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
-
-    // Status filter
     if (statusFilter !== "all") {
       filtered = filtered.filter(
         (donation) => donation.payment_status === statusFilter,
       );
     }
-
-    // Purpose filter
     if (purposeFilter !== "all") {
       filtered = filtered.filter(
         (donation) => donation.purpose === purposeFilter,
       );
     }
-
-    // Date range filter
     if (dateRange.from) {
       filtered = filtered.filter(
         (donation) => new Date(donation.created_at) >= new Date(dateRange.from),
@@ -161,9 +142,16 @@ export default function AdminDonations() {
         (donation) => new Date(donation.created_at) <= new Date(dateRange.to),
       );
     }
-
     setFilteredDonations(filtered);
-  };
+  }, [donations, searchTerm, statusFilter, purposeFilter, dateRange]);
+
+  useEffect(() => {
+    loadDonations();
+  }, [loadDonations]);
+
+  useEffect(() => {
+    filterDonations();
+  }, [filterDonations]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {

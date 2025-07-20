@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -99,7 +99,6 @@ export default function AdminLogin() {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
     const confirmPassword = formData.get("confirmPassword") as string;
-    const secretCode = formData.get("secretCode") as string;
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");

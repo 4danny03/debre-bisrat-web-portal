@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -44,6 +44,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
+import { Member } from "@/types/member";
+import { Database } from "@/types/supabase";
 
 interface AnalyticsData {
   donations: {
@@ -75,7 +77,6 @@ interface AnalyticsData {
   engagement: {
     prayerRequests: number;
     testimonials: number;
-    sermons: number;
     galleryViews: number;
   };
 }
@@ -89,11 +90,7 @@ export default function Analytics() {
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
 
-  useEffect(() => {
-    loadAnalyticsData();
-  }, [timeRange]);
-
-  const loadAnalyticsData = async () => {
+  const loadAnalyticsData = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -110,7 +107,6 @@ export default function Analytics() {
         eventsRes,
         prayerRequestsRes,
         testimonialsRes,
-        sermonsRes,
       ] = await Promise.all([
         supabase
           .from("donations")
@@ -130,7 +126,6 @@ export default function Analytics() {
         supabase
           .from("testimonials")
           .select("*", { count: "exact", head: true }),
-        supabase.from("sermons").select("*", { count: "exact", head: true }),
       ]);
 
       // Process donations data
@@ -178,7 +173,6 @@ export default function Analytics() {
         engagement: {
           prayerRequests: prayerRequestsRes.count || 0,
           testimonials: testimonialsRes.count || 0,
-          sermons: sermonsRes.count || 0,
           galleryViews: 0, // Would need view tracking
         },
       });
@@ -192,23 +186,30 @@ export default function Analytics() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [timeRange, toast]);
+
+  useEffect(() => {
+    loadAnalyticsData();
+  }, [loadAnalyticsData]);
 
   const processMonthlyData = (
-    items: any[],
-    dateField: string,
-    valueField?: string,
+    items: Database["public"]["Tables"]["donations"]["Row"][],
+    dateField: keyof Database["public"]["Tables"]["donations"]["Row"],
+    valueField?: keyof Database["public"]["Tables"]["donations"]["Row"],
   ) => {
     const monthlyData: Record<string, { count: number; amount: number }> = {};
 
     items.forEach((item) => {
-      const month = format(new Date(item[dateField]), "MMM yyyy");
-      if (!monthlyData[month]) {
-        monthlyData[month] = { count: 0, amount: 0 };
-      }
-      monthlyData[month].count += 1;
-      if (valueField && item[valueField]) {
-        monthlyData[month].amount += item[valueField];
+      const dateValue = item[dateField];
+      if (typeof dateValue === "string" || typeof dateValue === "number") {
+        const month = format(new Date(dateValue), "MMM yyyy");
+        if (!monthlyData[month]) {
+          monthlyData[month] = { count: 0, amount: 0 };
+        }
+        monthlyData[month].count += 1;
+        if (valueField && typeof item[valueField] === "number") {
+          monthlyData[month].amount += item[valueField] as number;
+        }
       }
     });
 
@@ -219,7 +220,7 @@ export default function Analytics() {
     }));
   };
 
-  const processPurposeData = (donations: any[]) => {
+  const processPurposeData = (donations: Database["public"]["Tables"]["donations"]["Row"][]) => {
     const purposeData: Record<string, number> = {};
     const total = donations.reduce((sum, d) => sum + d.amount, 0);
 
@@ -235,12 +236,15 @@ export default function Analytics() {
     }));
   };
 
-  const processTypeData = (members: any[], typeField: string) => {
+  const processTypeData = (
+    members: Member[],
+    typeField: keyof Member,
+  ) => {
     const typeData: Record<string, number> = {};
     const total = members.length;
 
     members.forEach((member) => {
-      const type = member[typeField] || "Regular";
+      const type = member[typeField] ? String(member[typeField]) : "Regular";
       typeData[type] = (typeData[type] || 0) + 1;
     });
 
@@ -251,7 +255,10 @@ export default function Analytics() {
     }));
   };
 
-  const calculateTrends = (items: any[], valueField?: string) => {
+  const calculateTrends = (
+    items: Database["public"]["Tables"]["donations"]["Row"][],
+    valueField?: keyof Database["public"]["Tables"]["donations"]["Row"],
+  ) => {
     const now = new Date();
     const thisMonthStart = startOfMonth(now);
     const lastMonthStart = startOfMonth(subDays(now, 30));
@@ -265,22 +272,27 @@ export default function Analytics() {
       return date >= lastMonthStart && date <= lastMonthEnd;
     });
 
-    const thisMonthValue = valueField
-      ? thisMonth.reduce((sum, item) => sum + (item[valueField] || 0), 0)
-      : thisMonth.length;
-    const lastMonthValue = valueField
-      ? lastMonth.reduce((sum, item) => sum + (item[valueField] || 0), 0)
-      : lastMonth.length;
-
-    const growth =
-      lastMonthValue > 0
-        ? Math.round(((thisMonthValue - lastMonthValue) / lastMonthValue) * 100)
-        : 0;
-
     return {
-      thisMonth: thisMonthValue,
-      lastMonth: lastMonthValue,
-      growth,
+      thisMonth:
+        valueField
+          ? thisMonth.reduce((sum, item) => sum + ((typeof item[valueField] === "number" ? item[valueField] as number : 0)), 0)
+          : thisMonth.length,
+      lastMonth:
+        valueField
+          ? lastMonth.reduce((sum, item) => sum + ((typeof item[valueField] === "number" ? item[valueField] as number : 0)), 0)
+          : lastMonth.length,
+      growth:
+        valueField
+          ? thisMonth.length > 0
+            ? Math.round(
+                ((
+                  thisMonth.reduce((sum, item) => sum + ((typeof item[valueField] === "number" ? item[valueField] as number : 0)), 0) -
+                  lastMonth.reduce((sum, item) => sum + ((typeof item[valueField] === "number" ? item[valueField] as number : 0)), 0)) /
+                  lastMonth.reduce((sum, item) => sum + ((typeof item[valueField] === "number" ? item[valueField] as number : 0)), 0)
+                ) * 100,
+              )
+            : 0
+          : 0,
     };
   };
 
@@ -497,7 +509,7 @@ export default function Analytics() {
                       fill="#8884d8"
                       dataKey="amount"
                     >
-                      {data.donations.byPurpose.map((entry, index) => (
+                      {data.donations.byPurpose.map((_, index) => (
                         <Cell
                           key={`cell-${index}`}
                           fill={COLORS[index % COLORS.length]}
@@ -557,7 +569,7 @@ export default function Analytics() {
                       fill="#8884d8"
                       dataKey="count"
                     >
-                      {data.members.byType.map((entry, index) => (
+                      {data.members.byType.map((_, index) => (
                         <Cell
                           key={`cell-${index}`}
                           fill={COLORS[index % COLORS.length]}
@@ -622,17 +634,6 @@ export default function Analytics() {
                   {data.engagement.testimonials}
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Community stories</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Sermons</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-church-burgundy">
-                  {data.engagement.sermons}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">Available content</p>
               </CardContent>
             </Card>
             <Card>

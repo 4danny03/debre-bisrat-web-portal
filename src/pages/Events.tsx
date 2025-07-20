@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
 import { api } from "@/integrations/supabase/api";
@@ -15,12 +15,12 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useDataRefresh } from "@/hooks/useDataRefresh";
+
+const baseUrl = import.meta.env.BASE_URL;
 
 // Placeholder Events Component
 const PlaceholderEvents = () => {
   const { language } = useLanguage();
-
   const placeholderEvents = [
     {
       id: "placeholder-1",
@@ -32,7 +32,7 @@ const PlaceholderEvents = () => {
       date: "Every Sunday",
       time: "7:00 AM - 12:00 PM",
       location: "Main Sanctuary",
-      image: "/images/gallery/church-service.jpg",
+      image: baseUrl + "images/gallery/church-service.jpg",
       icon: Church,
     },
     {
@@ -48,7 +48,7 @@ const PlaceholderEvents = () => {
       date: "19th of Every Month",
       time: "10:00 AM - 2:00 PM",
       location: "Church Grounds",
-      image: "/images/religious/palm-sunday.jpg",
+      image: baseUrl + "images/religious/palm-sunday.jpg",
       icon: Church,
     },
     {
@@ -64,7 +64,7 @@ const PlaceholderEvents = () => {
       date: "Every Sunday",
       time: "9:00 AM - 12:00 PM",
       location: "Education Hall",
-      image: "/images/gallery/ceremony-1.jpg",
+      image: baseUrl + "images/gallery/ceremony-1.jpg",
       icon: BookOpen,
     },
     {
@@ -77,7 +77,7 @@ const PlaceholderEvents = () => {
       date: "First Saturday of Every Month",
       time: "2:00 PM - 6:00 PM",
       location: "Community Hall",
-      image: "/images/gallery/ceremony-2.jpg",
+      image: baseUrl + "images/gallery/ceremony-2.jpg",
       icon: Users,
     },
     {
@@ -90,7 +90,7 @@ const PlaceholderEvents = () => {
       date: "Every Saturday",
       time: "3:00 PM - 6:00 PM",
       location: "Youth Center",
-      image: "/images/gallery/ceremony-3.jpg",
+      image: baseUrl + "images/gallery/ceremony-3.jpg",
       icon: Users,
     },
     {
@@ -103,7 +103,7 @@ const PlaceholderEvents = () => {
       date: "Every Saturday",
       time: "10:00 AM - 12:00 PM",
       location: "Language Center",
-      image: "/images/gallery/timket.jpg",
+      image: baseUrl + "images/gallery/timket.jpg",
       icon: BookOpen,
     },
   ];
@@ -138,15 +138,16 @@ const PlaceholderEvents = () => {
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    // Enhanced fallback system for placeholder events
                     if (target.src.includes("church-service.jpg")) {
-                      target.src = "/images/gallery/church-gathering.jpg";
+                      target.src =
+                        baseUrl + "images/gallery/church-gathering.jpg";
                     } else if (target.src.includes("church-gathering.jpg")) {
-                      target.src = "/images/gallery/ceremony-1.jpg";
+                      target.src = baseUrl + "images/gallery/ceremony-1.jpg";
                     } else if (target.src.includes("ceremony-1.jpg")) {
-                      target.src = "/images/gallery/timket.jpg";
+                      target.src = baseUrl + "images/gallery/timket.jpg";
                     } else {
-                      target.src = "/images/gallery/church-service.jpg";
+                      target.src =
+                        baseUrl + "images/gallery/church-service.jpg";
                     }
                   }}
                 />
@@ -204,15 +205,15 @@ interface Event {
 
 // Religious event images mapping with verified paths
 const religiousEventImages = [
-  "/images/religious/palm-sunday.jpg",
-  "/images/religious/crucifixion.jpg",
-  "/images/religious/procession.jpg",
-  "/images/gallery/timket.jpg",
-  "/images/gallery/church-service.jpg",
-  "/images/gallery/church-gathering.jpg",
-  "/images/gallery/ceremony-1.jpg",
-  "/images/gallery/ceremony-2.jpg",
-  "/images/gallery/ceremony-3.jpg",
+  baseUrl + "images/religious/palm-sunday.jpg",
+  baseUrl + "images/religious/crucifixion.jpg",
+  baseUrl + "images/religious/procession.jpg",
+  baseUrl + "images/gallery/timket.jpg",
+  baseUrl + "images/gallery/church-service.jpg",
+  baseUrl + "images/gallery/church-gathering.jpg",
+  baseUrl + "images/gallery/ceremony-1.jpg",
+  baseUrl + "images/gallery/ceremony-2.jpg",
+  baseUrl + "images/gallery/ceremony-3.jpg",
 ];
 
 // Function to get a religious image based on event data
@@ -231,7 +232,7 @@ export default function Events() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const loadEvents = async () => {
+  const loadEvents = useCallback(async () => {
     try {
       setLoading(true);
       const data = await api.events.getEvents();
@@ -239,22 +240,18 @@ export default function Events() {
       setEvents(validatedData);
     } catch (error) {
       console.error("Error loading events:", error);
-      // Don't show error to user for background refreshes
+      // Only show error if we have no events to display
       if (events.length === 0) {
-        // Only show error if we have no events to display
         console.error("Failed to load events on initial load");
         setEvents([]);
       }
-    } finally {
-      setLoading(false);
     }
-  };
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
     loadEvents();
-  }, []);
-
-  // Removed data refresh hook to prevent circular dependencies
+  }, [loadEvents]);
 
   const handleManualRefresh = async () => {
     console.log("Manual refresh triggered for events");
@@ -314,15 +311,16 @@ export default function Events() {
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      // Enhanced fallback system for placeholder events
                       if (target.src.includes("church-service.jpg")) {
-                        target.src = "/images/gallery/church-gathering.jpg";
+                        target.src =
+                          baseUrl + "images/gallery/church-gathering.jpg";
                       } else if (target.src.includes("church-gathering.jpg")) {
-                        target.src = "/images/gallery/ceremony-1.jpg";
+                        target.src = baseUrl + "images/gallery/ceremony-1.jpg";
                       } else if (target.src.includes("ceremony-1.jpg")) {
-                        target.src = "/images/gallery/timket.jpg";
+                        target.src = baseUrl + "images/gallery/timket.jpg";
                       } else {
-                        target.src = "/images/gallery/church-service.jpg";
+                        target.src =
+                          baseUrl + "images/gallery/church-service.jpg";
                       }
                     }}
                   />

@@ -106,21 +106,29 @@ const Footer: React.FC = () => {
               </li>
               <li>
                 <a
-                  href="https://stgabrielmd.org"
+                  href="https://www.google.com/maps/search/Debre+Bisrat+Dagmawi+Kulubi+St+Gabriel+Ethiopian+Orthodox+Tewahedo+Church+%E1%8B%B0%E1%89%A5%E1%88%A8+%E1%89%A5%E1%88%A5%E1%88%AB%E1%89%B5+%E1%8B%B3%E1%8C%8D%E1%88%9B%E1%8B%8A+%E1%89%81%E1%88%8D%E1%89%A2+%E1%89%85%E1%8B%B1%E1%88%B5+%E1%8C%88%E1%89%A5%E1%88%AD%E1%8A%A4%E1%88%8D+%E1%89%A4%E1%89%B0%E1%8A%AD%E1%88%AD%E1%88%B5%E1%89%B2%E1%8B%AB%E1%8A%95/@29.5352296,-17.578125,3z?entry=ttu&g_ep=EgoyMDI1MDYxNy4wIKXMDSoASAFQAw%3D%3D"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-church-gold transition-all hover:translate-x-1 block py-1 font-medium"
                 >
-                  🌐 {language === "en" ? "Official Website" : "ይፋዊ ድረ-ገጽ"}
+                  <span role="img" aria-label="Map">
+                    🗺️
+                  </span>{" "}
+                  {language === "en" ? "Official Map" : "ይፋዊ ካርታ"}
                 </a>
               </li>
               <li>
-                <Link
-                  to="/contact"
+                <a
+                  href="https://www.youtube.com/@st.gebrieleotcmd"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="hover:text-church-gold transition-all hover:translate-x-1 block py-1 font-medium"
                 >
-                  📞 {t("contact")}
-                </Link>
+                  <span role="img" aria-label="YouTube">
+                    ▶️
+                  </span>{" "}
+                  YouTube
+                </a>
               </li>
             </ul>
           </div>

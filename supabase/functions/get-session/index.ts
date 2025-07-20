@@ -1,10 +1,10 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
 interface SessionRequest {
@@ -19,7 +19,7 @@ serve(async (req: Request) => {
   try {
     const requestData: SessionRequest = await req.json();
     const { session_id } = requestData;
-    
+
     if (!session_id) {
       throw new Error("Missing session_id parameter");
     }
@@ -29,7 +29,7 @@ serve(async (req: Request) => {
     });
 
     const session = await stripe.checkout.sessions.retrieve(session_id, {
-      expand: ['payment_intent', 'subscription', 'customer']
+      expand: ["payment_intent", "subscription", "customer"],
     });
 
     return new Response(JSON.stringify({ session }), {
@@ -38,7 +38,8 @@ serve(async (req: Request) => {
     });
   } catch (error) {
     console.error("Error in get-session function:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,

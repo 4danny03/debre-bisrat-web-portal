@@ -1,10 +1,42 @@
-import React from "react";
+import React, { useState } from "react";
 import Layout from "../components/Layout";
 import { Home, Phone, Mail, Facebook } from "lucide-react";
 import { useLanguage } from "../contexts/LanguageContext";
 
 const Contact: React.FC = () => {
   const { language } = useLanguage();
+  // Add state for form fields and submission status
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    subject: "",
+    message: "",
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    setForm({ ...form, [e.target.id]: e.target.value });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setSuccess(null);
+    setError(null);
+    // Simulate async send (replace with real API call if needed)
+    setTimeout(() => {
+      setSubmitting(false);
+      setSuccess(
+        language === "am" ? "መልዕክትዎ ተልኳል!" : "Your message has been sent!",
+      );
+      setForm({ name: "", email: "", subject: "", message: "" });
+    }, 1200);
+  };
+
   return (
     <Layout>
       <div className="py-12 bg-white shadow-md">
@@ -125,7 +157,7 @@ const Contact: React.FC = () => {
                 <h2 className="text-3xl font-serif text-church-burgundy mb-6">
                   {language === "am" ? "መልዕክት ይላኩልን" : "Send Us a Message"}
                 </h2>
-                <form className="space-y-4">
+                <form className="space-y-4" onSubmit={handleSubmit}>
                   <div>
                     <label htmlFor="name" className="block mb-1 font-medium">
                       {language === "am" ? "ስም" : "Name"}
@@ -133,8 +165,11 @@ const Contact: React.FC = () => {
                     <input
                       type="text"
                       id="name"
+                      value={form.name}
+                      onChange={handleInputChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-church-burgundy"
                       placeholder={language === "am" ? "ስምዎን" : "Your name"}
+                      required
                     />
                   </div>
 
@@ -145,8 +180,11 @@ const Contact: React.FC = () => {
                     <input
                       type="email"
                       id="email"
+                      value={form.email}
+                      onChange={handleInputChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-church-burgundy"
                       placeholder={language === "am" ? "ኢሜይልዎን" : "Your email"}
+                      required
                     />
                   </div>
 
@@ -157,10 +195,13 @@ const Contact: React.FC = () => {
                     <input
                       type="text"
                       id="subject"
+                      value={form.subject}
+                      onChange={handleInputChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-church-burgundy"
                       placeholder={
                         language === "am" ? "የመልዕክት ርዕስ" : "Message subject"
                       }
+                      required
                     />
                   </div>
 
@@ -171,19 +212,36 @@ const Contact: React.FC = () => {
                     <textarea
                       id="message"
                       rows={5}
+                      value={form.message}
+                      onChange={handleInputChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-church-burgundy"
                       placeholder={
                         language === "am" ? "መልዕክትዎን" : "Your message"
                       }
+                      required
                     ></textarea>
                   </div>
+
+                  {success && (
+                    <div className="text-green-600 font-medium">{success}</div>
+                  )}
+                  {error && (
+                    <div className="text-red-600 font-medium">{error}</div>
+                  )}
 
                   <div>
                     <button
                       type="submit"
                       className="bg-church-burgundy text-white px-8 py-3 rounded-md hover:bg-church-burgundy/80 transition-colors"
+                      disabled={submitting}
                     >
-                      {language === "am" ? "መልዕክት ላክ" : "Send Message"}
+                      {submitting
+                        ? language === "am"
+                          ? "በማስተናገድ ላይ..."
+                          : "Sending..."
+                        : language === "am"
+                          ? "መልዕክት ላክ"
+                          : "Send Message"}
                     </button>
                   </div>
                 </form>
