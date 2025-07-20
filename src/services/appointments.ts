@@ -31,7 +31,7 @@ async function callAppointmentFunction<
   filters?: AppointmentFilters,
 ): Promise<R> {
   const { data: functionData, error } = await supabase.functions.invoke(
-    "appointment-management",
+    "supabase-functions-appointment-request",
     {
       body: { action, data, filters },
     },
