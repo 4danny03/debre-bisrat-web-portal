@@ -32,6 +32,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
 
 
 // Religious service images mapping with verified paths
@@ -85,34 +86,26 @@ const Services: React.FC = () => {
     const notes = formData.get("notes") as string;
 
     try {
-      // Prepare appointment data for Edge Function (if you have one) or direct insert
-      const appointmentPayload = {
-        name,
-        email,
-        phone,
-        service_type: service,
-        appointment_date: date,
-        appointment_time: time,
-        notes,
-        status: "pending",
-      };
+      // Use the appointment-request edge function for better validation and processing
+      const { data, error } = await supabase.functions.invoke(
+        "supabase-functions-appointment-request",
+        {
+          body: {
+            name,
+            email,
+            phone,
+            service_title: service,
+            requested_date: date,
+            requested_time: time,
+            notes,
+          },
+        },
+      );
 
-      // Direct insert using Supabase client (current method)
-      // await api.appointments.createAppointment(appointmentPayload);
-
-
-      // Use Edge Function with required action/data format
-      const response = await fetch("/functions/v1/appointment-management", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "create",
-          data: appointmentPayload,
-        }),
-      });
-      const result = await response.json();
-      if (!response.ok || result.error) {
-        throw new Error(result.error || "Appointment request failed");
+      if (error) {
+        throw new Error(
+          error.message || "Failed to submit appointment request",
+        );
       }
 
       toast({
