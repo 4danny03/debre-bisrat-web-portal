@@ -81,7 +81,7 @@ Deno.serve(async (req: Request) => {
       // @ts-expect-error Deno global is available in Supabase Edge runtime
       Deno.env.get("SUPABASE_URL") ?? "",
       // @ts-expect-error Deno global is available in Supabase Edge runtime
-      Deno.env.get("SUPABASE_SERVICE_KEY") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
     const memberId = url.searchParams.get("id");
     const action = url.searchParams.get("action");

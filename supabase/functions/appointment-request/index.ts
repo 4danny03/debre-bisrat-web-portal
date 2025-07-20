@@ -39,7 +39,7 @@ Deno.serve(async (req)=>{
       client_full_name,
       client_email,
       client_phone: client_phone || null,
-      appointment_date: new Date(appointment_date),
+      appointment_date,
       appointment_time,
       service_type,
       status: 'pending',
@@ -57,7 +57,7 @@ Deno.serve(async (req)=>{
     console.error('Appointment request error:', err);
     return new Response(JSON.stringify({
       error: 'Failed to create appointment request',
-      details: err.message
+      details: (err && typeof err === 'object' && 'message' in err) ? (err as any).message : String(err)
     }), {
       headers: {
         'Content-Type': 'application/json'
