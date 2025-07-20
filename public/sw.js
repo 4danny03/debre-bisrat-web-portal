@@ -1,23 +1,23 @@
 // Service Worker for offline capabilities
-const CACHE_NAME = 'church-cache-v1';
+const CACHE_NAME = "church-cache-v1";
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/offline.html',
-  '/favicon.ico',
-  '/images/church-icon.png',
+  "/",
+  "/index.html",
+  "/manifest.json",
+  "/offline.html",
+  "/favicon.ico",
+  "/images/church-icon.png",
 ];
 
-self.addEventListener('install', (event) => {
+self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(urlsToCache);
-    })
+    }),
   );
 });
 
-self.addEventListener('fetch', (event) => {
+self.addEventListener("fetch", (event) => {
   event.respondWith(
     caches.match(event.request).then((response) => {
       if (response) {
@@ -25,7 +25,7 @@ self.addEventListener('fetch', (event) => {
       }
 
       return fetch(event.request).then((response) => {
-        if (!response || response.status !== 200 || response.type !== 'basic') {
+        if (!response || response.status !== 200 || response.type !== "basic") {
           return response;
         }
 
@@ -37,6 +37,6 @@ self.addEventListener('fetch', (event) => {
 
         return response;
       });
-    })
+    }),
   );
 });

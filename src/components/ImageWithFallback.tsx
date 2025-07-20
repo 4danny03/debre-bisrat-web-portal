@@ -10,7 +10,7 @@ interface ImageWithFallbackProps {
 
 const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
   src,
-  fallbackSrc = "/images/gallery/church-service.jpg",
+  fallbackSrc = import.meta.env.BASE_URL + "images/gallery/church-service.jpg",
   alt,
   className = "",
   onError,

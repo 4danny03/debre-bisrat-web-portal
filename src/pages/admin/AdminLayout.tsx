@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate, Link, Outlet, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,11 +41,7 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
       const {
         data: { session },
@@ -101,7 +97,11 @@ export default function AdminLayout() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -127,12 +127,6 @@ export default function AdminLayout() {
       icon: Calendar,
       label: "Events",
       description: "Manage church events",
-    },
-    {
-      to: "/admin/sermons",
-      icon: Activity,
-      label: "Sermons",
-      description: "Manage sermons and audio",
     },
     {
       to: "/admin/members",
