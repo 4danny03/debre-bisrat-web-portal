@@ -254,11 +254,18 @@ export default function Events() {
     loadEvents();
   }, []);
 
-  // Removed data refresh hook to prevent circular dependencies
+  // Use enhanced data refresh hook
+  const { manualRefresh, forceSyncData } = useDataRefresh(
+    loadEvents,
+    5 * 60 * 1000, // Refresh every 5 minutes
+    [],
+    "events",
+  );
 
   const handleManualRefresh = async () => {
     console.log("Manual refresh triggered for events");
-    await loadEvents();
+    await manualRefresh();
+    await forceSyncData();
   };
 
   return (

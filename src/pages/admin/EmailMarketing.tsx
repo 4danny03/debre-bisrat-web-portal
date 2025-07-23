@@ -13,13 +13,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Mail, Users, Send, Eye } from "lucide-react";
 
 export default function EmailMarketing() {
-  const [subscribers, setSubscribers] = useState([]);
-  const [campaigns, setCampaigns] = useState([]);
-  const [templates, setTemplates] = useState([]);
+  const [subscribers, setSubscribers] = useState<any[]>([]);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const { toast } = useToast();
@@ -53,9 +53,10 @@ export default function EmailMarketing() {
         ],
       );
 
-      if (subscribersData.data) setSubscribers(subscribersData.data);
-      if (campaignsData.data) setCampaigns(campaignsData.data);
-      if (templatesData.data) setTemplates(templatesData.data);
+      if (Array.isArray(subscribersData.data))
+        setSubscribers(subscribersData.data);
+      if (Array.isArray(campaignsData.data)) setCampaigns(campaignsData.data);
+      if (Array.isArray(templatesData.data)) setTemplates(templatesData.data);
     } catch (error) {
       console.error("Error loading data:", error);
       toast({
@@ -88,7 +89,7 @@ export default function EmailMarketing() {
           subject: newCampaign.subject,
           content: newCampaign.content,
           status: "sending",
-          recipient_count: subscribers.length,
+          recipient_count: Array.isArray(subscribers) ? subscribers.length : 0,
         })
         .select()
         .single();
@@ -97,14 +98,16 @@ export default function EmailMarketing() {
 
       // Send emails
       const { error: emailError } = await supabase.functions.invoke(
-        "send-email",
+        "supabase-functions-send-email",
         {
           body: {
             type: "newsletter",
             data: {
               content: newCampaign.content,
             },
-            recipients: subscribers.map((sub: any) => sub.email),
+            recipients: Array.isArray(subscribers)
+              ? subscribers.map((sub: any) => sub?.email).filter(Boolean)
+              : [],
           },
         },
       );
@@ -117,13 +120,13 @@ export default function EmailMarketing() {
         .update({
           status: "sent",
           sent_at: new Date().toISOString(),
-          sent_count: subscribers.length,
+          sent_count: Array.isArray(subscribers) ? subscribers.length : 0,
         })
         .eq("id", campaign.id);
 
       toast({
         title: "Success",
-        description: `Newsletter sent to ${subscribers.length} subscribers`,
+        description: `Newsletter sent to ${Array.isArray(subscribers) ? subscribers.length : 0} subscribers`,
       });
 
       setNewCampaign({ name: "", subject: "", content: "" });
@@ -157,7 +160,9 @@ export default function EmailMarketing() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{subscribers.length}</div>
+            <div className="text-2xl font-bold">
+              {Array.isArray(subscribers) ? subscribers.length : 0}
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -169,7 +174,9 @@ export default function EmailMarketing() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {campaigns.filter((c) => c.status === "sent").length}
+              {Array.isArray(campaigns)
+                ? campaigns.filter((c) => c?.status === "sent").length
+                : 0}
             </div>
           </CardContent>
         </Card>
@@ -181,7 +188,9 @@ export default function EmailMarketing() {
             <Mail className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{templates.length}</div>
+            <div className="text-2xl font-bold">
+              {Array.isArray(templates) ? templates.length : 0}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -252,7 +261,7 @@ export default function EmailMarketing() {
               >
                 {sending
                   ? "Sending..."
-                  : `Send to ${subscribers.length} Subscribers`}
+                  : `Send to ${Array.isArray(subscribers) ? subscribers.length : 0} Subscribers`}
               </Button>
             </CardContent>
           </Card>
@@ -268,32 +277,40 @@ export default function EmailMarketing() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {subscribers.map((subscriber: any) => (
-                  <div
-                    key={subscriber.id}
-                    className="flex items-center justify-between p-4 border rounded"
-                  >
-                    <div>
-                      <p className="font-medium">
-                        {subscriber.name || "Anonymous"}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {subscriber.email}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        Subscribed:{" "}
-                        {new Date(
-                          subscriber.subscription_date,
-                        ).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <Badge
-                      variant={subscriber.subscribed ? "default" : "secondary"}
+                {Array.isArray(subscribers) && subscribers.length > 0 ? (
+                  subscribers.map((subscriber: any) => (
+                    <div
+                      key={subscriber.id}
+                      className="flex items-center justify-between p-4 border rounded"
                     >
-                      {subscriber.subscribed ? "Active" : "Unsubscribed"}
-                    </Badge>
+                      <div>
+                        <p className="font-medium">
+                          {subscriber.name || "Anonymous"}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {subscriber.email}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          Subscribed:{" "}
+                          {new Date(
+                            subscriber.subscription_date,
+                          ).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Badge
+                        variant={
+                          subscriber.subscribed ? "default" : "secondary"
+                        }
+                      >
+                        {subscriber.subscribed ? "Active" : "Unsubscribed"}
+                      </Badge>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    No subscribers found
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
           </Card>
@@ -307,41 +324,47 @@ export default function EmailMarketing() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {campaigns.map((campaign: any) => (
-                  <div
-                    key={campaign.id}
-                    className="flex items-center justify-between p-4 border rounded"
-                  >
-                    <div>
-                      <p className="font-medium">{campaign.name}</p>
-                      <p className="text-sm text-gray-500">
-                        {campaign.subject}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        {campaign.sent_at
-                          ? `Sent: ${new Date(campaign.sent_at).toLocaleDateString()}`
-                          : `Created: ${new Date(campaign.created_at).toLocaleDateString()}`}
-                      </p>
+                {Array.isArray(campaigns) && campaigns.length > 0 ? (
+                  campaigns.map((campaign: any) => (
+                    <div
+                      key={campaign.id}
+                      className="flex items-center justify-between p-4 border rounded"
+                    >
+                      <div>
+                        <p className="font-medium">{campaign.name}</p>
+                        <p className="text-sm text-gray-500">
+                          {campaign.subject}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {campaign.sent_at
+                            ? `Sent: ${new Date(campaign.sent_at).toLocaleDateString()}`
+                            : `Created: ${new Date(campaign.created_at).toLocaleDateString()}`}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <Badge
+                          variant={
+                            campaign.status === "sent"
+                              ? "default"
+                              : campaign.status === "sending"
+                                ? "secondary"
+                                : "outline"
+                          }
+                        >
+                          {campaign.status}
+                        </Badge>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {campaign.sent_count || 0} /{" "}
+                          {campaign.recipient_count || 0} sent
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <Badge
-                        variant={
-                          campaign.status === "sent"
-                            ? "default"
-                            : campaign.status === "sending"
-                              ? "secondary"
-                              : "outline"
-                        }
-                      >
-                        {campaign.status}
-                      </Badge>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {campaign.sent_count || 0} /{" "}
-                        {campaign.recipient_count || 0} sent
-                      </p>
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    No campaigns found
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
           </Card>

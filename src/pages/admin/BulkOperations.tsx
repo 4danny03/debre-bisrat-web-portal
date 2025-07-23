@@ -49,7 +49,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { api } from "@/integrations/supabase/api";
 
 interface BulkOperation {
@@ -87,19 +87,24 @@ export default function BulkOperations() {
         setImportData(content);
       } else if (file.type === "text/csv") {
         // Convert CSV to JSON format
-        const lines = content.split("\n");
-        const headers = lines[0].split(",");
+        const lines = content.split("\n").filter((line) => line.trim());
+        if (lines.length < 2) {
+          throw new Error(
+            "CSV must have at least a header row and one data row",
+          );
+        }
+        const headers = lines[0].split(",").map((h) => h.trim());
         const jsonData = lines
           .slice(1)
           .map((line) => {
             const values = line.split(",");
             const obj: any = {};
             headers.forEach((header, index) => {
-              obj[header.trim()] = values[index]?.trim();
+              obj[header] = values[index]?.trim() || "";
             });
             return obj;
           })
-          .filter((obj) => Object.values(obj).some((val) => val));
+          .filter((obj) => Object.values(obj).some((val) => val && val !== ""));
         setImportData(JSON.stringify(jsonData, null, 2));
       }
     };
@@ -120,6 +125,9 @@ export default function BulkOperations() {
       const data = JSON.parse(importData);
       if (!Array.isArray(data)) {
         throw new Error("Data must be an array");
+      }
+      if (data.length === 0) {
+        throw new Error("Data array cannot be empty");
       }
 
       const operation: BulkOperation = {
@@ -266,10 +274,12 @@ export default function BulkOperations() {
     }
 
     try {
-      // Get all active email subscribers
-      const subscribers = await api.emailSubscribers.getSubscribers();
-      const activeSubscribers =
-        subscribers?.filter((s) => s.status === "active") || [];
+      // Get all active newsletter subscribers
+      const { data: subscribers } = await supabase
+        .from("newsletter_subscribers")
+        .select("*")
+        .eq("subscribed", true);
+      const activeSubscribers = subscribers || [];
 
       if (activeSubscribers.length === 0) {
         toast({
@@ -281,15 +291,19 @@ export default function BulkOperations() {
       }
 
       // Create email campaign
-      const campaign = await api.emailCampaigns.createCampaign({
-        name: `Bulk Email - ${new Date().toLocaleDateString()}`,
-        subject: bulkEmailContent.subject,
-        content: bulkEmailContent.content,
-        status: "sent",
-        recipient_count: activeSubscribers.length,
-        sent_count: activeSubscribers.length,
-        sent_at: new Date().toISOString(),
-      });
+      const { data: campaign } = await supabase
+        .from("email_campaigns")
+        .insert({
+          name: `Bulk Email - ${new Date().toLocaleDateString()}`,
+          subject: bulkEmailContent.subject,
+          content: bulkEmailContent.content,
+          status: "sent",
+          recipient_count: activeSubscribers.length,
+          sent_count: activeSubscribers.length,
+          sent_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
 
       toast({
         title: "Success",

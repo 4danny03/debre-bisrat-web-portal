@@ -1,10 +1,42 @@
-import React from "react";
+import React, { useState } from "react";
 import Layout from "../components/Layout";
 import { Home, Phone, Mail, Facebook } from "lucide-react";
 import { useLanguage } from "../contexts/LanguageContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 
 const Contact: React.FC = () => {
   const { language } = useLanguage();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      // Simulate form submission
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      toast({
+        title: "Message Sent",
+        description: "Thank you for your message. We'll get back to you soon.",
+      });
+
+      // Reset form
+      (e.target as HTMLFormElement).reset();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   return (
     <Layout>
       <div className="py-12 bg-white shadow-md">
@@ -125,15 +157,16 @@ const Contact: React.FC = () => {
                 <h2 className="text-3xl font-serif text-church-burgundy mb-6">
                   {language === "am" ? "መልዕክት ይላኩልን" : "Send Us a Message"}
                 </h2>
-                <form className="space-y-4">
+                <form className="space-y-4" onSubmit={handleSubmit}>
                   <div>
                     <label htmlFor="name" className="block mb-1 font-medium">
                       {language === "am" ? "ስም" : "Name"}
                     </label>
-                    <input
+                    <Input
                       type="text"
                       id="name"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-church-burgundy"
+                      name="name"
+                      required
                       placeholder={language === "am" ? "ስምዎን" : "Your name"}
                     />
                   </div>
@@ -142,10 +175,11 @@ const Contact: React.FC = () => {
                     <label htmlFor="email" className="block mb-1 font-medium">
                       {language === "am" ? "ኢሜይል" : "Email"}
                     </label>
-                    <input
+                    <Input
                       type="email"
                       id="email"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-church-burgundy"
+                      name="email"
+                      required
                       placeholder={language === "am" ? "ኢሜይልዎን" : "Your email"}
                     />
                   </div>
@@ -154,10 +188,11 @@ const Contact: React.FC = () => {
                     <label htmlFor="subject" className="block mb-1 font-medium">
                       {language === "am" ? "ርዕስ" : "Subject"}
                     </label>
-                    <input
+                    <Input
                       type="text"
                       id="subject"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-church-burgundy"
+                      name="subject"
+                      required
                       placeholder={
                         language === "am" ? "የመልዕክት ርዕስ" : "Message subject"
                       }
@@ -168,23 +203,34 @@ const Contact: React.FC = () => {
                     <label htmlFor="message" className="block mb-1 font-medium">
                       {language === "am" ? "መልዕክት" : "Message"}
                     </label>
-                    <textarea
+                    <Textarea
                       id="message"
+                      name="message"
                       rows={5}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-church-burgundy"
+                      required
                       placeholder={
                         language === "am" ? "መልዕክትዎን" : "Your message"
                       }
-                    ></textarea>
+                    />
                   </div>
 
                   <div>
-                    <button
+                    <Button
                       type="submit"
-                      className="bg-church-burgundy text-white px-8 py-3 rounded-md hover:bg-church-burgundy/80 transition-colors"
+                      disabled={isSubmitting}
+                      className="bg-church-burgundy hover:bg-church-burgundy/90 text-white px-8 py-3"
                     >
-                      {language === "am" ? "መልዕክት ላክ" : "Send Message"}
-                    </button>
+                      {isSubmitting ? (
+                        <div className="flex items-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          {language === "am" ? "በመላክ ላይ..." : "Sending..."}
+                        </div>
+                      ) : language === "am" ? (
+                        "መልዕክት ላክ"
+                      ) : (
+                        "Send Message"
+                      )}
+                    </Button>
                   </div>
                 </form>
               </div>

@@ -1,4 +1,4 @@
-import { type FC, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
@@ -26,19 +26,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  CheckCircle,
-  User,
-  CreditCard,
-  FileText,
-  AlertCircle,
-  Phone,
-  Mail,
-  MapPin,
-  Calendar,
-  Users,
-  Heart,
-} from "lucide-react";
+import { CheckCircle, User, CreditCard, MapPin } from "lucide-react";
 
 interface FormData {
   // Personal Information
@@ -64,7 +52,7 @@ interface FormData {
   agreeToTerms: boolean;
 }
 
-const MembershipRegistration: FC = () => {
+const MembershipRegistration = () => {
   const { t, language } = useLanguage();
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
@@ -96,31 +84,7 @@ const MembershipRegistration: FC = () => {
   const totalSteps = 3;
   const progressPercentage = (currentStep / totalSteps) * 100;
 
-  const ministryOptions = [
-    "Sunday School",
-    "Youth Ministry",
-    "Music Ministry",
-    "Prayer Ministry",
-    "Outreach Ministry",
-    "Women's Ministry",
-    "Men's Ministry",
-    "Children's Ministry",
-    "Hospitality Ministry",
-    "Media Ministry",
-  ];
-
-  const volunteerOptions = [
-    "Event Planning",
-    "Cleaning & Maintenance",
-    "Food Service",
-    "Transportation",
-    "Translation Services",
-    "Technical Support",
-    "Administrative Support",
-    "Fundraising",
-    "Community Outreach",
-    "Teaching",
-  ];
+  // Removed unused ministryOptions and volunteerOptions arrays
 
   const validateStep = (step: number): boolean => {
     const errors: Record<string, string> = {};
@@ -178,9 +142,7 @@ const MembershipRegistration: FC = () => {
     }
   };
 
-  const handleArrayChange = (field: keyof FormData, values: string[]) => {
-    setFormData((prev) => ({ ...prev, [field]: values }));
-  };
+  // Removed unused handleArrayChange function
 
   const addChild = () => {
     setChildren((prev) => [...prev, { name: "", age: "" }]);
@@ -210,42 +172,6 @@ const MembershipRegistration: FC = () => {
     setIsSubmitting(true);
 
     try {
-      // Create member record
-      const { data: memberData, error: memberError } = await supabase
-        .from("members")
-        .insert([
-          {
-            full_name: `${formData.firstName} ${formData.lastName}`,
-            email: formData.email,
-            phone: formData.phone,
-            address: `${formData.streetAddress}, ${formData.city}, ${formData.stateProvinceRegion} ${formData.postalZipCode}`,
-            membership_type: formData.membershipType,
-            membership_status: "pending",
-            join_date: new Date().toISOString(),
-            registration_date: new Date().toISOString().split("T")[0],
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            street_address: formData.streetAddress,
-            city: formData.city,
-            state_province_region: formData.stateProvinceRegion,
-            postal_zip_code: formData.postalZipCode,
-            country: formData.country,
-            date_of_birth: formData.dateOfBirth,
-            gender: formData.gender,
-            preferred_language: formData.preferredLanguage,
-            ministry_interests: formData.ministryInterests
-              ? [formData.ministryInterests]
-              : [],
-            email_updates: formData.emailUpdates,
-          },
-        ])
-        .select()
-        .single();
-
-      if (memberError) {
-        throw memberError;
-      }
-
       // Determine membership fee based on type
       const membershipFees = {
         regular: "100",
@@ -266,7 +192,7 @@ const MembershipRegistration: FC = () => {
         email: formData.email,
         name: `${formData.firstName} ${formData.lastName}`,
         address: `${formData.streetAddress}, ${formData.city}, ${formData.stateProvinceRegion} ${formData.postalZipCode}`,
-        memberId: memberData.id,
+        // memberId will be set after member creation
         membershipType: formData.membershipType,
       };
 
@@ -278,12 +204,59 @@ const MembershipRegistration: FC = () => {
         membershipFee,
       );
 
-      const response = await supabase.functions.invoke(
-        "supabase-functions-create-checkout",
+      // First create the member record using the membership-management function
+      const memberResponse = await supabase.functions.invoke(
+        "membership-management",
         {
-          body: checkoutData,
+          body: {
+            action: "create_member",
+            member_data: {
+              full_name: `${formData.firstName} ${formData.lastName}`,
+              first_name: formData.firstName,
+              last_name: formData.lastName,
+              email: formData.email,
+              phone: formData.phone,
+              address: `${formData.streetAddress}, ${formData.city}, ${formData.stateProvinceRegion} ${formData.postalZipCode}`,
+              street_address: formData.streetAddress,
+              city: formData.city,
+              state_province_region: formData.stateProvinceRegion,
+              postal_zip_code: formData.postalZipCode,
+              country: formData.country,
+              date_of_birth: formData.dateOfBirth,
+              gender: formData.gender,
+              membership_type: formData.membershipType,
+              preferred_language: formData.preferredLanguage,
+              ministry_interests: formData.ministryInterests,
+              email_updates: formData.emailUpdates,
+              terms_accepted: formData.agreeToTerms,
+              newsletter_consent: formData.emailUpdates,
+            },
+          },
         },
       );
+
+      if (memberResponse.error) {
+        console.error("Member creation error:", memberResponse.error);
+        throw new Error(
+          `Member registration failed: ${memberResponse.error.message || "Unknown error"}`,
+        );
+      }
+
+      const newMember = memberResponse.data?.member;
+      if (!newMember) {
+        throw new Error("Failed to create member record");
+      }
+
+      // Then create the checkout session
+      const response = await supabase.functions.invoke("webhook-handler", {
+        body: {
+          action: "create_checkout",
+          checkout_data: {
+            ...checkoutData,
+            memberId: newMember.id,
+          },
+        },
+      });
 
       console.log("Checkout function response:", response);
       console.log("Response data:", response.data);

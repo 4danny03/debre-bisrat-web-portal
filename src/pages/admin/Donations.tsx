@@ -47,7 +47,7 @@ import {
   Filter,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
 interface Donation {
@@ -101,15 +101,16 @@ export default function AdminDonations() {
       });
       setDonations([]);
     } else {
-      // Ensure data has proper structure
-      const processedData = data.map((donation) => ({
+      // Ensure data has proper structure with safe array handling
+      const safeData = Array.isArray(data) ? data : [];
+      const processedData = safeData.map((donation) => ({
         ...donation,
-        amount: Number(donation.amount) || 0,
-        payment_status: donation.payment_status || "pending",
-        is_anonymous: Boolean(donation.is_anonymous),
-        donor_name: donation.donor_name || null,
-        donor_email: donation.donor_email || "",
-        purpose: donation.purpose || "general_fund",
+        amount: Number(donation?.amount) || 0,
+        payment_status: donation?.payment_status || "pending",
+        is_anonymous: Boolean(donation?.is_anonymous),
+        donor_name: donation?.donor_name || null,
+        donor_email: donation?.donor_email || "",
+        purpose: donation?.purpose || "general_fund",
       }));
 
       setDonations(processedData);
@@ -120,46 +121,61 @@ export default function AdminDonations() {
   };
 
   const filterDonations = () => {
+    if (!Array.isArray(donations)) {
+      setFilteredDonations([]);
+      return;
+    }
+
     let filtered = donations;
 
     // Search filter
     if (searchTerm) {
       filtered = filtered.filter(
         (donation) =>
-          donation.donor_email
+          donation?.donor_email
             ?.toLowerCase()
             .includes(searchTerm.toLowerCase()) ||
-          donation.donor_name
+          donation?.donor_name
             ?.toLowerCase()
             .includes(searchTerm.toLowerCase()) ||
-          donation.purpose.toLowerCase().includes(searchTerm.toLowerCase()),
+          donation?.purpose?.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
     // Status filter
     if (statusFilter !== "all") {
       filtered = filtered.filter(
-        (donation) => donation.payment_status === statusFilter,
+        (donation) => donation?.payment_status === statusFilter,
       );
     }
 
     // Purpose filter
     if (purposeFilter !== "all") {
       filtered = filtered.filter(
-        (donation) => donation.purpose === purposeFilter,
+        (donation) => donation?.purpose === purposeFilter,
       );
     }
 
-    // Date range filter
+    // Date range filter with safe date handling
     if (dateRange.from) {
-      filtered = filtered.filter(
-        (donation) => new Date(donation.created_at) >= new Date(dateRange.from),
-      );
+      filtered = filtered.filter((donation) => {
+        if (!donation?.created_at) return false;
+        try {
+          return new Date(donation.created_at) >= new Date(dateRange.from);
+        } catch {
+          return false;
+        }
+      });
     }
     if (dateRange.to) {
-      filtered = filtered.filter(
-        (donation) => new Date(donation.created_at) <= new Date(dateRange.to),
-      );
+      filtered = filtered.filter((donation) => {
+        if (!donation?.created_at) return false;
+        try {
+          return new Date(donation.created_at) <= new Date(dateRange.to);
+        } catch {
+          return false;
+        }
+      });
     }
 
     setFilteredDonations(filtered);
@@ -186,22 +202,40 @@ export default function AdminDonations() {
   };
 
   const calculateStats = () => {
+    if (!Array.isArray(donations)) {
+      return {
+        totalAmount: 0,
+        averageAmount: 0,
+        totalDonations: 0,
+        thisMonthAmount: 0,
+        thisMonthCount: 0,
+      };
+    }
+
     const completedDonations = donations.filter(
-      (d) => d.payment_status === "completed",
+      (d) => d?.payment_status === "completed",
     );
     const totalAmount = completedDonations.reduce(
-      (sum, d) => sum + d.amount,
+      (sum, d) => sum + (Number(d?.amount) || 0),
       0,
     );
     const averageAmount =
       completedDonations.length > 0
         ? totalAmount / completedDonations.length
         : 0;
-    const thisMonthDonations = completedDonations.filter(
-      (d) => new Date(d.created_at).getMonth() === new Date().getMonth(),
-    );
+
+    const currentMonth = new Date().getMonth();
+    const thisMonthDonations = completedDonations.filter((d) => {
+      if (!d?.created_at) return false;
+      try {
+        return new Date(d.created_at).getMonth() === currentMonth;
+      } catch {
+        return false;
+      }
+    });
+
     const thisMonthAmount = thisMonthDonations.reduce(
-      (sum, d) => sum + d.amount,
+      (sum, d) => sum + (Number(d?.amount) || 0),
       0,
     );
 
@@ -215,6 +249,15 @@ export default function AdminDonations() {
   };
 
   const exportDonations = () => {
+    if (!Array.isArray(filteredDonations)) {
+      toast({
+        title: "Error",
+        description: "No donations to export",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const csvContent = [
       [
         "Date",
@@ -225,15 +268,20 @@ export default function AdminDonations() {
         "Status",
         "Payment Method",
       ],
-      ...filteredDonations.map((donation) => [
-        format(new Date(donation.created_at), "yyyy-MM-dd HH:mm"),
-        donation.is_anonymous ? "Anonymous" : donation.donor_name || "N/A",
-        donation.is_anonymous ? "Anonymous" : donation.donor_email,
-        `$${donation.amount.toFixed(2)}`,
-        getPurposeLabel(donation.purpose),
-        donation.payment_status,
-        donation.payment_method || "N/A",
-      ]),
+      ...filteredDonations.map((donation) => {
+        const safeDate = donation?.created_at
+          ? format(new Date(donation.created_at), "yyyy-MM-dd HH:mm")
+          : "N/A";
+        return [
+          safeDate,
+          donation?.is_anonymous ? "Anonymous" : donation?.donor_name || "N/A",
+          donation?.is_anonymous ? "Anonymous" : donation?.donor_email || "N/A",
+          `${(Number(donation?.amount) || 0).toFixed(2)}`,
+          getPurposeLabel(donation?.purpose || "general_fund"),
+          donation?.payment_status || "N/A",
+          donation?.payment_method || "N/A",
+        ];
+      }),
     ]
       .map((row) => row.join(","))
       .join("\n");
@@ -335,7 +383,10 @@ export default function AdminDonations() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-600">
-              {new Set(donations.map((d) => d.donor_email)).size}
+              {Array.isArray(donations)
+                ? new Set(donations.map((d) => d?.donor_email).filter(Boolean))
+                    .size
+                : 0}
             </div>
             <p className="text-xs text-gray-500">Total donors</p>
           </CardContent>

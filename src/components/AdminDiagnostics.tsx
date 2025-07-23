@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { ErrorHandler } from "@/utils/errorHandling";
 import {
   Card,
@@ -157,16 +157,15 @@ export default function AdminDiagnostics({
   };
 
   const groupResultsByCategory = (results: TestResult[]) => {
-    if (!Array.isArray(results)) {
-      console.warn("groupResultsByCategory: results is not an array");
+    if (!Array.isArray(results) || results.length === 0) {
+      console.warn("groupResultsByCategory: results is not a valid array");
       return {};
     }
 
-    const safeResults = ErrorHandler.safeArrayAccess(results, []);
-    if (
-      !Array.isArray(safeResults) ||
-      ErrorHandler.safeLength(safeResults) === 0
-    ) {
+    const safeResults = results.filter(
+      (result) => result && typeof result === "object",
+    );
+    if (safeResults.length === 0) {
       console.warn("groupResultsByCategory: no valid results to categorize");
       return {};
     }
@@ -216,10 +215,7 @@ export default function AdminDiagnostics({
 
     // Remove empty categories
     Object.keys(categories).forEach((key) => {
-      if (
-        !Array.isArray(categories[key]) ||
-        ErrorHandler.safeLength(categories[key]) === 0
-      ) {
+      if (!Array.isArray(categories[key]) || categories[key].length === 0) {
         delete categories[key];
       }
     });
@@ -242,7 +238,8 @@ export default function AdminDiagnostics({
     }
   };
 
-  const summary = results.length > 0 ? adminTestSuite.getTestSummary() : null;
+  const summary =
+    (results?.length || 0) > 0 ? adminTestSuite.getTestSummary() : null;
   const categorizedResults = groupResultsByCategory(results);
 
   return (
@@ -325,10 +322,9 @@ export default function AdminDiagnostics({
                 return null;
               }
 
-              const safeResults = ErrorHandler.safeArrayAccess(
-                categoryResults,
-                [],
-              );
+              const safeResults = Array.isArray(categoryResults)
+                ? categoryResults
+                : [];
               const categoryStatus = safeResults.some(
                 (r) => r && r.status === "fail",
               )
@@ -350,7 +346,11 @@ export default function AdminDiagnostics({
                             {getCategoryIcon(category)}
                             <span className="ml-2">{category}</span>
                             <span className="ml-2 text-sm text-gray-500">
-                              ({ErrorHandler.safeLength(categoryResults)} tests)
+                              (
+                              {Array.isArray(categoryResults)
+                                ? categoryResults.length
+                                : 0}{" "}
+                              tests)
                             </span>
                           </span>
                           <div className="flex items-center space-x-2">
@@ -367,10 +367,7 @@ export default function AdminDiagnostics({
                     <CollapsibleContent>
                       <CardContent>
                         <div className="space-y-2">
-                          {ErrorHandler.safeArrayAccess(
-                            categoryResults,
-                            [],
-                          ).map((result, index) => {
+                          {(categoryResults || []).map((result, index) => {
                             if (!result) {
                               console.warn(`Invalid result at index ${index}`);
                               return null;
@@ -414,7 +411,7 @@ export default function AdminDiagnostics({
         </div>
       )}
 
-      {results.length === 0 && !isRunning && (
+      {(results?.length || 0) === 0 && !isRunning && (
         <Card>
           <CardContent className="text-center py-8">
             <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
