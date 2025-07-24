@@ -2,39 +2,43 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface ImageSliderProps {
-  images: string[];
+  slides: {
+    image: string;
+    title: string;
+    content: string;
+  }[];
   autoPlay?: boolean;
   interval?: number;
 }
 
 export default function ImageSlider({
-  images,
+  slides = [],
   autoPlay = false,
   interval = 3000,
 }: ImageSliderProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [imageLoaded, setImageLoaded] = useState<boolean[]>(
-    new Array(images.length).fill(false),
+    new Array(slides.length).fill(false),
   );
 
   useEffect(() => {
-    if (!autoPlay || images.length <= 1) return;
+    if (!autoPlay || slides.length <= 1) return;
 
     const autoAdvance = setInterval(() => {
-      setCurrentSlide((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+      setCurrentSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
     }, 7000); // 7 seconds for better readability
 
     return () => clearInterval(autoAdvance);
-  }, [autoPlay, images.length]);
+  }, [autoPlay, slides.length]);
 
   // Preload next image for better performance
   useEffect(() => {
-    if (images.length > 0) {
-      const nextIndex = (currentSlide + 1) % images.length;
+    if (slides.length > 0) {
+      const nextIndex = (currentSlide + 1) % slides.length;
       const img = new Image();
-      img.src = images[nextIndex];
+      img.src = slides[nextIndex].image;
     }
-  }, [currentSlide, images]);
+  }, [currentSlide, slides]);
 
   const handleImageLoad = (index: number) => {
     setImageLoaded((prev) => {
@@ -53,17 +57,17 @@ export default function ImageSlider({
   };
 
   const prevSlide = () => {
-    setCurrentSlide(currentSlide === 0 ? images.length - 1 : currentSlide - 1);
+    setCurrentSlide(currentSlide === 0 ? slides.length - 1 : currentSlide - 1);
   };
 
   const nextSlide = () => {
-    setCurrentSlide(currentSlide === images.length - 1 ? 0 : currentSlide + 1);
+    setCurrentSlide(currentSlide === slides.length - 1 ? 0 : currentSlide + 1);
   };
 
-  if (!images || images.length === 0) {
+  if (!slides || slides.length === 0) {
     return (
       <div className="w-full h-64 bg-gray-200 flex items-center justify-center">
-        No images available
+        No slides available
       </div>
     );
   }
@@ -71,7 +75,7 @@ export default function ImageSlider({
   return (
     <div className="relative w-full h-[450px] md:h-[550px] lg:h-[650px] overflow-hidden rounded-2xl shadow-2xl border border-church-gold/20">
       <div className="absolute inset-0 bg-gradient-to-br from-church-burgundy/5 via-transparent to-church-gold/5 pointer-events-none z-10"></div>
-      {images.map((image, index) => (
+      {slides.map((slide, index) => (
         <div
           key={index}
           className={`absolute inset-0 transition-all duration-1200 ease-in-out ${
@@ -86,7 +90,7 @@ export default function ImageSlider({
             </div>
           )}
           <img
-            src={image}
+            src={slide.image}
             alt={`Slide ${index + 1}`}
             className={`w-full h-full object-cover transition-all duration-1000 ${
               imageLoaded[index] ? "opacity-100" : "opacity-0"
@@ -146,7 +150,7 @@ export default function ImageSlider({
       </button>
 
       <div className="absolute bottom-6 md:bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-3 z-30">
-        {images.map((_, index) => (
+        {slides.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}
@@ -175,7 +179,7 @@ export default function ImageSlider({
         <div
           className="h-full bg-gradient-to-r from-church-gold via-church-gold/80 to-church-gold transition-all duration-500 ease-out shadow-sm"
           style={{
-            width: `${((currentSlide + 1) / images.length) * 100}%`,
+            width: `${((currentSlide + 1) / slides.length) * 100}%`,
           }}
         ></div>
       </div>

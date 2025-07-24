@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -25,7 +25,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Table,
@@ -46,14 +45,15 @@ import {
   XCircle,
   Calendar,
   RefreshCw,
-  Filter,
 } from "lucide-react";
 import { api } from "@/integrations/supabase/api";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import LoadingState from "@/components/LoadingState";
 import EmptyState from "@/components/EmptyState";
+// @ts-ignore
+import { saveAs } from "file-saver";
+import { User as SupabaseUser } from "@supabase/supabase-js";
 
 interface Appointment {
   id: string;
@@ -63,75 +63,81 @@ interface Appointment {
   service_title: string;
   requested_date: string;
   requested_time: string;
-  notes: string | null;
+  notes?: string | null;
   status: string;
-  admin_response: string | null;
-  admin_notes: string | null;
-  confirmed_date: string | null;
-  confirmed_time: string | null;
-  responded_by: string | null;
-  responded_at: string | null;
+  admin_response?: string | null;
+  admin_notes?: string | null;
+  confirmed_date?: string | null;
+  confirmed_time?: string | null;
+  responded_by?: string | null;
+  responded_at?: string | null;
   created_at: string;
-  updated_at: string;
+  updated_at?: string | null;
   responded_by_profile?: { email: string } | null;
 }
 
-export default function Appointments() {
+const AdminAppointments: React.FC = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAppointment, setSelectedAppointment] =
     useState<Appointment | null>(null);
   const [responseDialog, setResponseDialog] = useState(false);
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [currentUser, setCurrentUser] = useState<SupabaseUser | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    loadAppointments();
-    getCurrentUser();
-  }, [statusFilter]);
+  // Error boundary for robust UI
+  const [errorBoundary, setErrorBoundary] = useState<string | null>(null);
 
-  const getCurrentUser = async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    setCurrentUser(session?.user);
-  };
-
-  const loadAppointments = async () => {
+  const loadAppointments = useCallback(async () => {
+    setLoading(true);
+    setErrorBoundary(null);
     try {
-      setLoading(true);
       let data;
-      if (statusFilter === "all") {
+      if (!statusFilter || statusFilter === "all") {
         data = await api.appointments.getAppointments();
       } else {
         data = await api.appointments.getAppointmentsByStatus(statusFilter);
       }
-      const validatedData = Array.isArray(data) ? data : [];
-      setAppointments(validatedData);
-    } catch (error) {
-      console.error("Error loading appointments:", error);
+      setAppointments(data || []);
+    } catch (error: unknown) {
+      const errorMessage =
+        typeof error === "object" && error !== null && "message" in error
+          ? (error as { message?: string }).message
+          : String(error);
+      setErrorBoundary(errorMessage || "Failed to load appointments");
       toast({
         title: "Error",
-        description: "Failed to load appointments",
+        description: errorMessage || "Failed to load appointments",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
+  }, [statusFilter, toast]);
+
+  useEffect(() => {
+    loadAppointments();
+    getCurrentUser();
+  }, [loadAppointments]);
+
+  const getCurrentUser = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    setCurrentUser(session?.user ?? null);
   };
 
   const handleResponse = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!selectedAppointment || !currentUser) return;
-
     const formData = new FormData(e.currentTarget);
     const status = formData.get("status") as string;
     const admin_response = formData.get("admin_response") as string;
     const admin_notes = formData.get("admin_notes") as string;
     const confirmed_date = formData.get("confirmed_date") as string;
     const confirmed_time = formData.get("confirmed_time") as string;
-
     try {
       await api.appointments.respondToAppointment(selectedAppointment.id, {
         status,
@@ -139,14 +145,9 @@ export default function Appointments() {
         admin_notes: admin_notes || undefined,
         confirmed_date: confirmed_date || undefined,
         confirmed_time: confirmed_time || undefined,
-        responded_by: currentUser.id,
+        responded_by: currentUser?.id,
       });
-
-      toast({
-        title: "Success",
-        description: "Response sent successfully",
-      });
-
+      toast({ title: "Success", description: "Response sent successfully" });
       setResponseDialog(false);
       setSelectedAppointment(null);
       loadAppointments();
@@ -183,11 +184,9 @@ export default function Appointments() {
         color: "text-blue-600",
       },
     };
-
     const config =
       variants[status as keyof typeof variants] || variants.pending;
     const Icon = config.icon;
-
     return (
       <Badge variant={config.variant} className="capitalize">
         <Icon className={`w-3 h-3 mr-1 ${config.color}`} />
@@ -201,12 +200,58 @@ export default function Appointments() {
     setResponseDialog(true);
   };
 
-  if (loading) {
-    return <LoadingState message="Loading appointments..." />;
-  }
+  // Filtered and searched appointments
+  const filteredAppointments = useMemo(() => {
+    let filtered = appointments;
+    if (statusFilter && statusFilter !== "all") {
+      filtered = filtered.filter((a) => a.status === statusFilter);
+    }
+    if (search) {
+      filtered = filtered.filter((a) =>
+        a.name?.toLowerCase().includes(search.toLowerCase()) ||
+        a.email?.toLowerCase().includes(search.toLowerCase()) ||
+        a.service_title?.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+    return filtered;
+  }, [appointments, statusFilter, search]);
+
+  // Export to CSV functionality
+  const exportToCSV = () => {
+    const csvRows = [
+      [
+        "ID",
+        "Name",
+        "Email",
+        "Phone",
+        "Service",
+        "Date",
+        "Status",
+        "Admin Notes",
+      ],
+      ...appointments.map((a) => [
+        a.id,
+        a.name,
+        a.email,
+        a.phone,
+        a.service_title,
+        a.requested_date,
+        a.status,
+        a.admin_notes || "",
+      ]),
+    ];
+    const csvContent = csvRows.map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    saveAs(blob, "appointments.csv");
+  };
 
   return (
     <div className="space-y-6">
+      {errorBoundary && (
+        <div className="bg-red-100 text-red-700 p-4 rounded mb-4">
+          <b>Error:</b> {errorBoundary}
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-church-burgundy">
@@ -217,13 +262,13 @@ export default function Appointments() {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select value={statusFilter || ""} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full sm:w-40">
-              <Filter className="w-4 h-4 mr-2" />
+              <RefreshCw className="w-4 h-4 mr-2" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="">All Status</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="approved">Approved</SelectItem>
               <SelectItem value="rejected">Rejected</SelectItem>
@@ -236,8 +281,34 @@ export default function Appointments() {
           </Button>
         </div>
       </div>
-
-      {appointments.length === 0 ? (
+      <div className="flex gap-2 mb-4">
+        <Input
+          placeholder="Search by name, email, or service..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <Select
+          value={statusFilter || "all"}
+          onValueChange={setStatusFilter}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="confirmed">Confirmed</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button onClick={exportToCSV}>Export CSV</Button>
+      </div>
+      {loading ? (
+        <div className="py-10">
+          <span>Loading...</span>
+        </div>
+      ) : appointments.length === 0 ? (
         <EmptyState
           icon={CalendarCheck}
           title="No appointments found"
@@ -266,7 +337,7 @@ export default function Appointments() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {appointments.map((appointment) => (
+                  {filteredAppointments.map((appointment) => (
                     <TableRow key={appointment.id}>
                       <TableCell>
                         <div className="space-y-1">
@@ -368,7 +439,6 @@ export default function Appointments() {
           </CardContent>
         </Card>
       )}
-
       {/* Response Dialog */}
       <Dialog open={responseDialog} onOpenChange={setResponseDialog}>
         <DialogContent className="max-w-2xl">
@@ -472,6 +542,13 @@ export default function Appointments() {
           )}
         </DialogContent>
       </Dialog>
+      {/* Activity log stub */}
+      <div className="mt-8">
+        <h3 className="text-lg font-bold mb-2">Activity Log</h3>
+        <div className="text-sm text-gray-500">(Activity log will appear here)</div>
+      </div>
     </div>
   );
-}
+};
+
+export default AdminAppointments;

@@ -1,11 +1,5 @@
-import { useState, useEffect } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import React, { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,13 +36,9 @@ import {
   Calendar,
   Clock,
   Mail,
-  FileText,
-  Image,
-  Play,
   Pause,
   Trash2,
   Plus,
-  Edit,
   CheckCircle,
   XCircle,
   AlertTriangle,
@@ -60,9 +50,9 @@ import { api } from "@/integrations/supabase/api";
 
 interface ScheduledContent {
   id: string;
-  type: "event" | "sermon" | "email" | "post";
+  type: "event" | "email";
   title: string;
-  content: any;
+  content: Record<string, unknown>;
   scheduledFor: Date;
   status: "scheduled" | "published" | "failed" | "cancelled";
   recurring?: {
@@ -80,14 +70,25 @@ export default function ContentScheduler() {
   );
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingContent, setEditingContent] = useState<ScheduledContent | null>(
-    null,
-  );
   const [activeTab, setActiveTab] = useState("scheduled");
   const { toast } = useToast();
 
-  const [newContent, setNewContent] = useState({
-    type: "event" as const,
+  const [newContent, setNewContent] = useState<{
+    type: "event" | "email";
+    title: string;
+    description: string;
+    scheduledFor: string;
+    scheduledTime: string;
+    recurring: boolean;
+    frequency: "daily" | "weekly" | "monthly";
+    interval: number;
+    endDate: string;
+    emailSubject: string;
+    emailContent: string;
+    eventLocation: string;
+    eventTime: string;
+  }>({
+    type: "event",
     title: "",
     description: "",
     scheduledFor: "",
@@ -100,8 +101,6 @@ export default function ContentScheduler() {
     emailContent: "",
     eventLocation: "",
     eventTime: "",
-    sermonPreacher: "",
-    sermonAudioUrl: "",
   });
 
   useEffect(() => {
@@ -109,13 +108,12 @@ export default function ContentScheduler() {
     // Set up interval to check for content to publish
     const interval = setInterval(checkAndPublishContent, 60000); // Check every minute
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadScheduledContent = async () => {
     try {
       setLoading(true);
-      // In a real app, this would be stored in a dedicated table
-      // For now, we'll simulate with localStorage
       const stored = localStorage.getItem("scheduledContent");
       if (stored) {
         try {
@@ -175,17 +173,13 @@ export default function ContentScheduler() {
           await api.events.createEvent(content.content);
           success = true;
           break;
-        case "sermon":
-          await api.sermons.createSermon(content.content);
-          success = true;
-          break;
         case "email":
           await supabase.from("email_campaigns").insert({
             ...content.content,
             status: "sent",
             sent_at: new Date().toISOString(),
           });
-          success = true;
+          success = false;
           break;
         default:
           success = false;
@@ -270,7 +264,7 @@ export default function ContentScheduler() {
       `${newContent.scheduledFor}T${newContent.scheduledTime || "09:00"}`,
     );
 
-    let contentData: any = {};
+    let contentData: Record<string, unknown> = {};
 
     switch (newContent.type) {
       case "event":
@@ -280,15 +274,6 @@ export default function ContentScheduler() {
           event_date: newContent.scheduledFor,
           event_time: newContent.eventTime,
           location: newContent.eventLocation,
-        };
-        break;
-      case "sermon":
-        contentData = {
-          title: newContent.title,
-          description: newContent.description,
-          sermon_date: newContent.scheduledFor,
-          preacher: newContent.sermonPreacher || "Pastor",
-          audio_url: newContent.sermonAudioUrl,
         };
         break;
       case "email":
@@ -342,8 +327,6 @@ export default function ContentScheduler() {
       emailContent: "",
       eventLocation: "",
       eventTime: "",
-      sermonPreacher: "",
-      sermonAudioUrl: "",
     });
     setDialogOpen(false);
   };
@@ -387,12 +370,8 @@ export default function ContentScheduler() {
     switch (type) {
       case "event":
         return <Calendar className="h-4 w-4" />;
-      case "sermon":
-        return <FileText className="h-4 w-4" />;
       case "email":
         return <Mail className="h-4 w-4" />;
-      case "post":
-        return <Image className="h-4 w-4" />;
     }
   };
 
@@ -449,9 +428,7 @@ export default function ContentScheduler() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="event">Event</SelectItem>
-                      <SelectItem value="sermon">Sermon</SelectItem>
                       <SelectItem value="email">Email Campaign</SelectItem>
-                      <SelectItem value="post">Post</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -461,7 +438,7 @@ export default function ContentScheduler() {
                     id="title"
                     placeholder="Content title"
                     value={newContent.title}
-                    onChange={(e) =>
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setNewContent((prev) => ({
                         ...prev,
                         title: e.target.value,
@@ -477,7 +454,7 @@ export default function ContentScheduler() {
                   id="description"
                   placeholder="Content description"
                   value={newContent.description}
-                  onChange={(e) =>
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
                     setNewContent((prev) => ({
                       ...prev,
                       description: e.target.value,
@@ -494,7 +471,7 @@ export default function ContentScheduler() {
                     id="scheduled-date"
                     type="date"
                     value={newContent.scheduledFor}
-                    onChange={(e) =>
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setNewContent((prev) => ({
                         ...prev,
                         scheduledFor: e.target.value,
@@ -508,7 +485,7 @@ export default function ContentScheduler() {
                     id="scheduled-time"
                     type="time"
                     value={newContent.scheduledTime}
-                    onChange={(e) =>
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setNewContent((prev) => ({
                         ...prev,
                         scheduledTime: e.target.value,
@@ -527,7 +504,7 @@ export default function ContentScheduler() {
                       id="event-location"
                       placeholder="Event location"
                       value={newContent.eventLocation}
-                      onChange={(e) =>
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setNewContent((prev) => ({
                           ...prev,
                           eventLocation: e.target.value,
@@ -552,39 +529,6 @@ export default function ContentScheduler() {
                 </div>
               )}
 
-              {newContent.type === "sermon" && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="sermon-preacher">Preacher</Label>
-                    <Input
-                      id="sermon-preacher"
-                      placeholder="Preacher name"
-                      value={newContent.sermonPreacher}
-                      onChange={(e) =>
-                        setNewContent((prev) => ({
-                          ...prev,
-                          sermonPreacher: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sermon-audio">Audio URL</Label>
-                    <Input
-                      id="sermon-audio"
-                      placeholder="Audio file URL"
-                      value={newContent.sermonAudioUrl}
-                      onChange={(e) =>
-                        setNewContent((prev) => ({
-                          ...prev,
-                          sermonAudioUrl: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                </div>
-              )}
-
               {newContent.type === "email" && (
                 <div className="space-y-4">
                   <div className="space-y-2">
@@ -593,7 +537,7 @@ export default function ContentScheduler() {
                       id="email-subject"
                       placeholder="Email subject line"
                       value={newContent.emailSubject}
-                      onChange={(e) =>
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setNewContent((prev) => ({
                           ...prev,
                           emailSubject: e.target.value,
@@ -607,7 +551,7 @@ export default function ContentScheduler() {
                       id="email-content"
                       placeholder="Email content"
                       value={newContent.emailContent}
-                      onChange={(e) =>
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
                         setNewContent((prev) => ({
                           ...prev,
                           emailContent: e.target.value,
@@ -625,9 +569,12 @@ export default function ContentScheduler() {
                   <Switch
                     id="recurring"
                     checked={newContent.recurring}
-                    onCheckedChange={(checked) =>
-                      setNewContent((prev) => ({ ...prev, recurring: checked }))
-                    }
+                    onCheckedChange={(checked: boolean) => {
+                      setNewContent((prev) => ({
+                        ...prev,
+                        recurring: checked,
+                      }));
+                    }}
                   />
                   <Label htmlFor="recurring">Make this recurring</Label>
                 </div>
@@ -662,7 +609,7 @@ export default function ContentScheduler() {
                         type="number"
                         min="1"
                         value={newContent.interval}
-                        onChange={(e) =>
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           setNewContent((prev) => ({
                             ...prev,
                             interval: parseInt(e.target.value) || 1,
@@ -676,7 +623,7 @@ export default function ContentScheduler() {
                         id="end-date"
                         type="date"
                         value={newContent.endDate}
-                        onChange={(e) =>
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           setNewContent((prev) => ({
                             ...prev,
                             endDate: e.target.value,

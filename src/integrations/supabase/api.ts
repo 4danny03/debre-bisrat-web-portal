@@ -1,6 +1,9 @@
 import { supabase } from "./client";
 import { dataSyncService } from "@/services/DataSyncService";
-import { validateArrayData, validateApiData } from "@/utils/dataValidation";
+import type { Database } from '@/types/supabase';
+
+type Appointment = Database['public']['Tables']['appointments']['Row'];
+type AppointmentCreateInput = Database['public']['Tables']['appointments']['Insert'];
 
 export const api = {
   // Events API
@@ -389,7 +392,7 @@ export const api = {
         .single();
 
       if (error) throw error;
-      return data;
+      return data as Appointment;
     },
     updateAppointment: async (id: string, updates: Record<string, unknown>) => {
       const { data, error } = await supabase
@@ -401,7 +404,7 @@ export const api = {
 
       if (error) throw error;
       dataSyncService.notifyAdminAction("update", "appointments", data);
-      return data;
+      return data as Appointment;
     },
     respondToAppointment: async (
       id: string,
