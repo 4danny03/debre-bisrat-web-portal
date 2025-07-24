@@ -479,17 +479,33 @@ export const validateAppointmentData = (
 export const performHealthCheck = async () => {
   const results = {
     database: false,
+    storage: false,
     api: false,
     auth: false,
     sync: false,
+    environment: true,
   };
 
   try {
+    // Check environment variables
+    const requiredEnvVars = ["SUPABASE_URL", "SUPABASE_ANON_KEY"];
+    const missingEnvVars = requiredEnvVars.filter(
+      (varName) =>
+        !import.meta.env[`VITE_${varName}`] && !import.meta.env[varName],
+    );
+    results.environment = missingEnvVars.length === 0;
+
     // Test database connection
     const { error: dbError } = await supabase
       .from("profiles")
       .select("count", { count: "exact", head: true });
     results.database = !dbError;
+
+    // Test storage
+    const { error: storageError } = await supabase.storage
+      .from("images")
+      .list("", { limit: 1 });
+    results.storage = !storageError;
 
     // Test API endpoints
     try {

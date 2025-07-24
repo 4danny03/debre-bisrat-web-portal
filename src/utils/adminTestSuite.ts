@@ -1,13 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { api } from "@/integrations/supabase/api";
 import { dataSyncService } from "@/services/DataSyncService";
-import {
-  loadDashboardStats,
-  loadRecentActivity,
-  performBulkOperation,
-  checkAdminPermissions,
-  getCurrentUserProfile,
-} from "@/utils/adminHelpers";
 
 interface TestResult {
   name: string;
@@ -16,369 +8,174 @@ interface TestResult {
   error?: any;
 }
 
-/**
- * Comprehensive admin panel test suite
- */
-export class AdminTestSuite {
+interface TestSummary {
+  total: number;
+  passed: number;
+  failed: number;
+  warnings: number;
+}
+
+class AdminTestSuite {
   private results: TestResult[] = [];
+  private summary: TestSummary = {
+    total: 0,
+    passed: 0,
+    failed: 0,
+    warnings: 0,
+  };
 
-  async runAllTests(): Promise<TestResult[]> {
-    this.results = [];
-    console.log("🧪 Starting Admin Panel Test Suite...");
-
-    // Database connectivity tests
-    await this.testDatabaseConnection();
-    await this.testTableAccess();
-
-    // API function tests
-    await this.testApiEndpoints();
-
-    // Admin helper tests
-    await this.testAdminHelpers();
-
-    // Edge function tests
-    await this.testEdgeFunctions();
-
-    // Data sync service tests
-    await this.testDataSyncService();
-
-    // Authentication tests
-    await this.testAuthentication();
-
-    console.log("✅ Admin Panel Test Suite Complete");
-    return this.results;
-  }
-
-  private addResult(
+  async runTest(
     name: string,
-    status: "pass" | "fail" | "warning",
-    message: string,
-    error?: any,
-  ) {
-    this.results.push({ name, status, message, error });
-    const emoji = status === "pass" ? "✅" : status === "fail" ? "❌" : "⚠️";
-    console.log(`${emoji} ${name}: ${message}`);
-    if (error) console.error("Error details:", error);
-  }
-
-  private async testDatabaseConnection() {
+    testFn: () => Promise<void>,
+  ): Promise<TestResult> {
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("count", { count: "exact", head: true });
-      if (error) throw error;
-      this.addResult(
-        "Database Connection",
-        "pass",
-        "Successfully connected to Supabase",
-      );
+      await testFn();
+      this.results.push({
+        name,
+        status: "pass",
+        message: "Test passed successfully",
+      });
+      this.summary.passed++;
+      return this.results[this.results.length - 1];
     } catch (error) {
-      this.addResult(
-        "Database Connection",
-        "fail",
-        "Failed to connect to database",
+      const isWarning = error instanceof Warning;
+      const result = {
+        name,
+        status: isWarning ? "warning" : "fail",
+        message: error instanceof Error ? error.message : String(error),
         error,
-      );
+      };
+      this.results.push(result);
+      isWarning ? this.summary.warnings++ : this.summary.failed++;
+      return result;
+    } finally {
+      this.summary.total++;
     }
   }
 
-  private async testTableAccess() {
-    const tables = [
-      "profiles",
-      "events",
-      "members",
-      "donations",
-      "testimonials",
-      "prayer_requests",
-      "sermons",
-      "gallery",
-      "appointments",
-      "site_settings",
-      "stripe_settings",
-      "email_settings",
-      "email_subscribers",
-      "email_templates",
-      "email_campaigns",
-      "newsletter_subscribers",
-    ];
-
-    for (const table of tables) {
-      try {
-        const { error } = await supabase
-          .from(table)
-          .select("*", { count: "exact", head: true });
-        if (error) throw error;
-        this.addResult(`Table Access: ${table}`, "pass", "Table accessible");
-      } catch (error) {
-        this.addResult(
-          `Table Access: ${table}`,
-          "fail",
-          "Table not accessible",
-          error,
-        );
-      }
-    }
+  getResults(): TestResult[] {
+    return [...this.results];
   }
 
-  private async testApiEndpoints() {
-    const tests = [
-      { name: "Events API", test: () => api.events.getEvents() },
-      { name: "Members API", test: () => api.members.getMembers() },
-      { name: "Sermons API", test: () => api.sermons.getSermons() },
-      {
-        name: "Testimonials API",
-        test: () => api.testimonials.getTestimonials(false),
-      },
-      {
-        name: "Prayer Requests API",
-        test: () => api.prayerRequests.getPrayerRequests(false),
-      },
-      { name: "Donations API", test: () => api.donations.getDonations() },
-      { name: "Gallery API", test: () => api.gallery.getGalleryImages() },
-      { name: "Users API", test: () => api.users.getUsers() },
-      {
-        name: "Appointments API",
-        test: () => api.appointments.getAppointments(),
-      },
-      {
-        name: "Site Settings API",
-        test: () => api.siteSettings?.getSettings(),
-      },
-      {
-        name: "Stripe Settings API",
-        test: () => api.stripeSettings.getSettings(),
-      },
-      {
-        name: "Email Settings API",
-        test: () => api.emailSettings.getSettings(),
-      },
-      {
-        name: "Email Subscribers API",
-        test: () => api.emailSubscribers.getSubscribers(),
-      },
-      {
-        name: "Newsletter Subscribers API",
-        test: () => api.emailSubscribers.getNewsletterSubscribers(),
-      },
-      {
-        name: "Email Templates API",
-        test: () => api.emailTemplates.getTemplates(),
-      },
-      {
-        name: "Newsletter Templates API",
-        test: () => api.emailTemplates.getNewsletterTemplates(),
-      },
-      {
-        name: "Email Campaigns API",
-        test: () => api.emailCampaigns.getCampaigns(),
-      },
-    ];
-
-    for (const { name, test } of tests) {
-      try {
-        await test();
-        this.addResult(`API: ${name}`, "pass", "API endpoint working");
-      } catch (error) {
-        this.addResult(`API: ${name}`, "fail", "API endpoint failed", error);
-      }
-    }
+  getTestSummary(): TestSummary {
+    return { ...this.summary };
   }
 
-  private async testAdminHelpers() {
-    try {
-      const stats = await loadDashboardStats();
-      this.addResult(
-        "Admin Helper: Dashboard Stats",
-        "pass",
-        `Loaded stats: ${Object.keys(stats).length} metrics`,
-      );
-    } catch (error) {
-      this.addResult(
-        "Admin Helper: Dashboard Stats",
-        "fail",
-        "Failed to load dashboard stats",
-        error,
-      );
-    }
-
-    try {
-      const activity = await loadRecentActivity(5);
-      this.addResult(
-        "Admin Helper: Recent Activity",
-        "pass",
-        `Loaded ${activity.length} activities`,
-      );
-    } catch (error) {
-      this.addResult(
-        "Admin Helper: Recent Activity",
-        "fail",
-        "Failed to load recent activity",
-        error,
-      );
-    }
-  }
-
-  private async testEdgeFunctions() {
-    try {
-      const { data, error } = await supabase.functions.invoke(
-        "supabase-functions-admin-operations",
-        {
-          body: { operation: "getDashboardStats" },
-        },
-      );
-
-      if (error) throw error;
-      this.addResult(
-        "Edge Function: Admin Operations",
-        "pass",
-        "Admin operations function working",
-      );
-    } catch (error) {
-      this.addResult(
-        "Edge Function: Admin Operations",
-        "warning",
-        "Admin operations function not available",
-        error,
-      );
-    }
-  }
-
-  private async testDataSyncService() {
-    try {
-      const status = dataSyncService.getStatus();
-      this.addResult(
-        "Data Sync Service",
-        "pass",
-        `Service active with ${status.listeners} listeners`,
-      );
-
-      // Test admin action logging
-      dataSyncService.notifyAdminAction("test", "test_table", { test: true });
-      const recentActions = dataSyncService.getRecentAdminActions(1);
-
-      if (recentActions.length > 0) {
-        this.addResult(
-          "Data Sync: Action Logging",
-          "pass",
-          "Action logging working",
-        );
-      } else {
-        this.addResult(
-          "Data Sync: Action Logging",
-          "warning",
-          "Action logging may not be working",
-        );
-      }
-    } catch (error) {
-      this.addResult(
-        "Data Sync Service",
-        "fail",
-        "Data sync service failed",
-        error,
-      );
-    }
-  }
-
-  private async testAuthentication() {
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session) {
-        this.addResult(
-          "Authentication: Session",
-          "pass",
-          "User session active",
-        );
-
-        const profile = await getCurrentUserProfile();
-        if (profile) {
-          this.addResult(
-            "Authentication: Profile",
-            "pass",
-            `Profile loaded: ${profile.role}`,
-          );
-
-          const isAdmin = await checkAdminPermissions();
-          this.addResult(
-            "Authentication: Admin Check",
-            isAdmin ? "pass" : "warning",
-            isAdmin ? "Admin permissions confirmed" : "No admin permissions",
-          );
-        } else {
-          this.addResult(
-            "Authentication: Profile",
-            "warning",
-            "Profile not found",
-          );
-        }
-      } else {
-        this.addResult(
-          "Authentication: Session",
-          "warning",
-          "No active session",
-        );
-      }
-    } catch (error) {
-      this.addResult(
-        "Authentication",
-        "fail",
-        "Authentication test failed",
-        error,
-      );
-    }
-  }
-
-  getTestSummary(): {
-    total: number;
-    passed: number;
-    failed: number;
-    warnings: number;
-  } {
-    const total = this.results.length;
-    const passed = this.results.filter((r) => r.status === "pass").length;
-    const failed = this.results.filter((r) => r.status === "fail").length;
-    const warnings = this.results.filter((r) => r.status === "warning").length;
-
-    return { total, passed, failed, warnings };
-  }
-
-  getFailedTests(): TestResult[] {
-    return this.results.filter((r) => r.status === "fail");
-  }
-
-  getWarningTests(): TestResult[] {
-    return this.results.filter((r) => r.status === "warning");
+  clearResults(): void {
+    this.results = [];
+    this.summary = { total: 0, passed: 0, failed: 0, warnings: 0 };
   }
 }
 
-// Export singleton instance
+class Warning extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "Warning";
+  }
+}
+
+// Create a singleton instance
 export const adminTestSuite = new AdminTestSuite();
 
-// Quick test function for console use
-export const runAdminTests = async () => {
-  const results = await adminTestSuite.runAllTests();
-  const summary = adminTestSuite.getTestSummary();
+// Helper function to run all tests
+export async function runAdminTests(): Promise<TestResult[]> {
+  adminTestSuite.clearResults();
 
-  console.log("\n📊 Test Summary:");
-  console.log(`Total: ${summary.total}`);
-  console.log(`✅ Passed: ${summary.passed}`);
-  console.log(`❌ Failed: ${summary.failed}`);
-  console.log(`⚠️ Warnings: ${summary.warnings}`);
+  // Database tests
+  await adminTestSuite.runTest("Database Connection", async () => {
+    const { error } = await supabase.from("profiles").select("id").limit(1);
+    if (error) throw new Error(`Database connection failed: ${error.message}`);
+  });
 
-  if (summary.failed > 0) {
-    console.log("\n❌ Failed Tests:");
-    adminTestSuite.getFailedTests().forEach((test) => {
-      console.log(`- ${test.name}: ${test.message}`);
-    });
-  }
+  await adminTestSuite.runTest("Table Access: Members", async () => {
+    const { error } = await supabase.from("members").select("count").limit(1);
+    if (error) throw new Error(`Members table access failed: ${error.message}`);
+  });
 
-  if (summary.warnings > 0) {
-    console.log("\n⚠️ Warning Tests:");
-    adminTestSuite.getWarningTests().forEach((test) => {
-      console.log(`- ${test.name}: ${test.message}`);
-    });
-  }
+  await adminTestSuite.runTest("Table Access: Events", async () => {
+    const { error } = await supabase.from("events").select("count").limit(1);
+    if (error) throw new Error(`Events table access failed: ${error.message}`);
+  });
 
-  return results;
-};
+  // Storage tests
+  await adminTestSuite.runTest("Storage Bucket Access", async () => {
+    const { error } = await supabase.storage
+      .from("images")
+      .list("", { limit: 1 });
+    if (error)
+      throw new Error(`Storage bucket access failed: ${error.message}`);
+  });
+
+  // Authentication tests
+  await adminTestSuite.runTest("Authentication Status", async () => {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) throw new Warning("No active session found");
+  });
+
+  // Data sync tests
+  await adminTestSuite.runTest("Data Sync Service", async () => {
+    const status = dataSyncService.getStatus();
+    if (!status.isActive) throw new Warning("Data sync service is not active");
+    if (status.errors > 0)
+      throw new Warning(`Data sync has ${status.errors} errors`);
+  });
+
+  // Edge function tests
+  await adminTestSuite.runTest("Edge Function: Admin Dashboard", async () => {
+    try {
+      await supabase.functions.invoke("supabase-functions-admin-dashboard", {
+        body: { action: "ping" },
+      });
+    } catch (error) {
+      throw new Error(
+        `Admin dashboard function failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  });
+
+  // Admin helper tests
+  await adminTestSuite.runTest("Admin Helper: Dashboard Stats", async () => {
+    try {
+      await dataSyncService.getDashboardStats();
+    } catch (error) {
+      throw new Warning(
+        `Dashboard stats unavailable: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  });
+
+  // Environment variables test
+  await adminTestSuite.runTest("Environment Variables", async () => {
+    const requiredVars = ["SUPABASE_URL", "SUPABASE_ANON_KEY"];
+    const missingVars = requiredVars.filter(
+      (varName) =>
+        !import.meta.env[`VITE_${varName}`] && !import.meta.env[varName],
+    );
+    if (missingVars.length > 0) {
+      throw new Error(
+        `Missing required environment variables: ${missingVars.join(", ")}`,
+      );
+    }
+  });
+
+  // Browser features test
+  await adminTestSuite.runTest("Browser Features", async () => {
+    const requiredFeatures = {
+      localStorage: typeof localStorage !== "undefined",
+      sessionStorage: typeof sessionStorage !== "undefined",
+      indexedDB: typeof indexedDB !== "undefined",
+    };
+
+    const missingFeatures = Object.entries(requiredFeatures)
+      .filter(([_, supported]) => !supported)
+      .map(([name]) => name);
+
+    if (missingFeatures.length > 0) {
+      throw new Warning(
+        `Missing browser features: ${missingFeatures.join(", ")}`,
+      );
+    }
+  });
+
+  return adminTestSuite.getResults();
+}

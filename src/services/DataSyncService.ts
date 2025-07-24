@@ -43,40 +43,93 @@ class CoreDataSyncService {
     data: Record<string, unknown>;
   }> = [];
   private isProcessingQueue = false;
+  private maxRetries = 3;
+  private retryDelay = 2000; // 2 seconds
 
   initialize(): void {
-    this.syncStatus.isActive = true;
-    this.syncStatus.lastSync = new Date().toISOString();
-    console.log("CoreDataSyncService: Initialized successfully");
+    try {
+      this.syncStatus.isActive = true;
+      this.syncStatus.lastSync = new Date().toISOString();
+      console.log("CoreDataSyncService: Initialized successfully");
+    } catch (error) {
+      console.error("CoreDataSyncService: Failed to initialize", error);
+      this.syncStatus.errors++;
+    }
   }
 
   getStatus(): DataSyncStatus {
-    return { ...this.syncStatus };
+    // Ensure we're returning a valid status object even if this.syncStatus is corrupted
+    try {
+      if (!this.syncStatus || typeof this.syncStatus !== "object") {
+        console.warn(
+          "DataSyncService: syncStatus was invalid, resetting to defaults",
+        );
+        this.syncStatus = {
+          isActive: false,
+          listeners: 0,
+          lastSync: null,
+          errors: 0,
+        };
+      }
+      return { ...this.syncStatus };
+    } catch (error) {
+      console.error("Error getting sync status:", error);
+      return {
+        isActive: false,
+        listeners: 0,
+        lastSync: null,
+        errors: 0,
+      };
+    }
   }
 
   addSubscription(table: string, callback: () => void): void {
-    if (this.subscriptions.has(table)) {
-      console.warn(`Subscription for table ${table} already exists`);
-      return;
+    try {
+      if (!table || typeof table !== "string") {
+        console.error("Invalid table name provided to addSubscription");
+        return;
+      }
+
+      if (this.subscriptions.has(table)) {
+        console.warn(`Subscription for table ${table} already exists`);
+        return;
+      }
+
+      const subscription = supabase
+        .channel(`${table}_changes`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table },
+          callback,
+        )
+        .subscribe();
+
+      this.subscriptions.set(table, subscription);
+      this.syncStatus.listeners++;
+      console.log(`Added subscription for table: ${table}`);
+    } catch (error) {
+      console.error(`Error adding subscription for table ${table}:`, error);
+      this.syncStatus.errors++;
     }
-
-    const subscription = supabase
-      .channel(`${table}_changes`)
-      .on("postgres_changes", { event: "*", schema: "public", table }, callback)
-      .subscribe();
-
-    this.subscriptions.set(table, subscription);
-    this.syncStatus.listeners++;
-    console.log(`Added subscription for table: ${table}`);
   }
 
   removeSubscription(table: string): void {
-    const subscription = this.subscriptions.get(table);
-    if (subscription) {
-      subscription.unsubscribe();
-      this.subscriptions.delete(table);
-      this.syncStatus.listeners--;
-      console.log(`Removed subscription for table: ${table}`);
+    try {
+      if (!table || typeof table !== "string") {
+        console.error("Invalid table name provided to removeSubscription");
+        return;
+      }
+
+      const subscription = this.subscriptions.get(table);
+      if (subscription) {
+        subscription.unsubscribe();
+        this.subscriptions.delete(table);
+        this.syncStatus.listeners = Math.max(0, this.syncStatus.listeners - 1); // Prevent negative values
+        console.log(`Removed subscription for table: ${table}`);
+      }
+    } catch (error) {
+      console.error(`Error removing subscription for table ${table}:`, error);
+      this.syncStatus.errors++;
     }
   }
 
@@ -85,12 +138,24 @@ class CoreDataSyncService {
     action: string,
     data: Record<string, unknown>,
   ): void {
-    if (!Array.isArray(this.syncQueue)) {
-      this.syncQueue = [];
-    }
-    this.syncQueue.push({ table, action, data });
-    if (!this.isProcessingQueue) {
-      this.processQueue();
+    try {
+      if (!table || !action) {
+        console.error("Invalid parameters provided to queueSync");
+        return;
+      }
+
+      if (!Array.isArray(this.syncQueue)) {
+        this.syncQueue = [];
+      }
+
+      this.syncQueue.push({ table, action, data: data || {} });
+
+      if (!this.isProcessingQueue) {
+        this.processQueue();
+      }
+    } catch (error) {
+      console.error("Error queueing sync operation:", error);
+      this.syncStatus.errors++;
     }
   }
 
@@ -108,12 +173,35 @@ class CoreDataSyncService {
     while (Array.isArray(this.syncQueue) && this.syncQueue.length > 0) {
       const item = this.syncQueue.shift();
       if (item) {
-        try {
-          await this.processSyncItem(item);
-          this.syncStatus.lastSync = new Date().toISOString();
-        } catch (error) {
-          console.error("Error processing sync item:", error);
-          this.syncStatus.errors++;
+        let retries = 0;
+        let success = false;
+
+        while (retries < this.maxRetries && !success) {
+          try {
+            await this.processSyncItem(item);
+            this.syncStatus.lastSync = new Date().toISOString();
+            success = true;
+          } catch (error) {
+            console.error("Error processing sync item:", error);
+            this.syncStatus.errors++;
+            retries++;
+
+            if (retries < this.maxRetries) {
+              console.log(
+                `Retrying sync operation (${retries}/${this.maxRetries})...`,
+              );
+              await new Promise((resolve) =>
+                setTimeout(resolve, this.retryDelay),
+              );
+            }
+          }
+        }
+
+        if (!success) {
+          console.error(
+            `Failed to process sync item after ${this.maxRetries} attempts:`,
+            item,
+          );
         }
       }
     }
@@ -132,23 +220,35 @@ class CoreDataSyncService {
   }
 
   clearAll(): void {
-    // Unsubscribe from all channels
-    this.subscriptions.forEach((subscription) => {
-      subscription.unsubscribe();
-    });
-    this.subscriptions.clear();
-    if (Array.isArray(this.syncQueue)) {
-      this.syncQueue.length = 0;
-    } else {
-      this.syncQueue = [];
+    try {
+      // Unsubscribe from all channels
+      this.subscriptions.forEach((subscription) => {
+        try {
+          subscription.unsubscribe();
+        } catch (error) {
+          console.error("Error unsubscribing:", error);
+        }
+      });
+
+      this.subscriptions.clear();
+
+      if (Array.isArray(this.syncQueue)) {
+        this.syncQueue.length = 0;
+      } else {
+        this.syncQueue = [];
+      }
+
+      this.syncStatus = {
+        isActive: false,
+        listeners: 0,
+        lastSync: null,
+        errors: 0,
+      };
+
+      console.log("CoreDataSyncService: Cleared all subscriptions and data");
+    } catch (error) {
+      console.error("Error clearing data sync service:", error);
     }
-    this.syncStatus = {
-      isActive: false,
-      listeners: 0,
-      lastSync: null,
-      errors: 0,
-    };
-    console.log("CoreDataSyncService: Cleared all subscriptions and data");
   }
 }
 
@@ -181,29 +281,33 @@ class AdminActionTracker {
     userId?: string,
     details?: string,
   ): void {
-    this.ensureArraysInitialized();
+    try {
+      this.ensureArraysInitialized();
 
-    const actionLog: AdminAction = {
-      id: crypto.randomUUID(),
-      action,
-      table,
-      data,
-      userId,
-      timestamp: new Date().toISOString(),
-      details,
-    };
+      const actionLog: AdminAction = {
+        id: crypto.randomUUID(),
+        action,
+        table,
+        data,
+        userId,
+        timestamp: new Date().toISOString(),
+        details,
+      };
 
-    if (!Array.isArray(this.actions)) {
-      this.actions = [];
+      if (!Array.isArray(this.actions)) {
+        this.actions = [];
+      }
+      this.actions.unshift(actionLog);
+
+      // Keep only the most recent actions
+      if (this.actions.length > this.maxActions) {
+        this.actions = this.actions.slice(0, this.maxActions);
+      }
+
+      console.log(`Admin action logged: ${action} on ${table}`);
+    } catch (error) {
+      console.error("Error logging admin action:", error);
     }
-    this.actions.unshift(actionLog);
-
-    // Keep only the most recent actions
-    if (this.actions.length > this.maxActions) {
-      this.actions = this.actions.slice(0, this.maxActions);
-    }
-
-    console.log(`Admin action logged: ${action} on ${table}`);
   }
 
   logError(
@@ -212,28 +316,32 @@ class AdminActionTracker {
     context?: string,
     userId?: string,
   ): void {
-    this.ensureArraysInitialized();
+    try {
+      this.ensureArraysInitialized();
 
-    const errorLog: ErrorLog = {
-      id: crypto.randomUUID(),
-      message,
-      error,
-      context,
-      timestamp: new Date().toISOString(),
-      userId,
-    };
+      const errorLog: ErrorLog = {
+        id: crypto.randomUUID(),
+        message,
+        error,
+        context,
+        timestamp: new Date().toISOString(),
+        userId,
+      };
 
-    if (!Array.isArray(this.errors)) {
-      this.errors = [];
+      if (!Array.isArray(this.errors)) {
+        this.errors = [];
+      }
+      this.errors.unshift(errorLog);
+
+      // Keep only the most recent errors
+      if (this.errors.length > this.maxErrors) {
+        this.errors = this.errors.slice(0, this.maxErrors);
+      }
+
+      console.error(`Admin error logged: ${message}`, error);
+    } catch (logError) {
+      console.error("Failed to log error:", logError);
     }
-    this.errors.unshift(errorLog);
-
-    // Keep only the most recent errors
-    if (this.errors.length > this.maxErrors) {
-      this.errors = this.errors.slice(0, this.maxErrors);
-    }
-
-    console.error(`Admin error logged: ${message}`, error);
   }
 
   getRecentActions(limit = 10): AdminAction[] {
@@ -309,9 +417,13 @@ class AdminActionTracker {
   }
 
   clear(): void {
-    this.actions = [];
-    this.errors = [];
-    console.log("AdminActionTracker: Cleared all actions and errors");
+    try {
+      this.actions = [];
+      this.errors = [];
+      console.log("AdminActionTracker: Cleared all actions and errors");
+    } catch (error) {
+      console.error("Error clearing admin action tracker:", error);
+    }
   }
 }
 
@@ -351,10 +463,22 @@ class DataSyncService {
   }
 
   addSubscription(table: string, callback: () => void): void {
+    if (!table || typeof table !== "string") {
+      console.error(
+        "Invalid table name provided to DataSyncService.addSubscription",
+      );
+      return;
+    }
     this.coreService.addSubscription(table, callback);
   }
 
   removeSubscription(table: string): void {
+    if (!table || typeof table !== "string") {
+      console.error(
+        "Invalid table name provided to DataSyncService.removeSubscription",
+      );
+      return;
+    }
     this.coreService.removeSubscription(table);
   }
 
@@ -363,7 +487,11 @@ class DataSyncService {
     action: string,
     data: Record<string, unknown>,
   ): void {
-    this.coreService.queueSync(table, action, data);
+    if (!table || !action) {
+      console.error("Invalid parameters provided to DataSyncService.queueSync");
+      return;
+    }
+    this.coreService.queueSync(table, action, data || {});
   }
 
   // Admin action methods
@@ -374,8 +502,16 @@ class DataSyncService {
     userId?: string,
     details?: string,
   ): void {
-    this.actionTracker.logAction(action, table, data, userId, details);
-    this.logActionToDb(action, table, data, userId, details);
+    try {
+      this.actionTracker.logAction(action, table, data, userId, details);
+      this.logActionToDb(action, table, data, userId, details).catch(
+        (error) => {
+          console.error("Failed to log admin action to DB:", error);
+        },
+      );
+    } catch (error) {
+      console.error("Error in notifyAdminAction:", error);
+    }
   }
 
   logError(
@@ -417,10 +553,14 @@ class DataSyncService {
   }
 
   cleanup(): void {
-    this.coreService.clearAll();
-    this.actionTracker.clear();
-    this.isInitialized = false;
-    console.log("DataSyncService: Cleaned up successfully");
+    try {
+      this.coreService.clearAll();
+      this.actionTracker.clear();
+      this.isInitialized = false;
+      console.log("DataSyncService: Cleaned up successfully");
+    } catch (error) {
+      console.error("Error during DataSyncService cleanup:", error);
+    }
   }
 
   // Admin-specific methods
@@ -429,21 +569,31 @@ class DataSyncService {
     data?: Record<string, unknown>,
   ): Promise<unknown> {
     try {
-      const { supabase } = await import("@/integrations/supabase/client");
+      if (!operation) {
+        throw new Error("Operation name is required");
+      }
+
       const { data: result, error } = await supabase.functions.invoke(
         "supabase-functions-admin-operations",
         {
           body: { operation, data },
         },
       );
+
       if (error) throw error;
+
       this.notifyAdminAction("admin_function_call", operation, {
         operation,
         success: true,
       });
+
       return result;
     } catch (error) {
-      this.logError(`Admin function call failed: ${operation}`, error as Error);
+      this.logError(
+        `Admin function call failed: ${operation}`,
+        error as Error,
+        "admin_function",
+      );
       throw error;
     }
   }
@@ -457,6 +607,9 @@ class DataSyncService {
   }
 
   async bulkDelete(table: string, ids: string[]): Promise<unknown> {
+    if (!table || !Array.isArray(ids) || ids.length === 0) {
+      throw new Error("Invalid parameters for bulkDelete");
+    }
     return this.callAdminFunction("bulkDelete", { table, ids });
   }
 
@@ -464,6 +617,9 @@ class DataSyncService {
     table: string,
     updates: Record<string, unknown>[],
   ): Promise<unknown> {
+    if (!table || !Array.isArray(updates) || updates.length === 0) {
+      throw new Error("Invalid parameters for bulkUpdate");
+    }
     return this.callAdminFunction("bulkUpdate", { table, updates });
   }
 
@@ -471,6 +627,9 @@ class DataSyncService {
     table: string,
     filters?: Record<string, unknown>,
   ): Promise<unknown> {
+    if (!table) {
+      throw new Error("Table name is required for exportData");
+    }
     return this.callAdminFunction("exportData", { table, filters });
   }
 
@@ -479,6 +638,13 @@ class DataSyncService {
     campaignId: string,
     recipientIds: string[],
   ): Promise<unknown> {
+    if (
+      !campaignId ||
+      !Array.isArray(recipientIds) ||
+      recipientIds.length === 0
+    ) {
+      throw new Error("Invalid parameters for sendEmailCampaign");
+    }
     return this.callAdminFunction("sendEmailCampaign", {
       campaignId,
       recipientIds,
@@ -486,6 +652,9 @@ class DataSyncService {
   }
 
   async getEmailCampaignStats(campaignId: string): Promise<unknown> {
+    if (!campaignId) {
+      throw new Error("Campaign ID is required");
+    }
     return this.callAdminFunction("getEmailCampaignStats", { campaignId });
   }
 
@@ -501,29 +670,40 @@ class DataSyncService {
     details?: string,
   ) {
     try {
-      await supabase.from("admin_audit_log").insert({
+      const { error } = await supabase.from("admin_audit_log").insert({
         action,
         table_name: table,
         data,
         user_id: userId,
         details,
       });
+
+      if (error) {
+        console.error("Error logging to admin_audit_log:", error);
+      }
     } catch (error) {
       console.error("Failed to log admin action to DB:", error);
     }
   }
 
   async getRecentAdminActionsFromDb(limit = 50) {
-    const { data, error } = await supabase
-      .from("admin_audit_log")
-      .select("*")
-      .order("timestamp", { ascending: false })
-      .limit(limit);
-    if (error) {
-      console.error("Failed to fetch audit log from DB:", error);
+    try {
+      const { data, error } = await supabase
+        .from("admin_audit_log")
+        .select("*")
+        .order("timestamp", { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        console.error("Failed to fetch audit log from DB:", error);
+        return [];
+      }
+
+      return data;
+    } catch (error) {
+      console.error("Error retrieving admin actions from DB:", error);
       return [];
     }
-    return data;
   }
 }
 

@@ -47,11 +47,16 @@ class ErrorBoundary extends React.Component<
     // Store error info in state
     this.setState({ errorInfo });
 
-    // Log to DataSyncService
+    // Extract component name from stack trace for better error context
+    const componentMatch =
+      errorInfo.componentStack?.match(/\s+at\s+([\w.]+)/)?.[1];
+    const componentName = componentMatch || "unknown component";
+
+    // Log to DataSyncService with improved context
     dataSyncService.logError(
       "React Error Boundary",
       error,
-      `Component: ${errorInfo.componentStack?.split("\n")[1]?.trim()}`,
+      `Component: ${componentName}`,
     );
 
     // Call custom error handler if provided
@@ -63,6 +68,14 @@ class ErrorBoundary extends React.Component<
     if (import.meta.env.PROD) {
       this.logToExternalService(error, errorInfo);
     }
+
+    // Report error to console with structured data for debugging
+    console.group("React Error Details");
+    console.error("Error:", error.message);
+    console.error("Component:", componentName);
+    console.error("Stack:", error.stack);
+    console.error("Component Stack:", errorInfo.componentStack);
+    console.groupEnd();
   }
 
   private logToExternalService = (error: Error, errorInfo: React.ErrorInfo) => {
@@ -113,7 +126,9 @@ class ErrorBoundary extends React.Component<
             key &&
             (key.includes("admin_cache") ||
               key.includes("sync_cache") ||
-              key.includes("temp_"))
+              key.includes("temp_") ||
+              key.includes("error_") ||
+              key.includes("debug_"))
           ) {
             keysToRemove.push(key);
           }
@@ -124,11 +139,28 @@ class ErrorBoundary extends React.Component<
         const sessionKeysToRemove: string[] = [];
         for (let i = 0; i < sessionStorage.length; i++) {
           const key = sessionStorage.key(i);
-          if (key && (key.includes("temp_") || key.includes("cache_"))) {
+          if (
+            key &&
+            (key.includes("temp_") ||
+              key.includes("cache_") ||
+              key.includes("error_"))
+          ) {
             sessionKeysToRemove.push(key);
           }
         }
         sessionKeysToRemove.forEach((key) => sessionStorage.removeItem(key));
+
+        // Reset any error flags in the data sync service
+        try {
+          dataSyncService.clearLogs();
+        } catch (syncError) {
+          console.warn("Failed to clear data sync logs:", syncError);
+        }
+
+        // Log recovery attempt
+        console.log(
+          "Error boundary reset - cleared temporary storage and error logs",
+        );
       } catch (e) {
         console.warn("Failed to clear storage:", e);
       }

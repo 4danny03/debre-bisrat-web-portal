@@ -1,100 +1,113 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { User } from "@supabase/supabase-js";
-
-interface AdminUser extends User {
-  role?: string;
-}
+import { authService, AuthUser } from "@/lib/auth/AuthService";
+import "@/lib/auth/strategies";
 
 export const useAdminAuth = () => {
-  const [user, setUser] = useState<AdminUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    checkAuth();
+    // Initialize auth state
+    initializeAuth();
 
+    // Listen for auth state changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = authService.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_OUT" || !session) {
         setUser(null);
         setIsAdmin(false);
         navigate("/admin/login");
       } else if (event === "SIGNED_IN" && session) {
-        await checkUserRole(session.user);
+        await checkUserRole();
       }
     });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const checkAuth = async () => {
+  const initializeAuth = async () => {
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      setLoading(true);
+      const { success, session } = await authService.getSession();
 
-      if (session?.user) {
-        await checkUserRole(session.user);
+      if (success && session) {
+        await checkUserRole();
       } else {
         setLoading(false);
       }
     } catch (error) {
-      console.error("Error checking auth:", error);
+      console.error("Error initializing auth:", error);
       setLoading(false);
     }
   };
 
-  const checkUserRole = async (user: User) => {
+  const checkUserRole = async () => {
     try {
-      const { data: profile, error } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
+      const { success, user, error } = await authService.getCurrentUser();
 
-      if (error) {
-        console.error("Error fetching profile:", error);
-        // If profile doesn't exist, check if this is the first user
-        const { count } = await supabase
-          .from("profiles")
-          .select("*", { count: "exact", head: true });
-
-        if (count === 0) {
-          // First user becomes admin
-          const { error: createError } = await supabase
-            .from("profiles")
-            .insert({
-              id: user.id,
-              email: user.email,
-              role: "admin",
-            });
-
-          if (!createError) {
-            setUser({ ...user, role: "admin" });
-            setIsAdmin(true);
-          }
-        }
-      } else if (profile?.role === "admin") {
-        setUser({ ...user, role: profile.role });
-        setIsAdmin(true);
-      } else {
+      if (success && user) {
         setUser(user);
-        setIsAdmin(false);
+        const isUserAdmin = user.role === "admin";
+        setIsAdmin(isUserAdmin);
+
+        if (!isUserAdmin) {
+          navigate("/admin/login");
+        }
+      } else {
+        console.error("Error getting current user:", error);
         navigate("/admin/login");
       }
     } catch (error) {
       console.error("Error checking user role:", error);
+      navigate("/admin/login");
     } finally {
       setLoading(false);
     }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      const { success, error } = await authService.signOut();
+      if (!success) {
+        console.error("Error signing out:", error);
+      }
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
+  const login = async (email: string, password: string) => {
+    try {
+      setLoading(true);
+      const result = await authService.authenticate("emailPassword", {
+        email,
+        password,
+      });
+
+      if (result.success && result.user) {
+        setUser(result.user);
+        setIsAdmin(result.user.role === "admin");
+        return { success: true };
+      } else {
+        return {
+          success: false,
+          error: result.error || "Authentication failed",
+        };
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Unknown error during login",
+      };
+    } finally {
+      setLoading(false);
+    }
   };
 
   return {
@@ -102,5 +115,6 @@ export const useAdminAuth = () => {
     loading,
     isAdmin,
     signOut,
+    login,
   };
 };

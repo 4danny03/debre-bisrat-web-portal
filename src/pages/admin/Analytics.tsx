@@ -94,304 +94,155 @@ export default function Analytics() {
     try {
       setLoading(true);
 
-      // Calculate date ranges
-      const now = new Date();
-      const monthsBack =
-        timeRange === "3months" ? 3 : timeRange === "6months" ? 6 : 12;
-      const startDate = subDays(now, monthsBack * 30);
+      // Map timeRange to dateRange format expected by the API
+      const dateRangeMap = {
+        "3months": "last90days",
+        "6months": "last180days",
+        "12months": "last365days",
+      };
 
-      // Fetch all data in parallel
-      const [
-        donationsRes,
-        membersRes,
-        eventsRes,
-        prayerRequestsRes,
-        testimonialsRes,
-      ] = await Promise.all([
-        supabase
-          .from("donations")
-          .select("*")
-          .gte("created_at", startDate.toISOString()),
-        supabase
-          .from("members")
-          .select("*")
-          .gte("created_at", startDate.toISOString()),
-        supabase
-          .from("events")
-          .select("*")
-          .gte("created_at", startDate.toISOString()),
-        supabase
-          .from("prayer_requests")
-          .select("*", { count: "exact", head: true }),
-        supabase
-          .from("testimonials")
-          .select("*", { count: "exact", head: true }),
-      ]);
+      const dateRange = dateRangeMap[timeRange] || "last30days";
 
-      // Process donations data with safe array handling
-      const donations = Array.isArray(donationsRes.data)
-        ? donationsRes.data
-        : [];
-      const donationsByMonth = processMonthlyData(
-        donations,
-        "created_at",
-        "amount",
+      // Use the new analytics-reports edge function
+      const { data: reportData, error } = await supabase.functions.invoke(
+        "supabase-functions-analytics-reports",
+        {
+          body: {
+            reportType: activeTab === "overview" ? "overview" : activeTab,
+            dateRange,
+            filters: {},
+          },
+        },
       );
-      const donationsByPurpose = processPurposeData(donations);
-      const donationTrends = calculateTrends(donations, "amount");
 
-      // Process members data with safe array handling
-      const members = Array.isArray(membersRes.data) ? membersRes.data : [];
-      const membersByMonth = processMonthlyData(members, "created_at");
-      const membersByType = processTypeData(members, "membership_type");
-      const memberTrends = calculateTrends(members);
+      if (error) throw error;
 
-      // Process events data with safe array handling
-      const events = Array.isArray(eventsRes.data) ? eventsRes.data : [];
-      const eventsByMonth = processMonthlyData(events, "created_at");
-      const upcomingEvents = events.filter((e) => {
-        if (!e?.event_date) return false;
-        try {
-          return new Date(e.event_date) > now;
-        } catch {
-          return false;
-        }
-      }).length;
+      if (!reportData || !reportData.data) {
+        throw new Error("No data returned from analytics service");
+      }
 
-      setData({
-        donations: {
-          total: donations.reduce(
-            (sum, d) => sum + (Number(d?.amount) || 0),
-            0,
-          ),
-          monthly: donationsByMonth,
-          byPurpose: donationsByPurpose,
-          trends: donationTrends,
-        },
-        members: {
-          total: members.length,
-          monthly: membersByMonth,
-          byType: membersByType,
-          trends: memberTrends,
-        },
-        events: {
-          total: events.length,
-          upcoming: upcomingEvents,
-          monthly: eventsByMonth,
-          attendance: [], // Would need additional tracking
-        },
-        engagement: {
-          prayerRequests: prayerRequestsRes.count || 0,
-          testimonials: testimonialsRes.count || 0,
-          galleryViews: 0, // Would need view tracking
-        },
-      });
+      // Set the data based on the report type
+      if (
+        activeTab === "overview" ||
+        activeTab === "donations" ||
+        activeTab === "members" ||
+        activeTab === "events"
+      ) {
+        setData(reportData.data);
+      } else {
+        // For other tabs, we need to transform the data to match the expected format
+        const transformedData = {
+          donations: reportData.data.donations || {},
+          members: reportData.data.members || {},
+          events: reportData.data.events || {},
+          engagement: reportData.data.engagement || {},
+        };
+        setData(transformedData);
+      }
     } catch (error) {
       console.error("Error loading analytics:", error);
       toast({
         title: "Error",
-        description: "Failed to load analytics data",
+        description:
+          "Failed to load analytics data: " +
+          (error instanceof Error ? error.message : String(error)),
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
-  }, [timeRange, toast]);
+  }, [timeRange, activeTab, toast]);
 
   useEffect(() => {
     loadAnalyticsData();
   }, [loadAnalyticsData]);
 
-  const processMonthlyData = (
-    items: Database["public"]["Tables"]["donations"]["Row"][],
-    dateField: keyof Database["public"]["Tables"]["donations"]["Row"],
-    valueField?: keyof Database["public"]["Tables"]["donations"]["Row"],
-  ) => {
-    if (!Array.isArray(items)) {
-      console.warn("processMonthlyData: items is not an array");
-      return [];
-    }
+  // These data processing functions have been moved to the edge function
+  // We'll keep simplified versions for any client-side processing if needed
 
-    const monthlyData: Record<string, { count: number; amount: number }> = {};
-
-    items.forEach((item) => {
-      if (!item || !item[dateField]) return;
-
-      try {
-        const month = format(new Date(item[dateField]), "MMM yyyy");
-        if (!monthlyData[month]) {
-          monthlyData[month] = { count: 0, amount: 0 };
-        }
-        monthlyData[month].count += 1;
-        if (valueField && item[valueField]) {
-          monthlyData[month].amount += Number(item[valueField]) || 0;
-        }
-      } catch (error) {
-        console.warn("Error processing date:", item[dateField], error);
-      }
-    });
-
-    return Object.entries(monthlyData).map(([month, data]) => ({
-      month,
-      count: data.count,
-      amount: data.amount,
-    }));
+  const formatCurrency = (amount: number): string => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+    }).format(amount);
   };
 
-  const processPurposeData = (donations: any[]) => {
-    if (!Array.isArray(donations)) {
-      console.warn("processPurposeData: donations is not an array");
-      return [];
-    }
-
-    const purposeData: Record<string, number> = {};
-    const total = donations.reduce(
-      (sum, d) => sum + (Number(d?.amount) || 0),
-      0,
-    );
-
-    donations.forEach((donation) => {
-      if (!donation) return;
-      const purpose = donation.purpose || "General Fund";
-      const amount = Number(donation.amount) || 0;
-      purposeData[purpose] = (purposeData[purpose] || 0) + amount;
-    });
-
-    return Object.entries(purposeData).map(([purpose, amount]) => ({
-      purpose,
-      amount,
-      percentage: total > 0 ? Math.round((amount / total) * 100) : 0,
-    }));
+  const formatPercentage = (value: number): string => {
+    return `${value}%`;
   };
 
-  const processTypeData = (members: any[], typeField: string) => {
-    if (!Array.isArray(members)) {
-      console.warn("processTypeData: members is not an array");
-      return [];
-    }
-
-    const typeData: Record<string, number> = {};
-    const total = members.length;
-
-    members.forEach((member) => {
-      if (!member) return;
-      const type = member[typeField] || "Regular";
-      typeData[type] = (typeData[type] || 0) + 1;
-    });
-
-    return Object.entries(typeData).map(([type, count]) => ({
-      type,
-      count,
-      percentage: total > 0 ? Math.round((count / total) * 100) : 0,
-    }));
-  };
-
-  const calculateTrends = (items: any[], valueField?: string) => {
-    if (!Array.isArray(items)) {
-      console.warn("calculateTrends: items is not an array");
-      return { thisMonth: 0, lastMonth: 0, growth: 0 };
-    }
-
-    const now = new Date();
-    const thisMonthStart = startOfMonth(now);
-    const lastMonthStart = startOfMonth(subDays(now, 30));
-    const lastMonthEnd = endOfMonth(subDays(now, 30));
-
-    const thisMonth = items.filter((item) => {
-      if (!item?.created_at) return false;
-      try {
-        return new Date(item.created_at) >= thisMonthStart;
-      } catch {
-        return false;
-      }
-    });
-
-    const lastMonth = items.filter((item) => {
-      if (!item?.created_at) return false;
-      try {
-        const date = new Date(item.created_at);
-        return date >= lastMonthStart && date <= lastMonthEnd;
-      } catch {
-        return false;
-      }
-    });
-
-    const thisMonthValue = valueField
-      ? thisMonth.reduce(
-          (sum, item) => sum + (Number(item[valueField]) || 0),
-          0,
-        )
-      : thisMonth.length;
-    const lastMonthValue = valueField
-      ? lastMonth.reduce(
-          (sum, item) => sum + (Number(item[valueField]) || 0),
-          0,
-        )
-      : lastMonth.length;
-
-    const growth =
-      lastMonthValue > 0
-        ? Math.round(((thisMonthValue - lastMonthValue) / lastMonthValue) * 100)
-        : 0;
-
-    return {
-      thisMonth:
-        valueField
-          ? thisMonth.reduce((sum, item) => sum + ((typeof item[valueField] === "number" ? item[valueField] as number : 0)), 0)
-          : thisMonth.length,
-      lastMonth:
-        valueField
-          ? lastMonth.reduce((sum, item) => sum + ((typeof item[valueField] === "number" ? item[valueField] as number : 0)), 0)
-          : lastMonth.length,
-      growth:
-        valueField
-          ? thisMonth.length > 0
-            ? Math.round(
-                ((
-                  thisMonth.reduce((sum, item) => sum + ((typeof item[valueField] === "number" ? item[valueField] as number : 0)), 0) -
-                  lastMonth.reduce((sum, item) => sum + ((typeof item[valueField] === "number" ? item[valueField] as number : 0)), 0)) /
-                  lastMonth.reduce((sum, item) => sum + ((typeof item[valueField] === "number" ? item[valueField] as number : 0)), 0)
-                ) * 100,
-              )
-            : 0
-          : 0,
-    };
-  };
-
-  const exportData = () => {
+  const exportData = async () => {
     if (!data) return;
 
-    const exportData = {
-      generatedAt: new Date().toISOString(),
-      timeRange,
-      summary: {
-        totalDonations: data.donations.total,
-        totalMembers: data.members.total,
-        totalEvents: data.events.total,
-        upcomingEvents: data.events.upcoming,
-      },
-      donations: data.donations,
-      members: data.members,
-      events: data.events,
-      engagement: data.engagement,
-    };
+    try {
+      setLoading(true);
 
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `church-analytics-${format(new Date(), "yyyy-MM-dd")}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+      // Get full data for export using the edge function
+      const dateRangeMap = {
+        "3months": "last90days",
+        "6months": "last180days",
+        "12months": "last365days",
+      };
 
-    toast({
-      title: "Success",
-      description: "Analytics data exported successfully",
-    });
+      const dateRange = dateRangeMap[timeRange] || "last30days";
+
+      // Request full data for export
+      const { data: reportData, error } = await supabase.functions.invoke(
+        "supabase-functions-analytics-reports",
+        {
+          body: {
+            reportType: "overview",
+            dateRange,
+            filters: {},
+            includeRawData: true,
+          },
+        },
+      );
+
+      if (error) throw error;
+
+      const exportData = {
+        generatedAt: new Date().toISOString(),
+        timeRange,
+        dateRange,
+        summary: {
+          totalDonations: data.donations.total,
+          totalMembers: data.members.total,
+          totalEvents: data.events.total,
+          upcomingEvents: data.events.upcoming,
+        },
+        data: reportData.data,
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `church-analytics-${format(new Date(), "yyyy-MM-dd")}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Success",
+        description: "Analytics data exported successfully",
+      });
+    } catch (error) {
+      console.error("Error exporting data:", error);
+      toast({
+        title: "Error",
+        description:
+          "Failed to export analytics data: " +
+          (error instanceof Error ? error.message : String(error)),
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading) {
@@ -426,7 +277,14 @@ export default function Analytics() {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-          <Select value={timeRange} onValueChange={setTimeRange}>
+          <Select
+            value={timeRange}
+            onValueChange={(value) => {
+              setTimeRange(value);
+              // Reload data when time range changes
+              setTimeout(() => loadAnalyticsData(), 0);
+            }}
+          >
             <SelectTrigger className="w-full sm:w-40">
               <SelectValue />
             </SelectTrigger>
@@ -490,7 +348,14 @@ export default function Analytics() {
         />
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => {
+          setActiveTab(value);
+          // Reload data when tab changes
+          setTimeout(() => loadAnalyticsData(), 0);
+        }}
+      >
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="donations">Donations</TabsTrigger>
