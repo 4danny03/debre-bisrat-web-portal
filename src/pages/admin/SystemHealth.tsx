@@ -23,6 +23,11 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import AdminDiagnostics from "@/components/AdminDiagnostics";
+import {
+  runSystemDiagnostics,
+  getPerformanceMetrics,
+} from "@/utils/adminDiagnostics";
 
 interface HealthCheck {
   name: string;
@@ -294,7 +299,9 @@ export default function SystemHealth() {
       </div>
 
       {/* Overall Status */}
-      <Card>
+      <AdminDiagnostics />
+
+      <Card className="mt-6">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             {getStatusIcon(overallStatus)}
@@ -342,7 +349,10 @@ export default function SystemHealth() {
                         <div className="text-xs text-gray-500 mt-1">
                           {Object.entries(check.details).map(([key, value]) => (
                             <span key={key} className="mr-3">
-                              {key}: {typeof value === "object" ? JSON.stringify(value) : String(value)}
+                              {key}:{" "}
+                              {typeof value === "object"
+                                ? JSON.stringify(value)
+                                : String(value)}
                             </span>
                           ))}
                         </div>

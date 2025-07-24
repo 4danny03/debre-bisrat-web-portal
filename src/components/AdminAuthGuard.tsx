@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { authService } from "@/lib/auth/AuthService";
 
 interface AdminAuthGuardProps {
   children: React.ReactNode;
@@ -14,27 +14,28 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
 
   useEffect(() => {
     checkAdminAuth();
-  }, []);
+
+    // Set up auth state change listener
+    const {
+      data: { subscription },
+    } = authService.onAuthStateChange(async (event) => {
+      if (event === "SIGNED_OUT") {
+        setIsAuthorized(false);
+        navigate("/admin/login");
+      } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        await checkAdminAuth();
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   const checkAdminAuth = async () => {
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      setLoading(true);
+      const isAdmin = await authService.isAdmin();
 
-      if (!session) {
-        navigate("/admin/login");
-        return;
-      }
-
-      // Check if user has admin role
-      const { data: profile, error } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
-        .single();
-
-      if (error || !profile || profile.role !== "admin") {
+      if (!isAdmin) {
         navigate("/admin/login");
         return;
       }

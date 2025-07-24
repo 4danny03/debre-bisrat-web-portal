@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { dataSyncService } from "@/services/DataSyncService";
 import { useDataContext } from "@/contexts/DataContext";
 
@@ -17,8 +17,9 @@ export const useDataRefresh = (
 ) => {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const isActiveRef = useRef(true);
-  const lastRefreshRef = useRef<Date | null>(null);
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const isRefreshingRef = useRef(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const refreshFunctionRef = useRef(refreshFunction);
   const { connectionHealth, forceSync } = useDataContext();
@@ -48,7 +49,8 @@ export const useDataRefresh = (
       while (retryCount < maxRetries) {
         try {
           await refreshFunctionRef.current();
-          lastRefreshRef.current = new Date();
+          const now = new Date();
+          setLastRefresh(now);
           console.log(
             `Data refresh successful for ${tableName || "component"}`,
           );
@@ -73,6 +75,7 @@ export const useDataRefresh = (
       }
 
       isRefreshingRef.current = false;
+      setIsRefreshing(false);
     };
 
     intervalRef.current = setInterval(async () => {
@@ -149,9 +152,11 @@ export const useDataRefresh = (
     if (!isRefreshingRef.current) {
       console.log(`Manual refresh triggered for ${tableName || "component"}`);
       isRefreshingRef.current = true;
+      setIsRefreshing(true);
       try {
         await refreshFunction();
-        lastRefreshRef.current = new Date();
+        const now = new Date();
+        setLastRefresh(now);
       } catch (error) {
         console.error(
           `Manual refresh error for ${tableName || "component"}:`,
@@ -159,6 +164,7 @@ export const useDataRefresh = (
         );
       } finally {
         isRefreshingRef.current = false;
+        setIsRefreshing(false);
       }
     }
   }, [refreshFunction, tableName]);
@@ -171,7 +177,8 @@ export const useDataRefresh = (
   return {
     manualRefresh,
     forceSyncData,
-    lastRefresh: lastRefreshRef.current,
+    lastRefresh,
     isActive: isActiveRef.current,
+    isRefreshing,
   };
 };
