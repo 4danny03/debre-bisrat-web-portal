@@ -5,10 +5,10 @@ import { api } from "@/integrations/supabase/api";
 /**
  * Safe data loader with error handling and logging
  */
-export const safeDataLoader = async (
-  loader: () => Promise<any>,
+export const safeDataLoader = async <T>(
+  loader: () => Promise<{ data: T; error?: unknown }>,
   context: string,
-) => {
+): Promise<{ data: T | null; error: unknown }> => {
   try {
     console.log(`Loading data for: ${context}`);
     const result = await loader();
@@ -46,10 +46,10 @@ export const safeDataLoader = async (
 export const logAdminAction = (
   action: string,
   table: string,
-  data?: any,
+  data?: Record<string, unknown>,
   userId?: string,
   details?: string,
-) => {
+): void => {
   try {
     dataSyncService.notifyAdminAction(action, table, data, userId, details);
     console.log(`Admin action logged: ${action} on ${table}`);
@@ -61,11 +61,19 @@ export const logAdminAction = (
 /**
  * Format error messages for user display
  */
-export const formatErrorMessage = (error: any, fallback: string): string => {
+export const formatErrorMessage = (
+  error: unknown,
+  fallback: string,
+): string => {
   if (!error) return fallback;
 
   // Handle Supabase errors
-  if (error.message) {
+  if (
+    error &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
     return error.message;
   }
 
@@ -75,7 +83,12 @@ export const formatErrorMessage = (error: any, fallback: string): string => {
   }
 
   // Handle PostgreSQL errors
-  if (error.code) {
+  if (
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    typeof error.code === "string"
+  ) {
     switch (error.code) {
       case "23505":
         return "This record already exists";
@@ -84,7 +97,13 @@ export const formatErrorMessage = (error: any, fallback: string): string => {
       case "42P01":
         return "Database table not found";
       default:
-        return error.details || error.hint || fallback;
+        const details =
+          "details" in error && typeof error.details === "string"
+            ? error.details
+            : "";
+        const hint =
+          "hint" in error && typeof error.hint === "string" ? error.hint : "";
+        return details || hint || fallback;
     }
   }
 
@@ -137,10 +156,7 @@ export const debounce = <T extends (...args: any[]) => any>(
 /**
  * Safe JSON parse with fallback
  */
-export const safeJsonParse = (
-  jsonString: string,
-  fallback: any = null,
-): any => {
+export const safeJsonParse = <T>(jsonString: string, fallback: T): T => {
   try {
     return JSON.parse(jsonString);
   } catch (error) {
@@ -232,7 +248,7 @@ export const getCurrentUserProfile = async () => {
 export const performBulkOperation = async (
   operation: "delete" | "update" | "export",
   table: string,
-  data: any,
+  data: Record<string, unknown>,
 ) => {
   try {
     const result = await dataSyncService.callAdminFunction(
@@ -370,7 +386,7 @@ export const validateEmailTemplate = (template: any): boolean => {
   return true;
 };
 
-export const formatEmailCampaignStats = (stats: any) => {
+export const formatEmailCampaignStats = (stats: Record<string, unknown>) => {
   return {
     sent: stats.sent || 0,
     delivered: stats.delivered || 0,
@@ -392,7 +408,7 @@ export const formatEmailCampaignStats = (stats: any) => {
 };
 
 export const validateMemberData = (
-  memberData: any,
+  memberData: Record<string, unknown>,
 ): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
 
@@ -423,7 +439,7 @@ export const validateMemberData = (
 };
 
 export const validateAppointmentData = (
-  appointmentData: any,
+  appointmentData: Record<string, unknown>,
 ): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
 
@@ -502,7 +518,10 @@ export const performHealthCheck = async () => {
 /**
  * Export data to CSV format
  */
-export const exportToCSV = (data: any[], filename: string) => {
+export const exportToCSV = (
+  data: Record<string, unknown>[],
+  filename: string,
+) => {
   if (!Array.isArray(data) || data.length === 0) {
     throw new Error("No data to export");
   }

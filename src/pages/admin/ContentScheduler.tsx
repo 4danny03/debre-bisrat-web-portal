@@ -43,7 +43,8 @@ import {
   XCircle,
   AlertTriangle,
 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { format, addDays, addWeeks, addMonths } from "date-fns";
 import { api } from "@/integrations/supabase/api";
 
@@ -115,13 +116,23 @@ export default function ContentScheduler() {
       setLoading(true);
       const stored = localStorage.getItem("scheduledContent");
       if (stored) {
-        const parsed: ScheduledContent[] = JSON.parse(stored).map((item: Record<string, unknown>) => ({
-          ...item,
-          scheduledFor: new Date(item.scheduledFor as string),
-          createdAt: new Date(item.createdAt as string),
-          publishedAt: item.publishedAt ? new Date(item.publishedAt as string) : undefined,
-        }));
-        setScheduledContent(parsed);
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            const processedContent = parsed.map((item: any) => ({
+              ...item,
+              scheduledFor: new Date(item.scheduledFor),
+              createdAt: new Date(item.createdAt),
+              publishedAt: item.publishedAt
+                ? new Date(item.publishedAt)
+                : undefined,
+            }));
+            setScheduledContent(processedContent);
+          }
+        } catch (error) {
+          console.error("Error parsing scheduled content:", error);
+          setScheduledContent([]);
+        }
       }
     } catch (error) {
       console.error("Error loading scheduled content:", error);
@@ -136,13 +147,20 @@ export default function ContentScheduler() {
   };
 
   const checkAndPublishContent = async () => {
+    if (!Array.isArray(scheduledContent)) return;
+
     const now = new Date();
     const toPublish = scheduledContent.filter(
-      (item) => item.status === "scheduled" && item.scheduledFor <= now,
+      (item) =>
+        item?.status === "scheduled" &&
+        item?.scheduledFor &&
+        item.scheduledFor <= now,
     );
 
     for (const item of toPublish) {
-      await publishContent(item);
+      if (item) {
+        await publishContent(item);
+      }
     }
   };
 
@@ -156,11 +174,10 @@ export default function ContentScheduler() {
           success = true;
           break;
         case "email":
-          toast({
-            title: "Email Campaigns Not Supported",
-            description:
-              "Email campaign API is not available in this deployment.",
-            variant: "destructive",
+          await supabase.from("email_campaigns").insert({
+            ...content.content,
+            status: "sent",
+            sent_at: new Date().toISOString(),
           });
           success = false;
           break;

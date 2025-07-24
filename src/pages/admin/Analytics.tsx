@@ -42,7 +42,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
 import { Member } from "@/types/member";
 import { Database } from "@/types/supabase";
@@ -128,8 +128,10 @@ export default function Analytics() {
           .select("*", { count: "exact", head: true }),
       ]);
 
-      // Process donations data
-      const donations = donationsRes.data || [];
+      // Process donations data with safe array handling
+      const donations = Array.isArray(donationsRes.data)
+        ? donationsRes.data
+        : [];
       const donationsByMonth = processMonthlyData(
         donations,
         "created_at",
@@ -138,22 +140,30 @@ export default function Analytics() {
       const donationsByPurpose = processPurposeData(donations);
       const donationTrends = calculateTrends(donations, "amount");
 
-      // Process members data
-      const members = membersRes.data || [];
+      // Process members data with safe array handling
+      const members = Array.isArray(membersRes.data) ? membersRes.data : [];
       const membersByMonth = processMonthlyData(members, "created_at");
       const membersByType = processTypeData(members, "membership_type");
       const memberTrends = calculateTrends(members);
 
-      // Process events data
-      const events = eventsRes.data || [];
+      // Process events data with safe array handling
+      const events = Array.isArray(eventsRes.data) ? eventsRes.data : [];
       const eventsByMonth = processMonthlyData(events, "created_at");
-      const upcomingEvents = events.filter(
-        (e) => new Date(e.event_date) > now,
-      ).length;
+      const upcomingEvents = events.filter((e) => {
+        if (!e?.event_date) return false;
+        try {
+          return new Date(e.event_date) > now;
+        } catch {
+          return false;
+        }
+      }).length;
 
       setData({
         donations: {
-          total: donations.reduce((sum, d) => sum + d.amount, 0),
+          total: donations.reduce(
+            (sum, d) => sum + (Number(d?.amount) || 0),
+            0,
+          ),
           monthly: donationsByMonth,
           byPurpose: donationsByPurpose,
           trends: donationTrends,
@@ -197,19 +207,27 @@ export default function Analytics() {
     dateField: keyof Database["public"]["Tables"]["donations"]["Row"],
     valueField?: keyof Database["public"]["Tables"]["donations"]["Row"],
   ) => {
+    if (!Array.isArray(items)) {
+      console.warn("processMonthlyData: items is not an array");
+      return [];
+    }
+
     const monthlyData: Record<string, { count: number; amount: number }> = {};
 
     items.forEach((item) => {
-      const dateValue = item[dateField];
-      if (typeof dateValue === "string" || typeof dateValue === "number") {
-        const month = format(new Date(dateValue), "MMM yyyy");
+      if (!item || !item[dateField]) return;
+
+      try {
+        const month = format(new Date(item[dateField]), "MMM yyyy");
         if (!monthlyData[month]) {
           monthlyData[month] = { count: 0, amount: 0 };
         }
         monthlyData[month].count += 1;
-        if (valueField && typeof item[valueField] === "number") {
-          monthlyData[month].amount += item[valueField] as number;
+        if (valueField && item[valueField]) {
+          monthlyData[month].amount += Number(item[valueField]) || 0;
         }
+      } catch (error) {
+        console.warn("Error processing date:", item[dateField], error);
       }
     });
 
@@ -220,13 +238,23 @@ export default function Analytics() {
     }));
   };
 
-  const processPurposeData = (donations: Database["public"]["Tables"]["donations"]["Row"][]) => {
+  const processPurposeData = (donations: any[]) => {
+    if (!Array.isArray(donations)) {
+      console.warn("processPurposeData: donations is not an array");
+      return [];
+    }
+
     const purposeData: Record<string, number> = {};
-    const total = donations.reduce((sum, d) => sum + d.amount, 0);
+    const total = donations.reduce(
+      (sum, d) => sum + (Number(d?.amount) || 0),
+      0,
+    );
 
     donations.forEach((donation) => {
+      if (!donation) return;
       const purpose = donation.purpose || "General Fund";
-      purposeData[purpose] = (purposeData[purpose] || 0) + donation.amount;
+      const amount = Number(donation.amount) || 0;
+      purposeData[purpose] = (purposeData[purpose] || 0) + amount;
     });
 
     return Object.entries(purposeData).map(([purpose, amount]) => ({
@@ -236,15 +264,18 @@ export default function Analytics() {
     }));
   };
 
-  const processTypeData = (
-    members: Member[],
-    typeField: keyof Member,
-  ) => {
+  const processTypeData = (members: any[], typeField: string) => {
+    if (!Array.isArray(members)) {
+      console.warn("processTypeData: members is not an array");
+      return [];
+    }
+
     const typeData: Record<string, number> = {};
     const total = members.length;
 
     members.forEach((member) => {
-      const type = member[typeField] ? String(member[typeField]) : "Regular";
+      if (!member) return;
+      const type = member[typeField] || "Regular";
       typeData[type] = (typeData[type] || 0) + 1;
     });
 
@@ -255,22 +286,53 @@ export default function Analytics() {
     }));
   };
 
-  const calculateTrends = (
-    items: Database["public"]["Tables"]["donations"]["Row"][],
-    valueField?: keyof Database["public"]["Tables"]["donations"]["Row"],
-  ) => {
+  const calculateTrends = (items: any[], valueField?: string) => {
+    if (!Array.isArray(items)) {
+      console.warn("calculateTrends: items is not an array");
+      return { thisMonth: 0, lastMonth: 0, growth: 0 };
+    }
+
     const now = new Date();
     const thisMonthStart = startOfMonth(now);
     const lastMonthStart = startOfMonth(subDays(now, 30));
     const lastMonthEnd = endOfMonth(subDays(now, 30));
 
-    const thisMonth = items.filter(
-      (item) => new Date(item.created_at) >= thisMonthStart,
-    );
-    const lastMonth = items.filter((item) => {
-      const date = new Date(item.created_at);
-      return date >= lastMonthStart && date <= lastMonthEnd;
+    const thisMonth = items.filter((item) => {
+      if (!item?.created_at) return false;
+      try {
+        return new Date(item.created_at) >= thisMonthStart;
+      } catch {
+        return false;
+      }
     });
+
+    const lastMonth = items.filter((item) => {
+      if (!item?.created_at) return false;
+      try {
+        const date = new Date(item.created_at);
+        return date >= lastMonthStart && date <= lastMonthEnd;
+      } catch {
+        return false;
+      }
+    });
+
+    const thisMonthValue = valueField
+      ? thisMonth.reduce(
+          (sum, item) => sum + (Number(item[valueField]) || 0),
+          0,
+        )
+      : thisMonth.length;
+    const lastMonthValue = valueField
+      ? lastMonth.reduce(
+          (sum, item) => sum + (Number(item[valueField]) || 0),
+          0,
+        )
+      : lastMonth.length;
+
+    const growth =
+      lastMonthValue > 0
+        ? Math.round(((thisMonthValue - lastMonthValue) / lastMonthValue) * 100)
+        : 0;
 
     return {
       thisMonth:

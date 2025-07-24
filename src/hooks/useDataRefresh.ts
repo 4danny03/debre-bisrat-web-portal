@@ -12,7 +12,7 @@ import { useDataContext } from "@/contexts/DataContext";
 export const useDataRefresh = (
   refreshFunction: () => void | Promise<void>,
   intervalMs: number = 30 * 60 * 1000, // Increased to 30 minutes to reduce frequency
-  dependencies: any[] = [],
+  dependencies: unknown[] = [],
   tableName?: string,
 ) => {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -133,7 +133,7 @@ export const useDataRefresh = (
       window.removeEventListener("adminActionCompleted", handleAdminAction);
       window.removeEventListener("dataRefresh", handleDataChange);
     };
-  }, [tableName, connectionHealth, intervalMs]);
+  }, [tableName, connectionHealth, intervalMs, ...dependencies]);
 
   const pauseRefresh = useCallback(() => {
     isActiveRef.current = false;
@@ -161,7 +161,7 @@ export const useDataRefresh = (
         isRefreshingRef.current = false;
       }
     }
-  }, [tableName]);
+  }, [refreshFunction, tableName]);
 
   const forceSyncData = useCallback(async () => {
     console.log(`Force sync triggered for ${tableName || "component"}`);

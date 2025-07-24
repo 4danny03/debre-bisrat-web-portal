@@ -1,4 +1,3 @@
-import { User, CreditCard, MapPin, Users } from "lucide-react";
 import { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -26,19 +25,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, User, CreditCard, MapPin, Users } from "lucide-react";
-import { User as SupabaseUser } from "@supabase/supabase-js";
-
-interface Member {
-  full_name?: string;
-  email?: string;
-  membership_status?: string;
-  membership_type?: string;
-  next_renewal_date?: string;
-  membership_card_number?: string;
-  orientation_completed?: boolean;
-  integration_status?: string;
-}
+import { CheckCircle, User, CreditCard, MapPin } from "lucide-react";
 
 interface FormData {
   firstName: string;
@@ -60,87 +47,9 @@ interface FormData {
   // Removed unused children field for cleanup
 }
 
-// Member dashboard for authenticated users
-const MemberDashboard: React.FC = () => {
-  const [member, setMember] = useState<Member | null>(null);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-  useEffect(() => {
-    const fetchMember = async () => {
-      setLoading(true);
-      try {
-        const user = await supabase.auth.getUser();
-        if (!user?.data?.user) return;
-        // Add Accept header to fix 406 error
-        const { data: memberData, error } = await supabase
-          .from("members")
-          .select("*", { head: false })
-          .eq("email", user.data.user.email)
-          .single();
-        if (error) throw error;
-        setMember(memberData);
-      } catch (err: unknown) {
-        const errorMessage =
-          typeof err === "object" && err !== null && "message" in err
-            ? (err as { message?: string }).message
-            : String(err);
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchMember();
-  }, []);
-  if (loading) return <div>Loading membership info...</div>;
-  if (!member) return <div>No membership record found.</div>;
-  return (
-    <div className="my-8">
-      <h2 className="text-lg font-bold mb-2">Your Membership</h2>
-      <div>
-        <b>Name:</b> {String(member?.full_name ?? "")}
-      </div>
-      <div>
-        <b>Email:</b> {String(member?.email ?? "")}
-      </div>
-      <div>
-        <b>Status:</b> {String(member?.membership_status ?? "")}
-      </div>
-      <div>
-        <b>Type:</b> {String(member?.membership_type ?? "")}
-      </div>
-      <div>
-        <b>Renewal Due:</b> {String(member?.next_renewal_date ?? "N/A")}
-      </div>
-      {member?.membership_card_number && (
-        <div>
-          <b>Membership Card:</b> {String(member.membership_card_number)}
-        </div>
-      )}
-      {member?.orientation_completed && (
-        <div>
-          <b>Orientation:</b> Completed
-        </div>
-      )}
-      {member.integration_status === "integrated" && (
-        <div>
-          <b>Integration:</b> Complete
-        </div>
-      )}
-      <Button onClick={() => window.location.reload()}>Refresh</Button>
-    </div>
-  );
-};
-
 const MembershipRegistration = () => {
-  // Deployment check: Ensure Supabase Edge Functions 'membership-management' and 'supabase-functions-create-checkout' are deployed and accessible at:
-  //   ${import.meta.env.VITE_SUPABASE_URL}/functions/v1/membership-management
-  //   supabase.functions.invoke('supabase-functions-create-checkout')
-  // Also verify HTTPS and CORS settings for production.
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -175,6 +84,8 @@ const MembershipRegistration = () => {
 
   const totalSteps = 3;
   const progressPercentage = (currentStep / totalSteps) * 100;
+
+  // Removed unused ministryOptions and volunteerOptions arrays
 
   const validateStep = (step: number): boolean => {
     const errors: Record<string, string> = {};
@@ -232,7 +143,15 @@ const MembershipRegistration = () => {
     }
   };
 
-  // Removed unused child management functions
+  // Removed unused handleArrayChange function
+
+  const addChild = () => {
+    setChildren((prev) => [...prev, { name: "", age: "" }]);
+  };
+
+  const removeChild = (index: number) => {
+    setChildren((prev) => prev.filter((_, i) => i !== index));
+  };
 
   // Removed useEffect for children state
 
@@ -242,47 +161,6 @@ const MembershipRegistration = () => {
     setIsSubmitting(true);
     setError(null);
     try {
-      // Prepare member data for Edge Function
-      const memberPayload = {
-        full_name: `${formData.firstName} ${formData.lastName}`.trim(),
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        email: formData.email,
-        phone: formData.phone,
-        address: `${formData.streetAddress}, ${formData.city}, ${formData.stateProvinceRegion} ${formData.postalZipCode}`.trim(),
-        street_address: formData.streetAddress,
-        city: formData.city,
-        state_province_region: formData.stateProvinceRegion,
-        postal_zip_code: formData.postalZipCode,
-        country: formData.country,
-        date_of_birth: formData.dateOfBirth,
-        gender: formData.gender,
-        membership_type: formData.membershipType,
-        preferred_language: formData.preferredLanguage,
-        ministry_interests: formData.ministryInterests ? [formData.ministryInterests] : [],
-        email_updates: formData.emailUpdates,
-        agree_to_terms: formData.agreeToTerms,
-        newsletter_consent: formData.emailUpdates,
-        terms_accepted: formData.agreeToTerms,
-        privacy_accepted: true,
-        data_processing_consent: true,
-        // Add any other fields as needed
-      };
-
-      // Call Edge Function for registration
-      const fetchResponse = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/membership-management`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(memberPayload),
-        }
-      );
-      const result = await fetchResponse.json();
-      if (!fetchResponse.ok || result.error) {
-        throw new Error(result.error || "Registration failed");
-      }
-      const memberData = result.member;
 
       // Determine membership fee based on type
       const membershipFees = {
@@ -304,7 +182,7 @@ const MembershipRegistration = () => {
         email: formData.email,
         name: `${formData.firstName} ${formData.lastName}`,
         address: `${formData.streetAddress}, ${formData.city}, ${formData.stateProvinceRegion} ${formData.postalZipCode}`,
-        memberId: memberData.id,
+        // memberId will be set after member creation
         membershipType: formData.membershipType,
       };
 
@@ -316,14 +194,66 @@ const MembershipRegistration = () => {
         membershipFee,
       );
 
-      const supabaseResponse = await supabase.functions.invoke(
-        "supabase-functions-create-checkout",
+      // First create the member record using the membership-management function
+      const memberResponse = await supabase.functions.invoke(
+        "membership-management",
         {
-          body: checkoutData,
+          body: {
+            action: "create_member",
+            member_data: {
+              full_name: `${formData.firstName} ${formData.lastName}`,
+              first_name: formData.firstName,
+              last_name: formData.lastName,
+              email: formData.email,
+              phone: formData.phone,
+              address: `${formData.streetAddress}, ${formData.city}, ${formData.stateProvinceRegion} ${formData.postalZipCode}`,
+              street_address: formData.streetAddress,
+              city: formData.city,
+              state_province_region: formData.stateProvinceRegion,
+              postal_zip_code: formData.postalZipCode,
+              country: formData.country,
+              date_of_birth: formData.dateOfBirth,
+              gender: formData.gender,
+              membership_type: formData.membershipType,
+              preferred_language: formData.preferredLanguage,
+              ministry_interests: formData.ministryInterests,
+              email_updates: formData.emailUpdates,
+              terms_accepted: formData.agreeToTerms,
+              newsletter_consent: formData.emailUpdates,
+            },
+          },
         },
       );
 
-      if ((supabaseResponse as any).error) {
+      if (memberResponse.error) {
+        console.error("Member creation error:", memberResponse.error);
+        throw new Error(
+          `Member registration failed: ${memberResponse.error.message || "Unknown error"}`,
+        );
+      }
+
+      const newMember = memberResponse.data?.member;
+      if (!newMember) {
+        throw new Error("Failed to create member record");
+      }
+
+      // Then create the checkout session
+      const response = await supabase.functions.invoke("webhook-handler", {
+        body: {
+          action: "create_checkout",
+          checkout_data: {
+            ...checkoutData,
+            memberId: newMember.id,
+          },
+        },
+      });
+
+      console.log("Checkout function response:", response);
+      console.log("Response data:", response.data);
+      console.log("Response error:", response.error);
+
+      if (response.error) {
+        console.error("Function error:", response.error);
         throw new Error(
           `Payment initiation failed: ${(supabaseResponse as any).error.message || "Unknown error"}`,
         );

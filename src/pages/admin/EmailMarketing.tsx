@@ -14,45 +14,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Mail, Users, Send, Eye } from "lucide-react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { XCircle, RefreshCw, BarChart2, Clock } from "lucide-react";
 
-// Add types for state arrays
-interface Subscriber {
-  id: string;
-  email: string;
-  name?: string;
-  subscribed: boolean;
-  subscription_date: string;
-}
-interface Campaign {
-  id: string;
-  name: string;
-  subject: string;
-  content: string;
-  status: string;
-  recipient_count: number;
-  sent_count?: number;
-  sent_at?: string;
-  created_at: string;
-  scheduled_for?: string;
-  open_rate?: number;
-  click_rate?: number;
-}
-interface Template {
-  id: string;
-  name: string;
-  template_type: string;
-  content: string;
-}
-
-const AdminEmailMarketing: React.FC = () => {
-  const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [templates, setTemplates] = useState<Template[]>([]);
+export default function EmailMarketing() {
+  const [subscribers, setSubscribers] = useState<any[]>([]);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const { toast } = useToast();
@@ -102,9 +73,11 @@ const AdminEmailMarketing: React.FC = () => {
             .eq("template_type", "newsletter"),
         ],
       );
-      if (subscribersData.data) setSubscribers(subscribersData.data);
-      if (campaignsData.data) setCampaigns(campaignsData.data);
-      if (templatesData.data) setTemplates(templatesData.data);
+
+      if (Array.isArray(subscribersData.data))
+        setSubscribers(subscribersData.data);
+      if (Array.isArray(campaignsData.data)) setCampaigns(campaignsData.data);
+      if (Array.isArray(templatesData.data)) setTemplates(templatesData.data);
     } catch (error) {
       console.error("Error loading data:", error);
       toast({
@@ -143,8 +116,7 @@ const AdminEmailMarketing: React.FC = () => {
           subject: newCampaign.subject,
           content: newCampaign.content,
           status: "sending",
-          recipient_count: subscribers.length,
-          scheduled_for: scheduledFor ? scheduledFor.toISOString() : null,
+          recipient_count: Array.isArray(subscribers) ? subscribers.length : 0,
         })
         .select()
         .single();
@@ -153,14 +125,16 @@ const AdminEmailMarketing: React.FC = () => {
 
       // Send emails
       const { error: emailError } = await supabase.functions.invoke(
-        "send-email",
+        "supabase-functions-send-email",
         {
           body: {
             type: "newsletter",
             data: {
               content: newCampaign.content,
             },
-            recipients: subscribers.map((sub: any) => sub.email),
+            recipients: Array.isArray(subscribers)
+              ? subscribers.map((sub: any) => sub?.email).filter(Boolean)
+              : [],
           },
         },
       );
@@ -173,15 +147,13 @@ const AdminEmailMarketing: React.FC = () => {
         .update({
           status: "sent",
           sent_at: new Date().toISOString(),
-          sent_count: subscribers.length,
+          sent_count: Array.isArray(subscribers) ? subscribers.length : 0,
         })
         .eq("id", campaign.id);
 
       toast({
-        title: scheduledFor ? "Campaign Scheduled" : "Success",
-        description: scheduledFor
-          ? `Newsletter scheduled for ${scheduledFor.toLocaleString()}`
-          : `Newsletter sent to ${subscribers.length} subscribers`,
+        title: "Success",
+        description: `Newsletter sent to ${Array.isArray(subscribers) ? subscribers.length : 0} subscribers`,
       });
 
       setNewCampaign({ name: "", subject: "", content: "" });
@@ -233,74 +205,49 @@ const AdminEmailMarketing: React.FC = () => {
     setPreviewContent(body || newCampaign.content);
   };
 
-  const handleSendEnhanced = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSending(true);
-    try {
-      // Use selected or all
-      const recipientList =
-        recipients === "custom"
-          ? subscribers.filter((s) => selectedSubscribers.includes(s.id)).map((s) => s.email)
-          : recipients === "members"
-          ? [] // TODO: fetch members
-          : subscribers.map((s) => s.email);
-      // Call backend function
-      const response = await fetch("/functions/v1/email-marketing", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subject: subject,
-          content: body,
-          recipients: recipientList,
-        }),
-      });
-      const result = await response.json();
-      if (!response.ok || result.error) throw new Error(result.error || "Send failed");
-      toast({
-        title: "Email Sent!",
-        description: `Your email campaign has been sent to ${recipientList.length} recipients`,
-      });
-      setSubject("");
-      setBody("");
-      setSelectedSubscribers([]);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to send email. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  // Cancel campaign (stub)
-  const handleCancelCampaign = async (id: string) => {
-    setCancellingId(id);
-    // TODO: Integrate with backend to cancel scheduled campaign
-    setTimeout(() => {
-      toast({
-        title: "Campaign Cancelled",
-        description: `Campaign ${id} cancelled (stubbed)`
-      });
-      setCancellingId(null);
-      loadData();
-    }, 1000);
-  };
-
-  // Resend campaign (stub)
-  const handleResendCampaign = async (id: string) => {
-    setResendingId(id);
-    // TODO: Integrate with backend to resend campaign
-    setTimeout(() => {
-      toast({
-        title: "Campaign Resent",
-        description: `Campaign ${id} resent (stubbed)`
-      });
-      setResendingId(null);
-      loadData();
-    }, 1000);
-  };
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Total Subscribers
+            </CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {Array.isArray(subscribers) ? subscribers.length : 0}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Campaigns Sent
+            </CardTitle>
+            <Send className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {Array.isArray(campaigns)
+                ? campaigns.filter((c) => c?.status === "sent").length
+                : 0}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Email Templates
+            </CardTitle>
+            <Mail className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {Array.isArray(templates) ? templates.length : 0}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
   if (loading) return <div>Loading...</div>;
 
@@ -319,8 +266,59 @@ const AdminEmailMarketing: React.FC = () => {
               </CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{subscribers.length}</div>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="campaignName">Campaign Name</Label>
+                <Input
+                  id="campaignName"
+                  value={newCampaign.name}
+                  onChange={(e) =>
+                    setNewCampaign((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
+                  placeholder="e.g., Monthly Newsletter - January 2024"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="subject">Email Subject</Label>
+                <Input
+                  id="subject"
+                  value={newCampaign.subject}
+                  onChange={(e) =>
+                    setNewCampaign((prev) => ({
+                      ...prev,
+                      subject: e.target.value,
+                    }))
+                  }
+                  placeholder="Newsletter subject line"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="content">Email Content</Label>
+                <Textarea
+                  id="content"
+                  rows={10}
+                  value={newCampaign.content}
+                  onChange={(e) =>
+                    setNewCampaign((prev) => ({
+                      ...prev,
+                      content: e.target.value,
+                    }))
+                  }
+                  placeholder="Newsletter content..."
+                />
+              </div>
+              <Button
+                onClick={sendCampaign}
+                disabled={sending}
+                className="w-full"
+              >
+                {sending
+                  ? "Sending..."
+                  : `Send to ${Array.isArray(subscribers) ? subscribers.length : 0} Subscribers`}
+              </Button>
             </CardContent>
           </Card>
           <Card>
@@ -331,8 +329,41 @@ const AdminEmailMarketing: React.FC = () => {
               <Send className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {campaigns.filter((c) => c.status === "sent").length}
+              <div className="space-y-4">
+                {Array.isArray(subscribers) && subscribers.length > 0 ? (
+                  subscribers.map((subscriber: any) => (
+                    <div
+                      key={subscriber.id}
+                      className="flex items-center justify-between p-4 border rounded"
+                    >
+                      <div>
+                        <p className="font-medium">
+                          {subscriber.name || "Anonymous"}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {subscriber.email}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          Subscribed:{" "}
+                          {new Date(
+                            subscriber.subscription_date,
+                          ).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Badge
+                        variant={
+                          subscriber.subscribed ? "default" : "secondary"
+                        }
+                      >
+                        {subscriber.subscribed ? "Active" : "Unsubscribed"}
+                      </Badge>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    No subscribers found
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -575,64 +606,49 @@ const AdminEmailMarketing: React.FC = () => {
               <CardTitle>Email Marketing</CardTitle>
             </CardHeader>
             <CardContent>
-              <form className="space-y-6" onSubmit={handleSendEnhanced}>
-                <div>
-                  <label className="block font-medium mb-1">Recipients</label>
-                  <select
-                    className="w-full border rounded px-3 py-2"
-                    value={recipients}
-                    onChange={(e) => setRecipients(e.target.value)}
-                  >
-                    <option value="all">All Subscribers</option>
-                    <option value="members">Members Only</option>
-                    <option value="custom">Custom Selection</option>
-                  </select>
-                </div>
-                {recipients === "custom" && (
-                  <div className="mb-2 text-xs text-gray-500">
-                    {selectedSubscribers.length} selected
+              <div className="space-y-4">
+                {Array.isArray(campaigns) && campaigns.length > 0 ? (
+                  campaigns.map((campaign: any) => (
+                    <div
+                      key={campaign.id}
+                      className="flex items-center justify-between p-4 border rounded"
+                    >
+                      <div>
+                        <p className="font-medium">{campaign.name}</p>
+                        <p className="text-sm text-gray-500">
+                          {campaign.subject}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {campaign.sent_at
+                            ? `Sent: ${new Date(campaign.sent_at).toLocaleDateString()}`
+                            : `Created: ${new Date(campaign.created_at).toLocaleDateString()}`}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <Badge
+                          variant={
+                            campaign.status === "sent"
+                              ? "default"
+                              : campaign.status === "sending"
+                                ? "secondary"
+                                : "outline"
+                          }
+                        >
+                          {campaign.status}
+                        </Badge>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {campaign.sent_count || 0} /{" "}
+                          {campaign.recipient_count || 0} sent
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    No campaigns found
                   </div>
                 )}
-                <div>
-                  <label className="block font-medium mb-1">Subject</label>
-                  <Input
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    required
-                    placeholder="Email subject"
-                  />
-                </div>
-                <div>
-                  <label className="block font-medium mb-1">Message</label>
-                  <Textarea
-                    value={body}
-                    onChange={(e) => setBody(e.target.value)}
-                    required
-                    rows={8}
-                    placeholder="Write your email content here..."
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button type="button" variant="outline" onClick={handlePreview}>
-                    Preview
-                  </Button>
-                  <Button type="submit" className="bg-church-burgundy" disabled={isSending}>
-                    {isSending ? "Sending..." : "Send Email"}
-                  </Button>
-                </div>
-              </form>
-              {previewContent && (
-                <div className="mt-6 border-t pt-4">
-                  <h3 className="font-semibold mb-2">Preview</h3>
-                  <div className="bg-gray-50 p-4 rounded border text-sm whitespace-pre-line">
-                    <strong>Subject:</strong> {subject}
-                    <br />
-                    <strong>Message:</strong>
-                    <br />
-                    {previewContent}
-                  </div>
-                </div>
-              )}
+              </div>
             </CardContent>
           </Card>
         </div>

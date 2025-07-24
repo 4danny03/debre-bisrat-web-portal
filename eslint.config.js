@@ -2,44 +2,28 @@ import js from "@eslint/js";
 import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
-import tsPlugin from "@typescript-eslint/eslint-plugin";
-import tsParser from "@typescript-eslint/parser";
-
-// Sanitize global names to remove whitespace
-
-// Add additional globals for Node, React, Deno, etc.
-const extraGlobals = {
-  ...globals.browser,
-  ...globals.node,
-  React: true,
-  process: true,
-  Deno: true,
-  require: true,
-  __dirname: true,
-};
-
-const sanitizedGlobals = Object.fromEntries(
-  Object.entries(extraGlobals).map(([k, v]) => [k.trim(), v]),
-);
+import tseslint from "@typescript-eslint/eslint-plugin";
 
 export default [
-  js.configs.recommended,
+  { ignores: ["dist"] },
   {
-    ignores: ["dist"],
-  },
-  {
-    files: ["**/*.{ts,tsx}", "**/*.js"],
+    files: ["**/*.{js,mjs,cjs,ts,tsx}"],
     languageOptions: {
       ecmaVersion: 2020,
-      globals: sanitizedGlobals,
-      parser: tsParser,
+      globals: globals.browser,
+      parser: await import("@typescript-eslint/parser").then((m) => m.default),
+      parserOptions: {
+        ecmaVersion: "latest",
+        sourceType: "module",
+      },
     },
     plugins: {
-      "@typescript-eslint": tsPlugin,
+      "@typescript-eslint": tseslint,
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
     },
     rules: {
+      ...js.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": [
         "warn",

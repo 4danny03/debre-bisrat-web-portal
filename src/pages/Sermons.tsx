@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/integrations/supabase/api";
 import { format } from "date-fns";
 import { useDataRefresh } from "@/hooks/useDataRefresh";
+import { useToast } from "@/hooks/use-toast";
 
 interface Sermon {
   id: string;

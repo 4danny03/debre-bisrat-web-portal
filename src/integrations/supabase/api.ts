@@ -29,7 +29,7 @@ export const api = {
       if (error) throw error;
       return data || [];
     },
-    createEvent: async (event: any) => {
+    createEvent: async (event: Record<string, unknown>) => {
       const { data, error } = await supabase
         .from("events")
         .insert([event])
@@ -40,7 +40,7 @@ export const api = {
       dataSyncService.notifyAdminAction("create", "events", data);
       return data;
     },
-    updateEvent: async (id: string, updates: any) => {
+    updateEvent: async (id: string, updates: Record<string, unknown>) => {
       const { data, error } = await supabase
         .from("events")
         .update(updates)
@@ -71,7 +71,7 @@ export const api = {
       if (error) throw error;
       return data;
     },
-    createMember: async (member: any) => {
+    createMember: async (member: Record<string, unknown>) => {
       const { data, error } = await supabase
         .from("members")
         .insert([member])
@@ -82,7 +82,7 @@ export const api = {
       dataSyncService.notifyAdminAction("create", "members", data);
       return data;
     },
-    updateMember: async (id: string, updates: any) => {
+    updateMember: async (id: string, updates: Record<string, unknown>) => {
       const { data, error } = await supabase
         .from("members")
         .update(updates)
@@ -113,7 +113,7 @@ export const api = {
       if (error) throw error;
       return data;
     },
-    createSermon: async (sermon: any) => {
+    createSermon: async (sermon: Record<string, unknown>) => {
       const { data, error } = await supabase
         .from("sermons")
         .insert([sermon])
@@ -124,7 +124,7 @@ export const api = {
       dataSyncService.notifyAdminAction("create", "sermons", data);
       return data;
     },
-    updateSermon: async (id: string, updates: any) => {
+    updateSermon: async (id: string, updates: Record<string, unknown>) => {
       const { data, error } = await supabase
         .from("sermons")
         .update(updates)
@@ -159,7 +159,7 @@ export const api = {
       if (error) throw error;
       return data;
     },
-    createTestimonial: async (testimonial: any) => {
+    createTestimonial: async (testimonial: Record<string, unknown>) => {
       const { data, error } = await supabase
         .from("testimonials")
         .insert([testimonial])
@@ -170,7 +170,7 @@ export const api = {
       dataSyncService.notifyAdminAction("create", "testimonials", data);
       return data;
     },
-    updateTestimonial: async (id: string, updates: any) => {
+    updateTestimonial: async (id: string, updates: Record<string, unknown>) => {
       const { data, error } = await supabase
         .from("testimonials")
         .update(updates)
@@ -208,7 +208,7 @@ export const api = {
       if (error) throw error;
       return data;
     },
-    createPrayerRequest: async (request: any) => {
+    createPrayerRequest: async (request: Record<string, unknown>) => {
       const { data, error } = await supabase
         .from("prayer_requests")
         .insert([request])
@@ -219,7 +219,10 @@ export const api = {
       dataSyncService.notifyAdminAction("create", "prayer_requests", data);
       return data;
     },
-    updatePrayerRequest: async (id: string, updates: any) => {
+    updatePrayerRequest: async (
+      id: string,
+      updates: Record<string, unknown>,
+    ) => {
       const { data, error } = await supabase
         .from("prayer_requests")
         .update(updates)
@@ -253,7 +256,7 @@ export const api = {
       if (error) throw error;
       return data;
     },
-    createDonation: async (donation: any) => {
+    createDonation: async (donation: Record<string, unknown>) => {
       const { data, error } = await supabase
         .from("donations")
         .insert([donation])
@@ -264,7 +267,7 @@ export const api = {
       dataSyncService.notifyAdminAction("create", "donations", data);
       return data;
     },
-    updateDonation: async (id: string, updates: any) => {
+    updateDonation: async (id: string, updates: Record<string, unknown>) => {
       const { data, error } = await supabase
         .from("donations")
         .update(updates)
@@ -289,7 +292,7 @@ export const api = {
       if (error) throw error;
       return data;
     },
-    createGalleryImage: async (image: any) => {
+    createGalleryImage: async (image: Record<string, unknown>) => {
       const { data, error } = await supabase
         .from("gallery")
         .insert([image])
@@ -319,7 +322,7 @@ export const api = {
       if (error) throw error;
       return data;
     },
-    createUser: async (user: any) => {
+    createUser: async (user: Record<string, unknown>) => {
       const { data, error } = await supabase
         .from("profiles")
         .insert([user])
@@ -330,7 +333,7 @@ export const api = {
       dataSyncService.notifyAdminAction("create", "profiles", data);
       return data;
     },
-    updateUser: async (id: string, updates: any) => {
+    updateUser: async (id: string, updates: Record<string, unknown>) => {
       const { data, error } = await supabase
         .from("profiles")
         .update(updates)
@@ -381,7 +384,7 @@ export const api = {
       if (error) throw error;
       return data;
     },
-    createAppointment: async (appointment: AppointmentCreateInput) => {
+    createAppointment: async (appointment: Record<string, unknown>) => {
       const { data, error } = await supabase
         .from("appointments")
         .insert([appointment])
@@ -391,7 +394,7 @@ export const api = {
       if (error) throw error;
       return data as Appointment;
     },
-    updateAppointment: async (id: string, updates: Partial<Appointment>) => {
+    updateAppointment: async (id: string, updates: Record<string, unknown>) => {
       const { data, error } = await supabase
         .from("appointments")
         .update(updates)
@@ -471,7 +474,7 @@ export const api = {
       if (error && error.code !== "PGRST116") throw error;
       return data;
     },
-    updateSettings: async (settings: any) => {
+    updateSettings: async (settings: Record<string, unknown>) => {
       const { data, error } = await supabase
         .from("site_settings")
         .upsert({ id: 1, ...settings, updated_at: new Date().toISOString() })
@@ -555,7 +558,7 @@ export const api = {
       if (error) throw error;
       return data;
     },
-    addSubscriber: async (subscriber: any) => {
+    addSubscriber: async (subscriber: Record<string, unknown>) => {
       const { data, error } = await supabase
         .from("email_subscribers")
         .insert([subscriber])
@@ -566,7 +569,7 @@ export const api = {
       dataSyncService.notifyAdminAction("create", "email_subscribers", data);
       return data;
     },
-    updateSubscriber: async (id: string, updates: any) => {
+    updateSubscriber: async (id: string, updates: Record<string, unknown>) => {
       const { data, error } = await supabase
         .from("email_subscribers")
         .update(updates)
@@ -630,7 +633,7 @@ export const api = {
       if (error) throw error;
       return data;
     },
-    createTemplate: async (template: any) => {
+    createTemplate: async (template: Record<string, unknown>) => {
       const { data, error } = await supabase
         .from("email_templates")
         .insert([template])
@@ -641,7 +644,7 @@ export const api = {
       dataSyncService.notifyAdminAction("create", "email_templates", data);
       return data;
     },
-    updateTemplate: async (id: string, updates: any) => {
+    updateTemplate: async (id: string, updates: Record<string, unknown>) => {
       const { data, error } = await supabase
         .from("email_templates")
         .update(updates)
@@ -676,7 +679,7 @@ export const api = {
       if (error) throw error;
       return data;
     },
-    createCampaign: async (campaign: any) => {
+    createCampaign: async (campaign: Record<string, unknown>) => {
       const { data, error } = await supabase
         .from("email_campaigns")
         .insert([campaign])
@@ -687,7 +690,7 @@ export const api = {
       dataSyncService.notifyAdminAction("create", "email_campaigns", data);
       return data;
     },
-    updateCampaign: async (id: string, updates: any) => {
+    updateCampaign: async (id: string, updates: Record<string, unknown>) => {
       const { data, error } = await supabase
         .from("email_campaigns")
         .update(updates)
@@ -767,7 +770,13 @@ export const api = {
     },
     getRecentActivity: async (limit = 6) => {
       try {
-        const activities: any[] = [];
+        const activities: Array<{
+          id: string;
+          type: string;
+          title: string;
+          description: string;
+          created_at: string;
+        }> = [];
 
         // Get recent events
         const { data: events } = await supabase

@@ -1,12 +1,11 @@
 import { supabase } from "@/integrations/supabase/client";
-import { ErrorHandler } from "@/utils/errorHandling";
 
 // Types for admin actions and error logging
 interface AdminAction {
   id: string;
   action: string;
   table: string;
-  data?: any;
+  data?: Record<string, unknown>;
   userId?: string;
   timestamp: string;
   details?: string;
@@ -38,7 +37,11 @@ class CoreDataSyncService {
   };
 
   private subscriptions: Map<string, any> = new Map();
-  private syncQueue: Array<{ table: string; action: string; data: any }> = [];
+  private syncQueue: Array<{
+    table: string;
+    action: string;
+    data: Record<string, unknown>;
+  }> = [];
   private isProcessingQueue = false;
 
   initialize(): void {
@@ -77,7 +80,14 @@ class CoreDataSyncService {
     }
   }
 
-  queueSync(table: string, action: string, data: any): void {
+  queueSync(
+    table: string,
+    action: string,
+    data: Record<string, unknown>,
+  ): void {
+    if (!Array.isArray(this.syncQueue)) {
+      this.syncQueue = [];
+    }
     this.syncQueue.push({ table, action, data });
     if (!this.isProcessingQueue) {
       this.processQueue();
@@ -85,13 +95,17 @@ class CoreDataSyncService {
   }
 
   private async processQueue(): Promise<void> {
-    if (this.isProcessingQueue || this.syncQueue.length === 0) {
+    if (
+      this.isProcessingQueue ||
+      !Array.isArray(this.syncQueue) ||
+      this.syncQueue.length === 0
+    ) {
       return;
     }
 
     this.isProcessingQueue = true;
 
-    while (this.syncQueue.length > 0) {
+    while (Array.isArray(this.syncQueue) && this.syncQueue.length > 0) {
       const item = this.syncQueue.shift();
       if (item) {
         try {
@@ -110,7 +124,7 @@ class CoreDataSyncService {
   private async processSyncItem(item: {
     table: string;
     action: string;
-    data: any;
+    data: Record<string, unknown>;
   }): Promise<void> {
     // Process the sync item - this could involve API calls, cache updates, etc.
     console.log(`Processing sync: ${item.action} on ${item.table}`);
@@ -123,7 +137,11 @@ class CoreDataSyncService {
       subscription.unsubscribe();
     });
     this.subscriptions.clear();
-    this.syncQueue.length = 0;
+    if (Array.isArray(this.syncQueue)) {
+      this.syncQueue.length = 0;
+    } else {
+      this.syncQueue = [];
+    }
     this.syncStatus = {
       isActive: false,
       listeners: 0,
@@ -159,7 +177,7 @@ class AdminActionTracker {
   logAction(
     action: string,
     table: string,
-    data?: any,
+    data?: Record<string, unknown>,
     userId?: string,
     details?: string,
   ): void {
@@ -175,6 +193,9 @@ class AdminActionTracker {
       details,
     };
 
+    if (!Array.isArray(this.actions)) {
+      this.actions = [];
+    }
     this.actions.unshift(actionLog);
 
     // Keep only the most recent actions
@@ -202,6 +223,9 @@ class AdminActionTracker {
       userId,
     };
 
+    if (!Array.isArray(this.errors)) {
+      this.errors = [];
+    }
     this.errors.unshift(errorLog);
 
     // Keep only the most recent errors
@@ -214,32 +238,34 @@ class AdminActionTracker {
 
   getRecentActions(limit = 10): AdminAction[] {
     this.ensureArraysInitialized();
-    const safeActions = ErrorHandler.safeArrayAccess(this.actions, []);
+    const safeActions = Array.isArray(this.actions) ? this.actions : [];
     const validLimit = Math.max(0, Math.min(limit, safeActions.length));
     return safeActions.slice(0, validLimit);
   }
 
   getRecentErrors(limit = 10): ErrorLog[] {
     this.ensureArraysInitialized();
-    const safeErrors = ErrorHandler.safeArrayAccess(this.errors, []);
+    const safeErrors = Array.isArray(this.errors) ? this.errors : [];
     const validLimit = Math.max(0, Math.min(limit, safeErrors.length));
     return safeErrors.slice(0, validLimit);
   }
 
   getActionsByTable(table: string, limit = 10): AdminAction[] {
     this.ensureArraysInitialized();
-    const safeActions = ErrorHandler.safeArrayAccess(this.actions, []);
-    return safeActions
-      .filter((action) => action && action.table === table)
-      .slice(0, Math.min(limit, safeActions.length));
+    const safeActions = Array.isArray(this.actions) ? this.actions : [];
+    const filteredActions = safeActions.filter(
+      (action) => action && action.table === table,
+    );
+    return filteredActions.slice(0, Math.min(limit, filteredActions.length));
   }
 
   getActionsByUser(userId: string, limit = 10): AdminAction[] {
     this.ensureArraysInitialized();
-    const safeActions = ErrorHandler.safeArrayAccess(this.actions, []);
-    return safeActions
-      .filter((action) => action && action.userId === userId)
-      .slice(0, Math.min(limit, safeActions.length));
+    const safeActions = Array.isArray(this.actions) ? this.actions : [];
+    const filteredActions = safeActions.filter(
+      (action) => action && action.userId === userId,
+    );
+    return filteredActions.slice(0, Math.min(limit, filteredActions.length));
   }
 
   getStats() {
@@ -247,8 +273,8 @@ class AdminActionTracker {
     const actionsByTable: Record<string, number> = {};
     const errorsByContext: Record<string, number> = {};
 
-    const safeActions = ErrorHandler.safeArrayAccess(this.actions, []);
-    const safeErrors = ErrorHandler.safeArrayAccess(this.errors, []);
+    const safeActions = Array.isArray(this.actions) ? this.actions : [];
+    const safeErrors = Array.isArray(this.errors) ? this.errors : [];
 
     safeActions.forEach((action) => {
       if (action && action.table) {
@@ -264,8 +290,8 @@ class AdminActionTracker {
     });
 
     return {
-      totalActions: ErrorHandler.safeLength(this.actions),
-      totalErrors: ErrorHandler.safeLength(this.errors),
+      totalActions: safeActions.length,
+      totalErrors: safeErrors.length,
       actionsByTable,
       errorsByContext,
     };
@@ -273,8 +299,8 @@ class AdminActionTracker {
 
   exportData() {
     this.ensureArraysInitialized();
-    const safeActions = ErrorHandler.safeArrayAccess(this.actions, []);
-    const safeErrors = ErrorHandler.safeArrayAccess(this.errors, []);
+    const safeActions = Array.isArray(this.actions) ? this.actions : [];
+    const safeErrors = Array.isArray(this.errors) ? this.errors : [];
     return {
       actions: [...safeActions],
       errors: [...safeErrors],
@@ -332,7 +358,11 @@ class DataSyncService {
     this.coreService.removeSubscription(table);
   }
 
-  queueSync(table: string, action: string, data: any): void {
+  queueSync(
+    table: string,
+    action: string,
+    data: Record<string, unknown>,
+  ): void {
     this.coreService.queueSync(table, action, data);
   }
 
@@ -340,7 +370,7 @@ class DataSyncService {
   notifyAdminAction(
     action: string,
     table: string,
-    data?: any,
+    data?: Record<string, unknown>,
     userId?: string,
     details?: string,
   ): void {
@@ -394,7 +424,10 @@ class DataSyncService {
   }
 
   // Admin-specific methods
-  async callAdminFunction(operation: string, data?: any): Promise<any> {
+  async callAdminFunction(
+    operation: string,
+    data?: Record<string, unknown>,
+  ): Promise<unknown> {
     try {
       const { supabase } = await import("@/integrations/supabase/client");
       const { data: result, error } = await supabase.functions.invoke(
@@ -415,23 +448,29 @@ class DataSyncService {
     }
   }
 
-  async getDashboardStats(): Promise<any> {
+  async getDashboardStats(): Promise<unknown> {
     return this.callAdminFunction("getDashboardStats");
   }
 
-  async getRecentActivity(limit = 6): Promise<any> {
+  async getRecentActivity(limit = 6): Promise<unknown> {
     return this.callAdminFunction("getRecentActivity", { limit });
   }
 
-  async bulkDelete(table: string, ids: string[]): Promise<any> {
+  async bulkDelete(table: string, ids: string[]): Promise<unknown> {
     return this.callAdminFunction("bulkDelete", { table, ids });
   }
 
-  async bulkUpdate(table: string, updates: any[]): Promise<any> {
+  async bulkUpdate(
+    table: string,
+    updates: Record<string, unknown>[],
+  ): Promise<unknown> {
     return this.callAdminFunction("bulkUpdate", { table, updates });
   }
 
-  async exportData(table: string, filters?: any): Promise<any> {
+  async exportData(
+    table: string,
+    filters?: Record<string, unknown>,
+  ): Promise<unknown> {
     return this.callAdminFunction("exportData", { table, filters });
   }
 
@@ -439,25 +478,25 @@ class DataSyncService {
   async sendEmailCampaign(
     campaignId: string,
     recipientIds: string[],
-  ): Promise<any> {
+  ): Promise<unknown> {
     return this.callAdminFunction("sendEmailCampaign", {
       campaignId,
       recipientIds,
     });
   }
 
-  async getEmailCampaignStats(campaignId: string): Promise<any> {
+  async getEmailCampaignStats(campaignId: string): Promise<unknown> {
     return this.callAdminFunction("getEmailCampaignStats", { campaignId });
   }
 
-  async syncNewsletterSubscribers(): Promise<any> {
+  async syncNewsletterSubscribers(): Promise<unknown> {
     return this.callAdminFunction("syncNewsletterSubscribers");
   }
 
   async logActionToDb(
     action: string,
     table: string,
-    data?: any,
+    data?: Record<string, unknown>,
     userId?: string,
     details?: string,
   ) {

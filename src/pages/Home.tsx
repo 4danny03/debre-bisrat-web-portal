@@ -380,21 +380,16 @@ const Home: React.FC = () => {
                               </p>
                             )}
                           </div>
-                          {(event.image_url ||
-                            import.meta.env.BASE_URL +
-                              "images/gallery/church-service.jpg") && (
-                            <div className="w-20 h-20 rounded-md overflow-hidden ml-3 flex-shrink-0">
-                              <img
-                                src={
-                                  event.image_url ||
-                                  import.meta.env.BASE_URL +
-                                    "images/gallery/church-service.jpg"
-                                }
-                                alt={event.title}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          )}
+                          <div className="w-20 h-20 rounded-md overflow-hidden ml-3 flex-shrink-0">
+                            <img
+                              src={
+                                event.image_url ||
+                                "/images/gallery/church-service.jpg"
+                              }
+                              alt={event.title}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
                         </li>
                       ))}
                     </ul>
