@@ -1,4 +1,4 @@
-import { corsHeaders } from "@shared/cors.ts";
+import { corsHeaders } from "../_shared/cors.ts";
 import {
   handleCorsOptions,
   formatErrorResponse,
@@ -6,7 +6,8 @@ import {
   sanitizeString,
   validateEmail,
   checkRateLimit,
-} from "@shared/utils.ts";
+  verifyAdminAccess,
+} from "../_shared/utils.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 Deno.serve(async (req) => {
@@ -30,26 +31,8 @@ Deno.serve(async (req) => {
         throw new Error("Authorization header is required");
       }
 
-      const token = authHeader.replace("Bearer ", "");
-      const {
-        data: { user },
-        error: authError,
-      } = await supabaseClient.auth.getUser(token);
-
-      if (authError || !user) {
-        throw new Error("Unauthorized");
-      }
-
-      // Verify admin role
-      const { data: profile, error: profileError } = await supabaseClient
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-
-      if (profileError || profile?.role !== "admin") {
-        throw new Error("Unauthorized: Admin access required");
-      }
+      // Verify admin authentication and role
+      await verifyAdminAccess(supabaseClient, authHeader);
 
       // Get all prayer requests or a specific one
       let query = supabaseClient.from("prayer_requests").select("*");
@@ -112,26 +95,8 @@ Deno.serve(async (req) => {
         throw new Error("Authorization header is required");
       }
 
-      const token = authHeader.replace("Bearer ", "");
-      const {
-        data: { user },
-        error: authError,
-      } = await supabaseClient.auth.getUser(token);
-
-      if (authError || !user) {
-        throw new Error("Unauthorized");
-      }
-
-      // Verify admin role
-      const { data: profile, error: profileError } = await supabaseClient
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-
-      if (profileError || profile?.role !== "admin") {
-        throw new Error("Unauthorized: Admin access required");
-      }
+      // Verify admin authentication and role
+      await verifyAdminAccess(supabaseClient, authHeader);
 
       const { is_answered } = await req.json();
 

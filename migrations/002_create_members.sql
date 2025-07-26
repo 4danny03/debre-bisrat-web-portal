@@ -1,0 +1,22 @@
+CREATE TABLE members (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    date_of_birth DATE NOT NULL,
+    gender TEXT CHECK (gender IN ('male', 'female')) NOT NULL,
+    street_address TEXT NOT NULL,
+    city TEXT NOT NULL,
+    state_province_region TEXT NOT NULL,
+    postal_zip_code TEXT NOT NULL,
+    country TEXT NOT NULL,
+    membership_type TEXT CHECK (membership_type IN ('regular', 'student', 'senior', 'family')) NOT NULL,
+    ministry_interests TEXT,
+    preferred_language TEXT CHECK (preferred_language IN ('english', 'amharic')) NOT NULL,
+    email_updates BOOLEAN DEFAULT TRUE,
+    agree_to_terms BOOLEAN DEFAULT FALSE,
+    notes TEXT
+);
