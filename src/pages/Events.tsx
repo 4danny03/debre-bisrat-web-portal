@@ -15,6 +15,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDataRefresh } from "@/hooks/useDataRefresh";
 
 const baseUrl = import.meta.env.BASE_URL;
 
