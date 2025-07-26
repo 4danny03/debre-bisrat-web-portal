@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
@@ -5,9 +6,10 @@ import { authService } from "@/lib/auth/AuthService";
 
 interface AdminAuthGuardProps {
   children: React.ReactNode;
+  ariaLabel?: string;
 }
 
-export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
+export default function AdminAuthGuard({ children, ariaLabel }: AdminAuthGuardProps) {
   const [loading, setLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const navigate = useNavigate();
@@ -51,9 +53,14 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div
+        className="min-h-screen flex items-center justify-center bg-gray-50"
+        role="status"
+        aria-live="polite"
+        aria-label={ariaLabel || "Verifying admin access"}
+      >
         <div className="flex items-center space-x-2">
-          <Loader2 className="h-6 w-6 animate-spin text-church-burgundy" />
+          <Loader2 className="h-6 w-6 animate-spin text-church-burgundy" aria-hidden="true" />
           <span className="text-gray-600">Verifying access...</span>
         </div>
       </div>
@@ -64,5 +71,5 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
     return null;
   }
 
-  return <>{children}</>;
+  return <div role="region" aria-label={ariaLabel || "Admin content"}>{children}</div>;
 }

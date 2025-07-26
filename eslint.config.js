@@ -10,7 +10,15 @@ export default [
     files: ["**/*.{js,mjs,cjs,ts,tsx}"],
     languageOptions: {
       ecmaVersion: 2020,
-      globals: globals.browser,
+      globals: {
+        ...Object.fromEntries(
+          Object.entries(globals.browser).filter(([key]) => key.trim() === key)
+        ),
+        ...globals.node,
+        process: "readonly",
+        require: "readonly",
+        Deno: "readonly",
+      },
       parser: await import("@typescript-eslint/parser").then((m) => m.default),
       parserOptions: {
         ecmaVersion: "latest",

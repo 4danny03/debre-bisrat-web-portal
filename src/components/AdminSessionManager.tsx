@@ -15,14 +15,14 @@ import { Clock } from "lucide-react";
 
 interface AdminSessionManagerProps {
   children: React.ReactNode;
+  ariaLabel?: string;
 }
 
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 const WARNING_TIME = 5 * 60 * 1000; // 5 minutes before timeout
 
-export default function AdminSessionManager({
-  children,
-}: AdminSessionManagerProps) {
+export default function AdminSessionManager(props: AdminSessionManagerProps) {
+  const { children, ariaLabel } = props;
   const [showWarning, setShowWarning] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const navigate = useNavigate();
@@ -45,8 +45,6 @@ export default function AdminSessionManager({
       warningTimer = setTimeout(() => {
         setShowWarning(true);
         setTimeLeft(WARNING_TIME);
-
-        // Start countdown
         countdownTimer = setInterval(() => {
           setTimeLeft((prev) => {
             if (prev <= 1000) {
@@ -135,15 +133,24 @@ export default function AdminSessionManager({
       {children}
 
       <Dialog open={showWarning} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent
+          className="sm:max-w-md"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="admin-session-title"
+          aria-describedby="admin-session-desc"
+          aria-label={ariaLabel || "Session expiring soon"}
+          tabIndex={-1}
+        >
           <DialogHeader>
-            <DialogTitle className="flex items-center">
+            <DialogTitle id="admin-session-title" className="flex items-center">
               <Clock className="mr-2 h-5 w-5 text-orange-500" />
               Session Expiring Soon
             </DialogTitle>
-            <DialogDescription>
-              Your admin session will expire in {formatTime(timeLeft)}. Would
-              you like to extend your session?
+            <DialogDescription id="admin-session-desc">
+              <span aria-live="polite">
+                Your admin session will expire in {formatTime(timeLeft)}. Would you like to extend your session?
+              </span>
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -151,12 +158,14 @@ export default function AdminSessionManager({
               variant="outline"
               onClick={handleLogout}
               className="w-full sm:w-auto"
+              aria-label="Logout now"
             >
               Logout Now
             </Button>
             <Button
               onClick={handleExtendSession}
               className="w-full sm:w-auto bg-church-burgundy hover:bg-church-burgundy/90"
+              aria-label="Extend session"
             >
               Extend Session
             </Button>

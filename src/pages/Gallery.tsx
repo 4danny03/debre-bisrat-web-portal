@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
-import { Image, X, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { Image, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { api } from "@/integrations/supabase/api";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -99,7 +98,6 @@ const Gallery: React.FC = () => {
   );
   const [galleryImages, setGalleryImages] = useState<GalleryImageData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   // Use actual images from public/images folder
   const baseUrl = import.meta.env.BASE_URL;
@@ -226,7 +224,6 @@ const Gallery: React.FC = () => {
   const fetchGalleryImages = useCallback(async () => {
     try {
       setLoading(true);
-      setError(null);
       const data = await api.gallery.getGalleryImages();
       const validatedData = Array.isArray(data) ? data : [];
 
@@ -236,13 +233,7 @@ const Gallery: React.FC = () => {
         setGalleryImages(fallbackImages);
       }
     } catch (err) {
-      console.error("Error fetching gallery images:", err);
       setGalleryImages(fallbackImages);
-      setError(
-        language === "en"
-          ? "Failed to load some gallery images. Showing available images."
-          : "አንዳንድ የጋለሪ ምስሎችን መጫን አልተቻለም። የሚገኙ ምስሎች ይታያሉ።",
-      );
     } finally {
       setLoading(false);
     }
@@ -252,19 +243,6 @@ const Gallery: React.FC = () => {
     fetchGalleryImages();
   }, [language]);
 
-  // Use enhanced data refresh hook
-  const { manualRefresh, forceSyncData } = useDataRefresh(
-    fetchGalleryImages,
-    10 * 60 * 1000, // Refresh every 10 minutes
-    [language],
-    "gallery",
-  );
-
-  const handleManualRefresh = async () => {
-    console.log("Manual refresh triggered for gallery");
-    await manualRefresh();
-    await forceSyncData();
-  };
 
   const handleImageClick = (index: number) => {
     setSelectedImageIndex(index);
@@ -296,6 +274,7 @@ const Gallery: React.FC = () => {
   return (
     <Layout>
       <div className="py-12 px-6">
+        {/* closed div tag fix */}
         <div className="container mx-auto">
           <div className="text-center mb-12">
             <Image className="inline-block h-12 w-12 text-church-burgundy mb-3" />
@@ -305,25 +284,7 @@ const Gallery: React.FC = () => {
             <p className="max-w-2xl mx-auto text-lg mb-4">
               {t("gallery_description")}
             </p>
-            <Button
-              onClick={handleManualRefresh}
-              variant="outline"
-              size="sm"
-              disabled={loading}
-              className="inline-flex items-center"
-            >
-              <RefreshCw
-                className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
-              />
-              {language === "en" ? "Refresh Gallery" : "ጋለሪ አድስ"}
-            </Button>
           </div>
-
-          {error && (
-            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-800 text-sm">
-              {error}
-            </div>
-          )}
 
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

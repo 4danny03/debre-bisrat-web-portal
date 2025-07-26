@@ -1,142 +1,182 @@
+
 import { supabase } from "./client";
 import { dataSyncService } from "@/services/DataSyncService";
-import type { Database } from '@/types/supabase';
+import type { Database, Appointment } from '@/types/supabase';
 
-type Appointment = Database['public']['Tables']['appointments']['Row'];
-type AppointmentCreateInput = Database['public']['Tables']['appointments']['Insert'];
+type TableName = keyof Database['public']['Tables'];
+type TableInsert<T extends TableName> = Database['public']['Tables'][T]['Insert'];
+type TableUpdate<T extends TableName> = Database['public']['Tables'][T]['Update'];
+
+
 
 export const api = {
+  // Member API
+  members: {
+    getMembers: async function () {
+      const { data, error } = await supabase
+        .from('members')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    getMemberProfile: async function (userId: string) {
+      const { data, error } = await supabase
+        .from('members')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    getMemberDonations: async function (userId: string, limit = 5) {
+      const { data, error } = await supabase
+        .from('donations')
+        .select('amount, payment_method, created_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      if (error) throw error;
+      return data;
+    },
+    getMemberEvents: async function (userId: string, limit = 5) {
+      const { data, error } = await supabase
+        .from('event_registrations')
+        .select(`
+          status,
+          events (
+            id,
+            title,
+            event_date
+          )
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      if (error) throw error;
+      return data;
+    },
+  },
   // Events API
   events: {
-    getEvents: async () => {
+    getEvents: async function () {
       const { data, error } = await supabase
-        .from("events")
-        .select("*")
-        .order("event_date", { ascending: false });
-
+        .from('events')
+        .select('*')
+        .order('event_date', { ascending: false });
       if (error) throw error;
-      return data || [];
+      return data;
     },
-    getUpcomingEvents: async (limit = 10) => {
-      const today = new Date().toISOString().split("T")[0];
+    getUpcomingEvents: async function (limit = 10) {
+      const today = new Date().toISOString().split('T')[0];
       const { data, error } = await supabase
-        .from("events")
-        .select("*")
-        .gte("event_date", today)
-        .order("event_date", { ascending: true })
+        .from('events')
+        .select('*')
+        .gte('event_date', today)
+        .order('event_date', { ascending: true })
         .limit(limit);
-
       if (error) throw error;
-      return data || [];
+      return data;
     },
-    createEvent: async (event: Record<string, unknown>) => {
+    createEvent: async function (event: TableInsert<'events'>) {
       const { data, error } = await supabase
-        .from("events")
+        .from('events')
         .insert([event])
         .select()
         .single();
-
       if (error) throw error;
-      dataSyncService.notifyAdminAction("create", "events", data);
+      dataSyncService.notifyAdminAction('create', 'events', data);
       return data;
     },
-    updateEvent: async (id: string, updates: Record<string, unknown>) => {
+    updateEvent: async function (id: string, updates: TableUpdate<'events'>) {
       const { data, error } = await supabase
-        .from("events")
+        .from('events')
         .update(updates)
-        .eq("id", id)
+        .eq('id', id)
         .select()
         .single();
-
       if (error) throw error;
-      dataSyncService.notifyAdminAction("update", "events", data);
+      dataSyncService.notifyAdminAction('update', 'events', data);
       return data;
     },
-    deleteEvent: async (id: string) => {
-      const { error } = await supabase.from("events").delete().eq("id", id);
+    deleteEvent: async function (id: string) {
+      const { error } = await supabase.from('events').delete().eq('id', id);
       if (error) throw error;
-      dataSyncService.notifyAdminAction("delete", "events", { id });
+      dataSyncService.notifyAdminAction('delete', 'events', { id });
       return true;
     },
   },
-
   // Members API
   members: {
-    getMembers: async () => {
+    getMembers: async function () {
       const { data, error } = await supabase
-        .from("members")
-        .select("*")
-        .order("created_at", { ascending: false });
-
+        .from('members')
+        .select('*')
+        .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
     },
-    createMember: async (member: Record<string, unknown>) => {
+    createMember: async function (member: Database['public']['Tables']['members']['Insert']) {
       const { data, error } = await supabase
-        .from("members")
+        .from('members')
         .insert([member])
         .select()
         .single();
-
       if (error) throw error;
-      dataSyncService.notifyAdminAction("create", "members", data);
+      dataSyncService.notifyAdminAction('create', 'members', data);
       return data;
     },
-    updateMember: async (id: string, updates: Record<string, unknown>) => {
+    updateMember: async function (id: string, updates: Database['public']['Tables']['members']['Update']) {
       const { data, error } = await supabase
-        .from("members")
+        .from('members')
         .update(updates)
-        .eq("id", id)
+        .eq('id', id)
         .select()
         .single();
-
       if (error) throw error;
-      dataSyncService.notifyAdminAction("update", "members", data);
+      dataSyncService.notifyAdminAction('update', 'members', data);
       return data;
     },
-    deleteMember: async (id: string) => {
-      const { error } = await supabase.from("members").delete().eq("id", id);
+    deleteMember: async function (id: string) {
+      const { error } = await supabase.from('members').delete().eq('id', id);
       if (error) throw error;
-      dataSyncService.notifyAdminAction("delete", "members", { id });
+      dataSyncService.notifyAdminAction('delete', 'members', { id });
       return true;
     },
   },
 
   // Sermons API
   sermons: {
-    getSermons: async () => {
+    getSermons: async function () {
       const { data, error } = await supabase
         .from("sermons")
         .select("*")
         .order("sermon_date", { ascending: false });
-
       if (error) throw error;
       return data;
     },
-    createSermon: async (sermon: Record<string, unknown>) => {
+    createSermon: async function (sermon: Record<string, unknown>) {
       const { data, error } = await supabase
         .from("sermons")
         .insert([sermon])
         .select()
         .single();
-
       if (error) throw error;
       dataSyncService.notifyAdminAction("create", "sermons", data);
       return data;
     },
-    updateSermon: async (id: string, updates: Record<string, unknown>) => {
+    updateSermon: async function (id: string, updates: Record<string, unknown>) {
       const { data, error } = await supabase
         .from("sermons")
         .update(updates)
         .eq("id", id)
         .select()
         .single();
-
       if (error) throw error;
       dataSyncService.notifyAdminAction("update", "sermons", data);
       return data;
     },
-    deleteSermon: async (id: string) => {
+    deleteSermon: async function (id: string) {
       const { error } = await supabase.from("sermons").delete().eq("id", id);
       if (error) throw error;
       dataSyncService.notifyAdminAction("delete", "sermons", { id });
@@ -146,267 +186,230 @@ export const api = {
 
   // Testimonials API
   testimonials: {
-    getTestimonials: async (approvedOnly = false) => {
-      let query = supabase.from("testimonials").select("*");
-
+    getTestimonials: async function (approvedOnly: boolean = false) {
+      let query = supabase.from('testimonials').select('*');
       if (approvedOnly) {
-        query = query.eq("is_approved", true);
+        query = query.eq('is_approved', true);
       }
-
-      const { data, error } = await query.order("created_at", {
-        ascending: false,
-      });
+      const { data, error } = await query.order('created_at', { ascending: false });
       if (error) throw error;
       return data;
     },
-    createTestimonial: async (testimonial: Record<string, unknown>) => {
+    createTestimonial: async function (testimonial: Database['public']['Tables']['testimonials']['Insert']) {
       const { data, error } = await supabase
-        .from("testimonials")
+        .from('testimonials')
         .insert([testimonial])
         .select()
         .single();
-
       if (error) throw error;
-      dataSyncService.notifyAdminAction("create", "testimonials", data);
+      dataSyncService.notifyAdminAction('create', 'testimonials', data);
       return data;
     },
-    updateTestimonial: async (id: string, updates: Record<string, unknown>) => {
+    updateTestimonial: async function (id: string, updates: Database['public']['Tables']['testimonials']['Update']) {
       const { data, error } = await supabase
-        .from("testimonials")
+        .from('testimonials')
         .update(updates)
-        .eq("id", id)
+        .eq('id', id)
         .select()
         .single();
-
       if (error) throw error;
-      dataSyncService.notifyAdminAction("update", "testimonials", data);
+      dataSyncService.notifyAdminAction('update', 'testimonials', data);
       return data;
     },
-    deleteTestimonial: async (id: string) => {
+    deleteTestimonial: async function (id: string) {
       const { error } = await supabase
-        .from("testimonials")
+        .from('testimonials')
         .delete()
-        .eq("id", id);
+        .eq('id', id);
       if (error) throw error;
-      dataSyncService.notifyAdminAction("delete", "testimonials", { id });
+      dataSyncService.notifyAdminAction('delete', 'testimonials', { id });
       return true;
     },
   },
 
   // Prayer Requests API
   prayerRequests: {
-    getPrayerRequests: async (approvedOnly = false) => {
-      let query = supabase.from("prayer_requests").select("*");
-
+    getPrayerRequests: async function (approvedOnly: boolean = false) {
+      let query = supabase.from('prayer_requests').select('*');
       if (approvedOnly) {
-        query = query.eq("is_approved", true);
+        query = query.eq('is_approved', true);
       }
-
-      const { data, error } = await query.order("created_at", {
-        ascending: false,
-      });
+      const { data, error } = await query.order('created_at', { ascending: false });
       if (error) throw error;
       return data;
     },
-    createPrayerRequest: async (request: Record<string, unknown>) => {
+    createPrayerRequest: async function (request: Database['public']['Tables']['prayer_requests']['Insert']) {
       const { data, error } = await supabase
-        .from("prayer_requests")
+        .from('prayer_requests')
         .insert([request])
         .select()
         .single();
-
       if (error) throw error;
-      dataSyncService.notifyAdminAction("create", "prayer_requests", data);
+      dataSyncService.notifyAdminAction('create', 'prayer_requests', data);
       return data;
     },
-    updatePrayerRequest: async (
-      id: string,
-      updates: Record<string, unknown>,
-    ) => {
+    updatePrayerRequest: async function (id: string, updates: Database['public']['Tables']['prayer_requests']['Update']) {
       const { data, error } = await supabase
-        .from("prayer_requests")
+        .from('prayer_requests')
         .update(updates)
-        .eq("id", id)
+        .eq('id', id)
         .select()
         .single();
-
       if (error) throw error;
-      dataSyncService.notifyAdminAction("update", "prayer_requests", data);
+      dataSyncService.notifyAdminAction('update', 'prayer_requests', data);
       return data;
     },
-    deletePrayerRequest: async (id: string) => {
+    deletePrayerRequest: async function (id: string) {
       const { error } = await supabase
-        .from("prayer_requests")
+        .from('prayer_requests')
         .delete()
-        .eq("id", id);
+        .eq('id', id);
       if (error) throw error;
-      dataSyncService.notifyAdminAction("delete", "prayer_requests", { id });
+      dataSyncService.notifyAdminAction('delete', 'prayer_requests', { id });
       return true;
     },
   },
 
   // Donations API
   donations: {
-    getDonations: async () => {
+    getDonations: async function () {
       const { data, error } = await supabase
-        .from("donations")
-        .select("*")
-        .order("created_at", { ascending: false });
-
+        .from('donations')
+        .select('*')
+        .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
     },
-    createDonation: async (donation: Record<string, unknown>) => {
+    createDonation: async function (donation: Database['public']['Tables']['donations']['Insert']) {
       const { data, error } = await supabase
-        .from("donations")
+        .from('donations')
         .insert([donation])
         .select()
         .single();
-
       if (error) throw error;
-      dataSyncService.notifyAdminAction("create", "donations", data);
+      dataSyncService.notifyAdminAction('create', 'donations', data);
       return data;
     },
-    updateDonation: async (id: string, updates: Record<string, unknown>) => {
+    updateDonation: async function (id: string, updates: Database['public']['Tables']['donations']['Update']) {
       const { data, error } = await supabase
-        .from("donations")
+        .from('donations')
         .update(updates)
-        .eq("id", id)
+        .eq('id', id)
         .select()
         .single();
-
       if (error) throw error;
-      dataSyncService.notifyAdminAction("update", "donations", data);
+      dataSyncService.notifyAdminAction('update', 'donations', data);
       return data;
     },
   },
 
   // Gallery API
   gallery: {
-    getGalleryImages: async () => {
+    getGalleryImages: async function () {
       const { data, error } = await supabase
-        .from("gallery")
-        .select("*")
-        .order("created_at", { ascending: false });
-
+        .from('gallery')
+        .select('*')
+        .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
     },
-    createGalleryImage: async (image: Record<string, unknown>) => {
+    createGalleryImage: async function (image: Database['public']['Tables']['gallery']['Insert']) {
       const { data, error } = await supabase
-        .from("gallery")
+        .from('gallery')
         .insert([image])
         .select()
         .single();
-
       if (error) throw error;
-      dataSyncService.notifyAdminAction("create", "gallery", data);
+      dataSyncService.notifyAdminAction('create', 'gallery', data);
       return data;
     },
-    deleteGalleryImage: async (id: string) => {
-      const { error } = await supabase.from("gallery").delete().eq("id", id);
+    deleteGalleryImage: async function (id: string) {
+      const { error } = await supabase.from('gallery').delete().eq('id', id);
       if (error) throw error;
-      dataSyncService.notifyAdminAction("delete", "gallery", { id });
+      dataSyncService.notifyAdminAction('delete', 'gallery', { id });
       return true;
     },
   },
 
   // Users API
   users: {
-    getUsers: async () => {
+    getUsers: async function () {
       const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
-
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
     },
-    createUser: async (user: Record<string, unknown>) => {
+    createUser: async function (user: Database['public']['Tables']['profiles']['Insert']) {
       const { data, error } = await supabase
-        .from("profiles")
+        .from('profiles')
         .insert([user])
         .select()
         .single();
-
       if (error) throw error;
-      dataSyncService.notifyAdminAction("create", "profiles", data);
+      dataSyncService.notifyAdminAction('create', 'profiles', data);
       return data;
     },
-    updateUser: async (id: string, updates: Record<string, unknown>) => {
+    updateUser: async function (id: string, updates: Database['public']['Tables']['profiles']['Update']) {
       const { data, error } = await supabase
-        .from("profiles")
+        .from('profiles')
         .update(updates)
-        .eq("id", id)
+        .eq('id', id)
         .select()
         .single();
-
       if (error) throw error;
-      dataSyncService.notifyAdminAction("update", "profiles", data);
+      dataSyncService.notifyAdminAction('update', 'profiles', data);
       return data;
     },
-    deleteUser: async (id: string) => {
-      const { error } = await supabase.from("profiles").delete().eq("id", id);
+    deleteUser: async function (id: string) {
+      const { error } = await supabase.from('profiles').delete().eq('id', id);
       if (error) throw error;
-      dataSyncService.notifyAdminAction("delete", "profiles", { id });
+      dataSyncService.notifyAdminAction('delete', 'profiles', { id });
       return true;
     },
   },
 
   // Appointments API
   appointments: {
-    getAppointments: async () => {
+    getAppointments: async function () {
       const { data, error } = await supabase
-        .from("appointments")
-        .select(
-          `
-          *,
-          responded_by_profile:profiles!appointments_responded_by_fkey(email)
-        `,
-        )
-        .order("created_at", { ascending: false });
-
+        .from('appointments')
+        .select(`*, responded_by_profile:profiles!appointments_responded_by_fkey(email)`)
+        .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
     },
-    getAppointmentById: async (id: string) => {
+    getAppointmentById: async function (id: string) {
       const { data, error } = await supabase
-        .from("appointments")
-        .select(
-          `
-          *,
-          responded_by_profile:profiles!appointments_responded_by_fkey(email)
-        `,
-        )
-        .eq("id", id)
+        .from('appointments')
+        .select(`*, responded_by_profile:profiles!appointments_responded_by_fkey(email)`)
+        .eq('id', id)
         .single();
-
       if (error) throw error;
       return data;
     },
-    createAppointment: async (appointment: Record<string, unknown>) => {
+    createAppointment: async function (appointment: Database['public']['Tables']['appointments']['Insert']) {
       const { data, error } = await supabase
-        .from("appointments")
+        .from('appointments')
         .insert([appointment])
         .select()
         .single();
-
       if (error) throw error;
       return data as Appointment;
     },
-    updateAppointment: async (id: string, updates: Record<string, unknown>) => {
+    updateAppointment: async function (id: string, updates: Database['public']['Tables']['appointments']['Update']) {
       const { data, error } = await supabase
-        .from("appointments")
+        .from('appointments')
         .update(updates)
-        .eq("id", id)
+        .eq('id', id)
         .select()
         .single();
-
       if (error) throw error;
-      dataSyncService.notifyAdminAction("update", "appointments", data);
+      dataSyncService.notifyAdminAction('update', 'appointments', data);
       return data as Appointment;
     },
-    respondToAppointment: async (
+    respondToAppointment: async function (
       id: string,
       response: {
         status: string;
@@ -416,47 +419,35 @@ export const api = {
         confirmed_time?: string;
         responded_by: string;
       },
-    ) => {
+    ) {
       const { data, error } = await supabase
-        .from("appointments")
+        .from('appointments')
         .update({
           ...response,
           responded_at: new Date().toISOString(),
         })
-        .eq("id", id)
+        .eq('id', id)
         .select()
         .single();
-
       if (error) throw error;
-      dataSyncService.notifyAdminAction(
-        "respond_appointment",
-        "appointments",
-        data,
-      );
+      dataSyncService.notifyAdminAction('respond_appointment', 'appointments', data);
       return data;
     },
-    deleteAppointment: async (id: string) => {
+    deleteAppointment: async function (id: string) {
       const { error } = await supabase
-        .from("appointments")
+        .from('appointments')
         .delete()
-        .eq("id", id);
-
+        .eq('id', id);
       if (error) throw error;
-      dataSyncService.notifyAdminAction("delete", "appointments", { id });
+      dataSyncService.notifyAdminAction('delete', 'appointments', { id });
       return true;
     },
-    getAppointmentsByStatus: async (status: string) => {
+    getAppointmentsByStatus: async function (status: string) {
       const { data, error } = await supabase
-        .from("appointments")
-        .select(
-          `
-          *,
-          responded_by_profile:profiles!appointments_responded_by_fkey(email)
-        `,
-        )
-        .eq("status", status)
-        .order("created_at", { ascending: false });
-
+        .from('appointments')
+        .select(`*, responded_by_profile:profiles!appointments_responded_by_fkey(email)`)
+        .eq('status', status)
+        .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -464,25 +455,23 @@ export const api = {
 
   // Site Settings API
   siteSettings: {
-    getSettings: async () => {
+    getSettings: async function () {
       const { data, error } = await supabase
-        .from("site_settings")
-        .select("*")
+        .from('site_settings')
+        .select('*')
         .limit(1)
         .single();
-
-      if (error && error.code !== "PGRST116") throw error;
+      if (error && error.code !== 'PGRST116') throw error;
       return data;
     },
-    updateSettings: async (settings: Record<string, unknown>) => {
+    updateSettings: async function (settings: Database['public']['Tables']['site_settings']['Update']) {
       const { data, error } = await supabase
-        .from("site_settings")
+        .from('site_settings')
         .upsert({ id: 1, ...settings, updated_at: new Date().toISOString() })
         .select()
         .single();
-
       if (error) throw error;
-      dataSyncService.notifyAdminAction("update", "site_settings", data);
+      dataSyncService.notifyAdminAction('update', 'site_settings', data);
       return data;
     },
   },

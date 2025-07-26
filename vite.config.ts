@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
     strictPort: true,
-    // allowedHosts: process.env.TEMPO === "true" ? true : undefined, // removed for static hosting
+    allowedHosts: process.env.TEMPO === "true" ? true : undefined,
   },
   build: {
     outDir: "dist",

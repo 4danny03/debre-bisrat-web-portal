@@ -168,7 +168,6 @@ const Contact: React.FC = () => {
                       name="name"
                       required
                       placeholder={language === "am" ? "ስምዎን" : "Your name"}
-                      required
                     />
                   </div>
 
@@ -182,7 +181,6 @@ const Contact: React.FC = () => {
                       name="email"
                       required
                       placeholder={language === "am" ? "ኢሜይልዎን" : "Your email"}
-                      required
                     />
                   </div>
 
@@ -198,7 +196,6 @@ const Contact: React.FC = () => {
                       placeholder={
                         language === "am" ? "የመልዕክት ርዕስ" : "Message subject"
                       }
-                      required
                     />
                   </div>
 
@@ -217,12 +214,6 @@ const Contact: React.FC = () => {
                     />
                   </div>
 
-                  {success && (
-                    <div className="text-green-600 font-medium">{success}</div>
-                  )}
-                  {error && (
-                    <div className="text-red-600 font-medium">{error}</div>
-                  )}
 
                   <div>
                     <Button

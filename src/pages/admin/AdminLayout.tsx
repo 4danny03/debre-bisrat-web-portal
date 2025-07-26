@@ -3,36 +3,13 @@ import { useNavigate, Link, Outlet, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import AdminErrorBoundary from "@/components/AdminErrorBoundary";
-import {
-  LayoutDashboard,
-  Calendar,
-  Image,
-  Users,
-  Activity,
-  MessageSquare,
-  Heart,
-  DollarSign,
-  Menu,
-  X,
-  Settings,
-  LogOut,
-  Users as UsersIcon,
-  Home,
-  TrendingUp,
-  Upload,
-  Clock,
-  CalendarCheck,
-  ChevronLeft,
-  ChevronRight,
-  Mail,
-} from "lucide-react";
+import * as Icons from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function AdminLayout() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    // Persist sidebar state in localStorage
     if (typeof window !== "undefined") {
       return localStorage.getItem("admin-sidebar-collapsed") === "true";
     }
@@ -109,103 +86,22 @@ export default function AdminLayout() {
   };
 
   const navigationItems = [
-    {
-      to: "/",
-      icon: Home,
-      label: "Main Website",
-      description: "Return to public site",
-      isExternal: true,
-    },
-    {
-      to: "/admin/dashboard",
-      icon: LayoutDashboard,
-      label: "Dashboard",
-      description: "Overview and statistics",
-    },
-    {
-      to: "/admin/events",
-      icon: Calendar,
-      label: "Events",
-      description: "Manage church events",
-    },
-    {
-      to: "/admin/members",
-      icon: Users,
-      label: "Members",
-      description: "Manage church members",
-    },
-    {
-      to: "/admin/gallery",
-      icon: Image,
-      label: "Gallery",
-      description: "Manage photo gallery",
-    },
-    {
-      to: "/admin/testimonials",
-      icon: MessageSquare,
-      label: "Testimonials",
-      description: "Review testimonials",
-    },
-    {
-      to: "/admin/prayer-requests",
-      icon: Heart,
-      label: "Prayer Requests",
-      description: "Manage prayer requests",
-    },
-    {
-      to: "/admin/donations",
-      icon: DollarSign,
-      label: "Donations",
-      description: "Track donations",
-    },
-    {
-      to: "/admin/appointments",
-      icon: CalendarCheck,
-      label: "Appointments",
-      description: "Manage appointment requests",
-    },
-    {
-      to: "/admin/email-marketing",
-      icon: Mail,
-      label: "Email Marketing",
-      description: "Newsletter campaigns",
-    },
-    {
-      to: "/admin/users",
-      icon: UsersIcon,
-      label: "Users",
-      description: "Manage admin users",
-    },
-    {
-      to: "/admin/analytics",
-      icon: TrendingUp,
-      label: "Analytics",
-      description: "Data insights",
-    },
-    {
-      to: "/admin/bulk-operations",
-      icon: Upload,
-      label: "Bulk Operations",
-      description: "Import/Export data",
-    },
-    {
-      to: "/admin/content-scheduler",
-      icon: Clock,
-      label: "Content Scheduler",
-      description: "Schedule content",
-    },
-    {
-      to: "/admin/system-health",
-      icon: Activity,
-      label: "System Health",
-      description: "System status & monitoring",
-    },
-    {
-      to: "/admin/settings",
-      icon: Settings,
-      label: "Settings",
-      description: "System configuration",
-    },
+    { to: "/", icon: "Home", label: "Main Website", description: "Return to public site", isExternal: true },
+    { to: "/admin/dashboard", icon: "LayoutDashboard", label: "Dashboard", description: "Overview and statistics" },
+    { to: "/admin/events", icon: "Calendar", label: "Events", description: "Manage church events" },
+    { to: "/admin/members", icon: "Users", label: "Members", description: "Manage church members" },
+    { to: "/admin/gallery", icon: "Image", label: "Gallery", description: "Manage photo gallery" },
+    { to: "/admin/testimonials", icon: "MessageSquare", label: "Testimonials", description: "Review testimonials" },
+    { to: "/admin/prayer-requests", icon: "Heart", label: "Prayer Requests", description: "Manage prayer requests" },
+    { to: "/admin/donations", icon: "DollarSign", label: "Donations", description: "Track donations" },
+    { to: "/admin/appointments", icon: "CalendarCheck", label: "Appointments", description: "Manage appointment requests" },
+    { to: "/admin/email-marketing", icon: "Mail", label: "Email Marketing", description: "Newsletter campaigns" },
+    { to: "/admin/users", icon: "Users", label: "Users", description: "Manage admin users" },
+    { to: "/admin/analytics", icon: "TrendingUp", label: "Analytics", description: "Data insights" },
+    { to: "/admin/bulk-operations", icon: "Upload", label: "Bulk Operations", description: "Import/Export data" },
+    { to: "/admin/content-scheduler", icon: "Clock", label: "Content Scheduler", description: "Schedule content" },
+    { to: "/admin/system-health", icon: "Activity", label: "System Health", description: "System status & monitoring" },
+    { to: "/admin/settings", icon: "Settings", label: "Settings", description: "System configuration" },
   ];
 
   if (loading) {
@@ -261,9 +157,9 @@ export default function AdminLayout() {
                 }}
               >
                 {sidebarCollapsed ? (
-                  <ChevronRight className="w-5 h-5" />
+                  <Icons.ChevronRight className="w-5 h-5" />
                 ) : (
-                  <ChevronLeft className="w-5 h-5" />
+                  <Icons.ChevronLeft className="w-5 h-5" />
                 )}
               </Button>
               {/* Mobile close button */}
@@ -273,7 +169,7 @@ export default function AdminLayout() {
                 className="lg:hidden text-white hover:bg-church-burgundy/20"
                 onClick={() => setSidebarOpen(false)}
               >
-                <X className="w-5 h-5" />
+                <Icons.X className="w-5 h-5" />
               </Button>
             </div>
           </div>
@@ -281,43 +177,54 @@ export default function AdminLayout() {
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
             {navigationItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.to;
+            const Icon = Icons[item.icon as keyof typeof Icons];
+            const isActive = location.pathname === item.to;
 
-              return item.isExternal ? (
-                <a
-                  key={item.to}
-                  href={item.to}
-                  className={cn(
-                    "flex items-center p-3 rounded-lg transition-colors group",
-                    "text-white/90 hover:bg-church-burgundy/20 hover:text-white bg-church-burgundy/10",
-                  )}
-                  onClick={() => setSidebarOpen(false)}
-                >
+            // Only render Icon if it's a function and not the createLucideIcon utility
+            function isLucideComponent(fn: unknown): fn is React.ComponentType<{ className?: string }> {
+              return (
+                typeof fn === "function" &&
+                fn !== (Icons as any).createLucideIcon
+              );
+            }
+
+            return item.isExternal ? (
+              <a
+                key={item.to}
+                href={item.to}
+                className={cn(
+                  "flex items-center p-3 rounded-lg transition-colors group",
+                  "text-white/90 hover:bg-church-burgundy/20 hover:text-white bg-church-burgundy/10",
+                )}
+                onClick={() => setSidebarOpen(false)}
+              >
+                {isLucideComponent(Icon) ? (
                   <Icon className="w-5 h-5 mr-3 flex-shrink-0 text-church-gold" />
-                  {!sidebarCollapsed && (
-                    <div className="flex-1">
-                      <div className="font-medium text-church-gold">
-                        {item.label}
-                      </div>
-                      <div className="text-xs text-white/50">
-                        {item.description}
-                      </div>
+                ) : null}
+                {!sidebarCollapsed && (
+                  <div className="flex-1">
+                    <div className="font-medium text-church-gold">
+                      {item.label}
                     </div>
-                  )}
-                </a>
-              ) : (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={cn(
-                    "flex items-center p-3 rounded-lg transition-colors group",
-                    isActive
-                      ? "bg-church-gold text-church-burgundy"
-                      : "text-white/90 hover:bg-church-burgundy/20 hover:text-white",
-                  )}
-                  onClick={() => setSidebarOpen(false)}
-                >
+                    <div className="text-xs text-white/50">
+                      {item.description}
+                    </div>
+                  </div>
+                )}
+              </a>
+            ) : (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={cn(
+                  "flex items-center p-3 rounded-lg transition-colors group",
+                  isActive
+                    ? "bg-church-gold text-church-burgundy"
+                    : "text-white/90 hover:bg-church-burgundy/20 hover:text-white",
+                )}
+                onClick={() => setSidebarOpen(false)}
+              >
+                {isLucideComponent(Icon) ? (
                   <Icon
                     className={cn(
                       "w-5 h-5 mr-3 flex-shrink-0",
@@ -326,30 +233,31 @@ export default function AdminLayout() {
                         : "text-white/70 group-hover:text-white",
                     )}
                   />
-                  {!sidebarCollapsed && (
-                    <div className="flex-1">
-                      <div
-                        className={cn(
-                          "font-medium",
-                          isActive ? "text-church-burgundy" : "text-white",
-                        )}
-                      >
-                        {item.label}
-                      </div>
-                      <div
-                        className={cn(
-                          "text-xs",
-                          isActive
-                            ? "text-church-burgundy/70"
-                            : "text-white/50",
-                        )}
-                      >
-                        {item.description}
-                      </div>
+                ) : null}
+                {!sidebarCollapsed && (
+                  <div className="flex-1">
+                    <div
+                      className={cn(
+                        "font-medium",
+                        isActive ? "text-church-burgundy" : "text-white",
+                      )}
+                    >
+                      {item.label}
                     </div>
-                  )}
-                </Link>
-              );
+                    <div
+                      className={cn(
+                        "text-xs",
+                        isActive
+                          ? "text-church-burgundy/70"
+                          : "text-white/50",
+                      )}
+                    >
+                      {item.description}
+                    </div>
+                  </div>
+                )}
+              </Link>
+            );
             })}
           </nav>
 
@@ -360,7 +268,7 @@ export default function AdminLayout() {
               className="w-full justify-start text-white hover:text-white hover:bg-church-burgundy/20"
               onClick={handleSignOut}
             >
-              <LogOut className="w-5 h-5 mr-3" />
+              <Icons.LogOut className="w-5 h-5 mr-3" />
               {!sidebarCollapsed && (
                 <div className="text-left">
                   <div className="font-medium">Sign Out</div>
@@ -382,7 +290,7 @@ export default function AdminLayout() {
               size="sm"
               onClick={() => setSidebarOpen(true)}
             >
-              <Menu className="w-5 h-5" />
+              <Icons.Menu className="w-5 h-5" />
             </Button>
             <h1 className="text-lg font-semibold text-church-burgundy">
               Admin Panel

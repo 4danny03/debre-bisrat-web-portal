@@ -114,7 +114,6 @@ export default function Donation() {
         memorial: memorial.trim(),
       };
 
-      console.log("Invoking create-checkout function with data:", checkoutData);
 
       const { data, error } = await supabase.functions.invoke(
         "supabase-functions-create-checkout",
@@ -123,22 +122,17 @@ export default function Donation() {
         },
       );
 
-      console.log("Function response:", { data, error });
 
       if (error) {
-        console.error("Function error:", error);
         throw new Error(error.message || "Payment initiation failed");
       }
 
       if (data?.url) {
-        console.log("Redirecting to checkout URL:", data.url);
         window.location.href = data.url;
       } else {
-        console.error("No checkout URL in response:", data);
         throw new Error("No checkout URL received");
       }
     } catch (error) {
-      console.error("Error:", error);
       toast({
         title: "Payment Error",
         description:

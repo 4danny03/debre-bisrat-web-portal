@@ -152,6 +152,7 @@ class AdminErrorBoundary extends React.Component<
     }
   }
 
+
   render() {
     if (this.state.hasError) {
       if (this.props.fallback) {
@@ -164,24 +165,24 @@ class AdminErrorBoundary extends React.Component<
         );
       }
 
+      // Accessibility: focus error card on mount
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-          <Card className="w-full max-w-3xl">
+          <Card className="w-full max-w-3xl" role="alertdialog" aria-modal="true" aria-labelledby="admin-error-title" aria-describedby="admin-error-desc" tabIndex={-1} ref={el => el && el.focus && el.focus()}>
             <CardHeader className="text-center">
-              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4" aria-hidden="true">
                 <AlertTriangle className="w-8 h-8 text-red-600" />
               </div>
-              <CardTitle className="text-red-900 text-xl">
+              <CardTitle id="admin-error-title" className="text-red-900 text-xl">
                 Admin System Error
               </CardTitle>
-              <CardDescription className="text-base">
-                The admin panel encountered an error. Don't worry - your data is
-                safe.
+              <CardDescription id="admin-error-desc" className="text-base">
+                The admin panel encountered an error. Don't worry - your data is safe.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Connection Status */}
-              <Alert>
+              <Alert role="status" aria-live="polite">
                 <Database className="h-4 w-4" />
                 <AlertDescription>
                   Database Status:
@@ -205,7 +206,7 @@ class AdminErrorBoundary extends React.Component<
 
               {/* Error Details */}
               {this.state.error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4" role="region" aria-label="Error details">
                   <h4 className="font-semibold text-red-900 mb-2 flex items-center">
                     <Bug className="w-4 h-4 mr-2" />
                     Error Details:
@@ -222,7 +223,7 @@ class AdminErrorBoundary extends React.Component<
               )}
 
               {/* Troubleshooting Steps */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4" role="region" aria-label="Troubleshooting steps">
                 <h4 className="font-semibold text-blue-900 mb-2">
                   Troubleshooting Steps:
                 </h4>
@@ -255,6 +256,7 @@ class AdminErrorBoundary extends React.Component<
                   onClick={this.retryWithDelay}
                   disabled={this.state.isRetrying}
                   className="flex-1 bg-church-burgundy hover:bg-church-burgundy/90"
+                  aria-label="Retry error recovery"
                 >
                   <RefreshCw
                     className={`w-4 h-4 mr-2 ${this.state.isRetrying ? "animate-spin" : ""}`}
@@ -265,6 +267,7 @@ class AdminErrorBoundary extends React.Component<
                   onClick={() => window.location.reload()}
                   variant="outline"
                   className="flex-1"
+                  aria-label="Refresh page"
                 >
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Refresh Page
@@ -273,6 +276,7 @@ class AdminErrorBoundary extends React.Component<
                   onClick={() => (window.location.href = "/admin/dashboard")}
                   variant="outline"
                   className="flex-1"
+                  aria-label="Go to dashboard"
                 >
                   <Home className="w-4 h-4 mr-2" />
                   Dashboard
@@ -283,10 +287,7 @@ class AdminErrorBoundary extends React.Component<
               <div className="text-center text-sm text-gray-500">
                 <p>
                   If this problem persists, please contact support with Error
-                  ID:{" "}
-                  <code className="bg-gray-100 px-1 rounded font-mono">
-                    {this.state.errorId}
-                  </code>
+                  ID: <code className="bg-gray-100 px-1 rounded font-mono">{this.state.errorId}</code>
                 </p>
               </div>
             </CardContent>

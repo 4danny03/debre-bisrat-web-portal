@@ -1,3 +1,4 @@
+import * as React from "react";
 /**
  * Custom test utilities for rendering React components with all providers.
  *

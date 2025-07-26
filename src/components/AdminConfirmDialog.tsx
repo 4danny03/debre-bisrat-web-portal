@@ -22,6 +22,7 @@ interface AdminConfirmDialogProps {
   onConfirm: () => Promise<void> | void;
   destructive?: boolean;
   loading?: boolean;
+  ariaLabel?: string;
 }
 
 export default function AdminConfirmDialog({
@@ -33,6 +34,7 @@ export default function AdminConfirmDialog({
   onConfirm,
   destructive = false,
   loading = false,
+  ariaLabel,
 }: AdminConfirmDialogProps) {
   const [open, setOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -53,25 +55,35 @@ export default function AdminConfirmDialog({
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
-      <AlertDialogContent>
+      <AlertDialogContent
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="admin-confirm-title"
+        aria-describedby="admin-confirm-desc"
+        aria-label={ariaLabel || title}
+        tabIndex={-1}
+      >
         <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription>{description}</AlertDialogDescription>
+          <AlertDialogTitle id="admin-confirm-title">{title}</AlertDialogTitle>
+          <AlertDialogDescription id="admin-confirm-desc">
+            {description}
+          </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading || loading}>
+          <AlertDialogCancel disabled={isLoading || loading} aria-label={cancelText}>
             {cancelText}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
             disabled={isLoading || loading}
             className={destructive ? "bg-red-600 hover:bg-red-700" : ""}
+            aria-label={confirmText}
           >
-            {isLoading || loading ? (
-              <>
+            {(isLoading || loading) ? (
+              <span aria-live="assertive">
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Processing...
-              </>
+              </span>
             ) : (
               confirmText
             )}

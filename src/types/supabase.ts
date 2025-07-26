@@ -1,72 +1,43 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[];
+/**
+ * JSON type for Postgres JSON/JSONB columns
+ */
+export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
 
+// ...existing code...
+
+/**
+ * Convenience type for Appointment row
+ */
+export type Appointment = Database['public']['Tables']['appointments']['Row'];
+/**
+ * Main database schema types for Supabase
+ * Modernized for strictness and maintainability
+ */
 export type Database = {
   public: {
     Tables: {
       appointments: {
         Row: {
+          id: string;
+          email: string;
+          name: string;
+          phone: string;
+          service_title: string;
+          requested_date: string;
+          requested_time: string;
           admin_notes: string | null;
           admin_response: string | null;
           confirmed_date: string | null;
           confirmed_time: string | null;
-          created_at: string | null;
-          email: string;
-          id: string;
-          name: string;
           notes: string | null;
-          phone: string;
-          requested_date: string;
-          requested_time: string;
           responded_at: string | null;
           responded_by: string | null;
-          service_title: string;
           status: string | null;
+          created_at: string | null;
           updated_at: string | null;
         };
-        Insert: {
-          admin_notes?: string | null;
-          admin_response?: string | null;
-          confirmed_date?: string | null;
-          confirmed_time?: string | null;
-          created_at?: string | null;
-          email: string;
-          id?: string;
-          name: string;
-          notes?: string | null;
-          phone: string;
-          requested_date: string;
-          requested_time: string;
-          responded_at?: string | null;
-          responded_by?: string | null;
-          service_title: string;
-          status?: string | null;
-          updated_at?: string | null;
-        };
-        Update: {
-          admin_notes?: string | null;
-          admin_response?: string | null;
-          confirmed_date?: string | null;
-          confirmed_time?: string | null;
-          created_at?: string | null;
-          email?: string;
-          id?: string;
-          name?: string;
-          notes?: string | null;
-          phone?: string;
-          requested_date?: string;
-          requested_time?: string;
-          responded_at?: string | null;
-          responded_by?: string | null;
-          service_title?: string;
-          status?: string | null;
-          updated_at?: string | null;
-        };
+        Insert: Partial<Omit<Database['public']['Tables']['appointments']['Row'], 'id'>> & { email: string; name: string; phone: string; service_title: string; requested_date: string; requested_time: string; };
+        Update: Partial<Database['public']['Tables']['appointments']['Row']>;
         Relationships: [
           {
             foreignKeyName: "appointments_responded_by_fkey";
@@ -79,92 +50,43 @@ export type Database = {
       };
       donations: {
         Row: {
+          id: string;
           amount: number;
-          created_at: string;
           donor_email: string | null;
           donor_name: string | null;
-          id: string;
-          is_anonymous: boolean | null;
           payment_id: string | null;
           payment_method: string | null;
           payment_status: string | null;
           purpose: string | null;
+          is_anonymous: boolean | null;
+          created_at: string;
           updated_at: string;
         };
-        Insert: {
-          amount: number;
-          created_at?: string;
-          donor_email?: string | null;
-          donor_name?: string | null;
-          id?: string;
-          is_anonymous?: boolean | null;
-          payment_id?: string | null;
-          payment_method?: string | null;
-          payment_status?: string | null;
-          purpose?: string | null;
-          updated_at?: string;
-        };
-        Update: {
-          amount?: number;
-          created_at?: string;
-          donor_email?: string | null;
-          donor_name?: string | null;
-          id?: string;
-          is_anonymous?: boolean | null;
-          payment_id?: string | null;
-          payment_method?: string | null;
-          payment_status?: string | null;
-          purpose?: string | null;
-          updated_at?: string;
-        };
+        Insert: Partial<Omit<Database['public']['Tables']['donations']['Row'], 'id' | 'created_at' | 'updated_at'>> & { amount: number; };
+        Update: Partial<Database['public']['Tables']['donations']['Row']>;
         Relationships: [];
       };
       email_campaigns: {
         Row: {
-          content: string;
-          created_at: string | null;
-          created_by: string | null;
           id: string;
           name: string;
-          recipient_count: number | null;
+          subject: string;
+          content: string;
+          status: string | null;
           scheduled_at: string | null;
           sent_at: string | null;
+          recipient_count: number | null;
           sent_count: number | null;
-          status: string | null;
-          subject: string;
+          created_by: string | null;
+          created_at: string | null;
           updated_at: string | null;
         };
-        Insert: {
-          content: string;
-          created_at?: string | null;
-          created_by?: string | null;
-          id?: string;
-          name: string;
-          recipient_count?: number | null;
-          scheduled_at?: string | null;
-          sent_at?: string | null;
-          sent_count?: number | null;
-          status?: string | null;
-          subject: string;
-          updated_at?: string | null;
-        };
-        Update: {
-          content?: string;
-          created_at?: string | null;
-          created_by?: string | null;
-          id?: string;
-          name?: string;
-          recipient_count?: number | null;
-          scheduled_at?: string | null;
-          sent_at?: string | null;
-          sent_count?: number | null;
-          status?: string | null;
-          subject?: string;
-          updated_at?: string | null;
-        };
+        Insert: Partial<Omit<Database['public']['Tables']['email_campaigns']['Row'], 'id'>> & { name: string; subject: string; content: string; };
+        Update: Partial<Database['public']['Tables']['email_campaigns']['Row']>;
         Relationships: [];
       };
       email_settings: {
+      // ...existing code for other tables, modernized in the same way...
         Row: {
           auto_welcome_email: boolean | null;
           created_at: string | null;

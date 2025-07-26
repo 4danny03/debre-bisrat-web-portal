@@ -9,12 +9,14 @@ interface ImageSliderProps {
   }[];
   autoPlay?: boolean;
   interval?: number;
+  ariaLabel?: string;
 }
 
 export default function ImageSlider({
   slides = [],
   autoPlay = false,
   interval = 3000,
+  ariaLabel,
 }: ImageSliderProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [imageLoaded, setImageLoaded] = useState<boolean[]>(
@@ -66,14 +68,19 @@ export default function ImageSlider({
 
   if (!slides || slides.length === 0) {
     return (
-      <div className="w-full h-64 bg-gray-200 flex items-center justify-center">
+      <div className="w-full h-64 bg-gray-200 flex items-center justify-center" role="region" aria-label={ariaLabel || "Image slider"}>
         No slides available
       </div>
     );
   }
 
   return (
-    <div className="relative w-full h-[450px] md:h-[550px] lg:h-[650px] overflow-hidden rounded-2xl shadow-2xl border border-church-gold/20">
+    <div
+      className="relative w-full h-[450px] md:h-[550px] lg:h-[650px] overflow-hidden rounded-2xl shadow-2xl border border-church-gold/20"
+      role="region"
+      aria-label={ariaLabel || "Image slider"}
+      aria-roledescription="carousel"
+    >
       <div className="absolute inset-0 bg-gradient-to-br from-church-burgundy/5 via-transparent to-church-gold/5 pointer-events-none z-10"></div>
       {slides.map((slide, index) => (
         <div
@@ -83,6 +90,10 @@ export default function ImageSlider({
               ? "opacity-100 scale-100"
               : "opacity-0 scale-110 pointer-events-none"
           }`}
+          role="group"
+          aria-roledescription="slide"
+          aria-label={`Slide ${index + 1} of ${slides.length}`}
+          aria-hidden={index !== currentSlide}
         >
           {!imageLoaded[index] && index === currentSlide && (
             <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-church-burgundy/10 to-church-gold/10">
@@ -114,6 +125,8 @@ export default function ImageSlider({
                     textShadow:
                       "4px 4px 8px rgba(0,0,0,0.95), 2px 2px 4px rgba(0,0,0,0.8)",
                   }}
+                  aria-live={index === currentSlide ? "polite" : undefined}
+                  tabIndex={index === currentSlide ? 0 : -1}
                 >
                   {slide.title}
                 </h2>

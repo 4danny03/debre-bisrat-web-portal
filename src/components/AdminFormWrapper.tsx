@@ -11,6 +11,8 @@ interface AdminFormWrapperProps {
   successMessage?: string;
   className?: string;
   disabled?: boolean;
+  formId?: string;
+  ariaLabel?: string;
 }
 
 export default function AdminFormWrapper({
@@ -20,11 +22,23 @@ export default function AdminFormWrapper({
   successMessage = "Changes saved successfully",
   className = "",
   disabled = false,
+  formId,
+  ariaLabel,
 }: AdminFormWrapperProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const { toast } = useToast();
+  const errorRef = React.useRef<HTMLDivElement>(null);
+  const successRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (error && errorRef.current) {
+      errorRef.current.focus();
+    } else if (success && successRef.current) {
+      successRef.current.focus();
+    }
+  }, [error, success]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -58,18 +72,37 @@ export default function AdminFormWrapper({
   };
 
   return (
-    <form onSubmit={handleSubmit} className={`space-y-6 ${className}`}>
+    <form
+      id={formId}
+      aria-label={ariaLabel || 'Admin form'}
+      onSubmit={handleSubmit}
+      className={`space-y-6 ${className}`}
+      role="form"
+      tabIndex={-1}
+    >
       {children}
 
       {error && (
-        <Alert variant="destructive">
+        <Alert
+          variant="destructive"
+          role="alert"
+          tabIndex={-1}
+          ref={errorRef}
+          aria-live="assertive"
+        >
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
       {success && (
-        <Alert className="border-green-200 bg-green-50">
+        <Alert
+          className="border-green-200 bg-green-50"
+          role="status"
+          tabIndex={-1}
+          ref={successRef}
+          aria-live="polite"
+        >
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
             {successMessage}
@@ -77,11 +110,12 @@ export default function AdminFormWrapper({
         </Alert>
       )}
 
-      <div className="flex justify-end space-x-4">
+      <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4">
         <Button
           type="submit"
           disabled={loading || disabled}
           className="bg-church-burgundy hover:bg-church-burgundy/90"
+          aria-label={submitText}
         >
           {loading ? (
             <>

@@ -1,3 +1,4 @@
+import React from "react";
 import { useDataContext } from "../contexts/DataContext";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
@@ -7,9 +8,10 @@ import { format } from "date-fns";
 
 interface AdminSyncStatusProps {
   className?: string;
+  ariaLabel?: string;
 }
 
-export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
+export default function AdminSyncStatus({ className, ariaLabel }: AdminSyncStatusProps) {
   const {
     connectionHealth,
     gitStatus,
@@ -19,20 +21,26 @@ export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
     autoCommitAndPush,
   } = useDataContext();
 
+  const statusRef = React.useRef<HTMLDivElement>(null);
+  const [actionStatus, setActionStatus] = React.useState<string | null>(null);
+
   const handleForceSync = async () => {
+    setActionStatus(null);
     await forceSync();
+    setActionStatus("Data sync triggered.");
+    if (statusRef.current) statusRef.current.focus();
   };
 
   const handleAutoCommit = async () => {
+    setActionStatus(null);
     const success = await autoCommitAndPush("Auto commit from admin panel");
-    if (success) {
-      console.log("Auto commit successful");
-    }
+    setActionStatus(success ? "Auto commit successful." : "Auto commit failed.");
+    if (statusRef.current) statusRef.current.focus();
   };
 
   // Ensure we have safe defaults for all data
   const safeConnectionHealth = connectionHealth ?? true;
-  const syncStatus = {}; // Default empty object for sync status
+  const syncStatus: Record<string, string> = {}; // Default empty object for sync status
   const safeGitStatus = gitStatus ?? {
     branch: "main",
     hasChanges: false,
@@ -55,9 +63,13 @@ export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
   };
 
   return (
-    <div className={`space-y-4 ${className || ""}`}>
+    <div
+      className={`space-y-4 ${className || ""}`}
+      aria-label={ariaLabel || "Admin sync status"}
+      role="region"
+    >
       {/* Connection Health */}
-      <Card>
+      <Card role="region" aria-label="Database connection status">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium flex items-center">
             {safeConnectionHealth ? (
@@ -69,7 +81,7 @@ export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between" aria-live="polite">
             <span
               className={
                 safeConnectionHealth ? "text-green-600" : "text-red-600"
@@ -87,7 +99,7 @@ export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
       </Card>
 
       {/* Real-time Sync Status */}
-      <Card>
+      <Card role="region" aria-label="Real-time sync status">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium flex items-center">
             <Database className="w-4 h-4 mr-2" />
@@ -95,7 +107,7 @@ export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
+          <div className="space-y-2" aria-live="polite">
             {Object.keys(syncStatus).length > 0 ? (
               Object.entries(syncStatus).map(([table, status]) => (
                 <div
@@ -116,7 +128,7 @@ export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
       </Card>
 
       {/* Git Status */}
-      <Card>
+      <Card role="region" aria-label="Git repository status">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium flex items-center">
             <GitBranch className="w-4 h-4 mr-2" />
@@ -167,8 +179,9 @@ export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
         <Button
           onClick={handleForceSync}
           disabled={safeIsRefreshing}
-          className="w-full"
+          className="w-full focus-visible:ring-2 focus-visible:ring-church-burgundy"
           variant="outline"
+          aria-label="Force sync data"
         >
           {safeIsRefreshing ? (
             <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
@@ -181,16 +194,27 @@ export default function AdminSyncStatus({ className }: AdminSyncStatusProps) {
         {safeGitStatus.hasChanges && (
           <Button
             onClick={handleAutoCommit}
-            className="w-full"
+            className="w-full focus-visible:ring-2 focus-visible:ring-church-burgundy"
             variant="default"
+            aria-label="Auto commit and push changes"
           >
             Auto Commit & Push
           </Button>
         )}
       </div>
 
+      {/* Action status feedback for screen readers */}
+      <div
+        ref={statusRef}
+        tabIndex={-1}
+        aria-live="assertive"
+        className="sr-only"
+      >
+        {actionStatus}
+      </div>
+
       {safeLastRefresh && (
-        <p className="text-xs text-gray-500 mt-2">
+        <p className="text-xs text-gray-500 mt-2" aria-live="polite">
           Last refresh: {safeLastRefresh.toLocaleString()}
         </p>
       )}
