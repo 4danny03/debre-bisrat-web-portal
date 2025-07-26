@@ -52,9 +52,10 @@ interface AuditLogStatistics {
 
 interface AuditLogProps {
   className?: string;
+  ariaLabel?: string;
 }
 
-const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
+const AuditLog: React.FC<AuditLogProps> = ({ className, ariaLabel }) => {
   const [actions, setActions] = useState<AuditLogEntry[]>([]);
   const [criticalActions, setCriticalActions] = useState<AuditLogEntry[]>([]);
   const [statistics, setStatistics] = useState<AuditLogStatistics | null>(null);
@@ -174,10 +175,14 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
   };
 
   return (
-    <div className={`space-y-6 ${className}`}>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div
+      className={`space-y-6 ${className}`}
+      role="region"
+      aria-label={ariaLabel || "Audit log"}
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4" role="region" aria-label="Audit log controls">
         <div>
-          <h2 className="text-2xl font-bold text-church-burgundy">Audit Log</h2>
+          <h2 className="text-2xl font-bold text-church-burgundy" id="audit-log-title">Audit Log</h2>
           <p className="text-gray-600 mt-1">
             Track all administrative actions and system events
           </p>
@@ -197,6 +202,7 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
             onClick={exportAuditLog}
             variant="outline"
             className="flex-1 sm:flex-none"
+            aria-label="Export audit log"
           >
             <Download className="h-4 w-4 mr-2" />
             Export
@@ -205,9 +211,12 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
             onClick={loadAuditData}
             variant="outline"
             className="flex-1 sm:flex-none"
+            aria-label="Refresh audit log"
+            aria-busy={loading}
           >
             <RefreshCw
               className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+              aria-hidden={!loading}
             />
             Refresh
           </Button>
@@ -216,7 +225,7 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
 
       {/* Statistics Overview */}
       {statistics && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4" role="region" aria-label="Audit statistics overview">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -276,17 +285,17 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
         </div>
       )}
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="recent">Recent Actions</TabsTrigger>
-          <TabsTrigger value="critical">Critical Actions</TabsTrigger>
-          <TabsTrigger value="statistics">Statistics</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} aria-label="Audit log tabs">
+        <TabsList className="grid w-full grid-cols-3" role="tablist">
+          <TabsTrigger value="recent" role="tab" aria-controls="recent-tab">Recent Actions</TabsTrigger>
+          <TabsTrigger value="critical" role="tab" aria-controls="critical-tab">Critical Actions</TabsTrigger>
+          <TabsTrigger value="statistics" role="tab" aria-controls="statistics-tab">Statistics</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="recent" className="space-y-4">
+        <TabsContent value="recent" className="space-y-4" id="recent-tab" role="tabpanel" aria-labelledby="recent">
           {loading ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-church-burgundy"></div>
+            <div className="flex items-center justify-center h-32" aria-live="polite">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-church-burgundy" aria-label="Loading recent actions"></div>
             </div>
           ) : actions.length === 0 ? (
             <Card>
@@ -340,7 +349,7 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
           )}
         </TabsContent>
 
-        <TabsContent value="critical" className="space-y-4">
+        <TabsContent value="critical" className="space-y-4" id="critical-tab" role="tabpanel" aria-labelledby="critical">
           {criticalActions.length === 0 ? (
             <Card>
               <CardContent className="text-center py-8">
@@ -393,7 +402,7 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
           )}
         </TabsContent>
 
-        <TabsContent value="statistics" className="space-y-4">
+        <TabsContent value="statistics" className="space-y-4" id="statistics-tab" role="tabpanel" aria-labelledby="statistics">
           {statistics ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card>

@@ -18,7 +18,7 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="bg-gradient-to-r from-church-burgundy via-church-burgundy to-church-burgundy/95 text-white relative shadow-lg">
+    <header className="bg-gradient-to-r from-church-burgundy via-church-burgundy to-church-burgundy/95 text-white relative shadow-lg" role="banner" aria-label="Site header">
       {/* Enhanced Flag-inspired horizontal bars at the top */}
       <div className="w-full flex h-3">
         <div className="bg-gradient-to-r from-green-600 to-green-500 flex-1 flag-green"></div>
@@ -46,6 +46,7 @@ const Header: React.FC = () => {
                     textShadow:
                       "2px 2px 4px rgba(0,0,0,0.8), 1px 1px 2px rgba(0,0,0,0.6)",
                   }}
+                  id="site-title"
                 >
                   {language === "en"
                     ? "Debre Bisrat Dagimawi Kulibi St.Gabriel church"
@@ -73,6 +74,7 @@ const Header: React.FC = () => {
               onClick={toggleLanguage}
               className="flex items-center justify-center bg-church-gold hover:bg-church-gold/90 text-church-burgundy rounded-full px-3 md:px-4 py-2 mr-3 md:mr-4 shadow-md transition-all hover:shadow-lg hover:scale-105 font-medium text-sm"
               aria-label="Change language"
+              aria-pressed={language === "am"}
             >
               <Globe size={16} className="md:w-[18px] md:h-[18px]" />
               <span className="ml-1 md:ml-2 text-xs md:text-sm font-semibold">
@@ -83,7 +85,9 @@ const Header: React.FC = () => {
             <button
               className="md:hidden bg-church-gold/20 hover:bg-church-gold/30 text-church-gold p-2 md:p-3 rounded-lg transition-all"
               onClick={toggleMobileMenu}
-              aria-label="Toggle menu"
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="main-nav"
             >
               {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
@@ -91,6 +95,8 @@ const Header: React.FC = () => {
         </div>
 
         <nav
+          id="main-nav"
+          aria-label="Main navigation"
           className={`mt-4 md:mt-6 ${mobileMenuOpen ? "block animate-slide-in" : "hidden md:block"}`}
         >
           <ul className="flex flex-col md:flex-row md:flex-wrap justify-center md:justify-start md:space-x-1 lg:space-x-2">
@@ -99,6 +105,7 @@ const Header: React.FC = () => {
                 to="/"
                 className={`nav-link text-sm md:text-base ${location.pathname === "/" ? "active" : ""}`}
                 onClick={() => setMobileMenuOpen(false)}
+                aria-current={location.pathname === "/" ? "page" : undefined}
               >
                 {t("home")}
               </Link>
@@ -108,6 +115,7 @@ const Header: React.FC = () => {
                 to="/about"
                 className={`nav-link text-sm md:text-base ${location.pathname === "/about" ? "active" : ""}`}
                 onClick={() => setMobileMenuOpen(false)}
+                aria-current={location.pathname === "/about" ? "page" : undefined}
               >
                 {t("about")}
               </Link>
@@ -117,6 +125,7 @@ const Header: React.FC = () => {
                 to="/services"
                 className={`nav-link text-sm md:text-base ${location.pathname === "/services" ? "active" : ""}`}
                 onClick={() => setMobileMenuOpen(false)}
+                aria-current={location.pathname === "/services" ? "page" : undefined}
               >
                 {t("services")}
               </Link>
@@ -126,6 +135,7 @@ const Header: React.FC = () => {
                 to="/events"
                 className={`nav-link text-sm md:text-base ${location.pathname === "/events" ? "active" : ""}`}
                 onClick={() => setMobileMenuOpen(false)}
+                aria-current={location.pathname === "/events" ? "page" : undefined}
               >
                 {t("events")}
               </Link>
@@ -135,6 +145,7 @@ const Header: React.FC = () => {
                 to="/gallery"
                 className={`nav-link text-sm md:text-base ${location.pathname === "/gallery" ? "active" : ""}`}
                 onClick={() => setMobileMenuOpen(false)}
+                aria-current={location.pathname === "/gallery" ? "page" : undefined}
               >
                 {t("gallery")}
               </Link>
@@ -144,6 +155,7 @@ const Header: React.FC = () => {
                 to="/donation"
                 className={`nav-link text-sm md:text-base ${location.pathname === "/donation" ? "active" : ""}`}
                 onClick={() => setMobileMenuOpen(false)}
+                aria-current={location.pathname === "/donation" ? "page" : undefined}
               >
                 {t("donation")}
               </Link>
@@ -153,6 +165,7 @@ const Header: React.FC = () => {
                 to="/membership"
                 className={`nav-link text-sm md:text-base ${location.pathname === "/membership" ? "active" : ""}`}
                 onClick={() => setMobileMenuOpen(false)}
+                aria-current={location.pathname === "/membership" ? "page" : undefined}
               >
                 {t("membership")}
               </Link>
@@ -162,6 +175,7 @@ const Header: React.FC = () => {
                 to="/contact"
                 className={`nav-link text-sm md:text-base ${location.pathname === "/contact" ? "active" : ""}`}
                 onClick={() => setMobileMenuOpen(false)}
+                aria-current={location.pathname === "/contact" ? "page" : undefined}
               >
                 {t("contact")}
               </Link>

@@ -114,7 +114,6 @@ const DonationSuccess: React.FC = () => {
 
         setIsLoading(false);
       } catch (error) {
-        console.error("Error fetching session data:", error);
         setError(
           "Failed to process your donation information. Please contact support.",
         );

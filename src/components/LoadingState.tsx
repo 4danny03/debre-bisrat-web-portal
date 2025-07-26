@@ -7,6 +7,7 @@ interface LoadingStateProps {
   size?: "sm" | "md" | "lg";
   className?: string;
   fullScreen?: boolean;
+  ariaLabel?: string;
 }
 
 const LoadingState: React.FC<LoadingStateProps> = ({
@@ -14,6 +15,7 @@ const LoadingState: React.FC<LoadingStateProps> = ({
   size = "md",
   className,
   fullScreen = false,
+  ariaLabel,
 }) => {
   const sizeClasses = {
     sm: "h-4 w-4",
@@ -26,13 +28,19 @@ const LoadingState: React.FC<LoadingStateProps> = ({
     : "flex items-center justify-center p-8";
 
   return (
-    <div className={cn(containerClasses, className)}>
+    <div
+      className={cn(containerClasses, className)}
+      role="status"
+      aria-live="polite"
+      aria-label={ariaLabel || message}
+    >
       <div className="flex flex-col items-center space-y-4">
         <Loader2
           className={cn("animate-spin text-church-burgundy", sizeClasses[size])}
+          aria-hidden="true"
         />
         {message && (
-          <p className="text-gray-600 text-sm font-medium animate-pulse">
+          <p className="text-gray-600 text-sm font-medium animate-pulse" aria-live="polite">
             {message}
           </p>
         )}

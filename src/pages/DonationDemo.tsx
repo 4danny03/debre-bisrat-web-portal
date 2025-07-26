@@ -59,7 +59,6 @@ export default function DonationDemo() {
         name: name || "",
       };
 
-      console.log("Invoking create-checkout function with data:", checkoutData);
 
       const { data, error: fnError } = await supabase.functions.invoke(
         "create-checkout",
@@ -68,23 +67,18 @@ export default function DonationDemo() {
         },
       );
 
-      console.log("Function response:", { data, error: fnError });
 
       if (fnError) {
-        console.error("Function error:", fnError);
         throw new Error(fnError.message);
       }
 
       // Redirect to Stripe checkout
       if (data?.url) {
-        console.log("Redirecting to checkout URL:", data.url);
         window.location.href = data.url;
       } else {
-        console.error("No checkout URL in response:", data);
         throw new Error("No checkout URL returned");
       }
     } catch (err) {
-      console.error("Error creating checkout session:", err);
       setError(
         err instanceof Error ? err.message : "Failed to process donation",
       );

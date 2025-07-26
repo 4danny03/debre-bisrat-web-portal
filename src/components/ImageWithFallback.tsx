@@ -11,6 +11,7 @@ interface ImageWithFallbackProps {
   height?: number;
   quality?: number;
   priority?: boolean;
+  ariaLabel?: string;
 }
 
 const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
@@ -23,6 +24,7 @@ const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
   height,
   quality = 80,
   priority = false,
+  ariaLabel,
 }) => {
   const [imgSrc, setImgSrc] = useState<string>(src);
   const [hasError, setHasError] = useState(false);
@@ -102,10 +104,10 @@ const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
   }, [priority, src, width, height, quality]);
 
   return (
-    <div className="relative">
+    <div className="relative" role="region" aria-label={ariaLabel || alt}>
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 animate-pulse">
-          <span className="sr-only">Loading...</span>
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 animate-pulse" aria-live="polite" role="status">
+          <span className="sr-only">Loading image...</span>
         </div>
       )}
       <img
@@ -117,7 +119,13 @@ const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
         width={width}
         height={height}
         onLoad={() => setIsLoading(false)}
+        aria-label={ariaLabel || alt}
       />
+      {hasError && !isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100/80" aria-live="assertive" role="status">
+          <span className="text-red-600 text-sm font-medium">Image failed to load. Showing fallback.</span>
+        </div>
+      )}
     </div>
   );
 };

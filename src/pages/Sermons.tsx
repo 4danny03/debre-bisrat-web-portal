@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/integrations/supabase/api";
 import { format } from "date-fns";
 import { useDataRefresh } from "@/hooks/useDataRefresh";
-import { useToast } from "@/hooks/use-toast";
 
 interface Sermon {
   id: string;
@@ -138,7 +137,7 @@ const Sermons: React.FC = () => {
 
   useEffect(() => {
     fetchSermons();
-  }, [language]);
+  }, [language, fetchSermons]);
 
   // Use enhanced data refresh hook
   const { manualRefresh, forceSyncData } = useDataRefresh(

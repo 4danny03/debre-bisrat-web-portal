@@ -4,13 +4,19 @@ import Footer from "./Footer";
 
 interface LayoutProps {
   children: React.ReactNode;
+  ariaLabel?: string;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const Layout: React.FC<LayoutProps> = ({ children, ariaLabel }) => {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-white via-church-cream/30 to-white">
       <Header />
-      <main className="flex-1 animate-fade-in">
+      <main
+        className="flex-1 animate-fade-in"
+        role="main"
+        aria-label={ariaLabel || "Main content"}
+        id="main-content"
+      >
         <div className="relative">
           {/* Enhanced background pattern */}
           <div className="absolute inset-0 opacity-10 pointer-events-none">

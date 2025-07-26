@@ -7,7 +7,7 @@ const Footer: React.FC = () => {
   const { t, language } = useLanguage();
 
   return (
-    <footer className="bg-gradient-to-r from-church-burgundy via-church-burgundy to-church-burgundy/95 text-white py-12 mt-16">
+    <footer className="bg-gradient-to-r from-church-burgundy via-church-burgundy to-church-burgundy/95 text-white py-12 mt-16" role="contentinfo" aria-label="Site footer">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           <div className="space-y-4">
@@ -17,6 +17,7 @@ const Footer: React.FC = () => {
                 textShadow:
                   "2px 2px 4px rgba(0,0,0,0.8), 1px 1px 2px rgba(0,0,0,0.6)",
               }}
+              id="footer-church-title"
             >
               {language === "en"
                 ? "Debre Bisrat Dagimawi Kulibi St.Gabriel church"
@@ -27,8 +28,9 @@ const Footer: React.FC = () => {
                 <MapPin
                   size={20}
                   className="text-church-gold mr-3 mt-1 group-hover:scale-110 transition-transform"
+                  aria-hidden="true"
                 />
-                <address className="not-italic leading-relaxed">
+                <address className="not-italic leading-relaxed" aria-label="Church address">
                   16020 Batson Rd, Spencerville, MD 20868
                 </address>
               </div>
@@ -36,20 +38,22 @@ const Footer: React.FC = () => {
                 <Phone
                   size={20}
                   className="text-church-gold mr-3 group-hover:scale-110 transition-transform"
+                  aria-hidden="true"
                 />
-                <p className="font-medium">(240)-381-8146</p>
+                <p className="font-medium" aria-label="Phone number">(240)-381-8146</p>
               </div>
               <div className="flex items-center group">
                 <Mail
                   size={20}
                   className="text-church-gold mr-3 group-hover:scale-110 transition-transform"
+                  aria-hidden="true"
                 />
-                <p className="font-medium">info@stgabrielmd.org</p>
+                <p className="font-medium" aria-label="Email">info@stgabrielmd.org</p>
               </div>
             </div>
           </div>
 
-          <div>
+          <nav aria-label="Quick links">
             <h3 className="text-church-gold text-xl font-semibold mb-4">
               {language === "en" ? "Quick Links" : "ፈጣን አገናኞች"}
             </h3>
@@ -58,6 +62,7 @@ const Footer: React.FC = () => {
                 <Link
                   to="/"
                   className="hover:text-church-gold transition-all hover:translate-x-1 block py-1"
+                  aria-label={t("home")}
                 >
                   {t("home")}
                 </Link>
@@ -66,6 +71,7 @@ const Footer: React.FC = () => {
                 <Link
                   to="/about"
                   className="hover:text-church-gold transition-all hover:translate-x-1 block py-1"
+                  aria-label={t("about")}
                 >
                   {t("about")}
                 </Link>
@@ -74,6 +80,7 @@ const Footer: React.FC = () => {
                 <Link
                   to="/services"
                   className="hover:text-church-gold transition-all hover:translate-x-1 block py-1"
+                  aria-label={t("services")}
                 >
                   {t("services")}
                 </Link>
@@ -82,14 +89,15 @@ const Footer: React.FC = () => {
                 <Link
                   to="/donation"
                   className="hover:text-church-gold transition-all hover:translate-x-1 block py-1"
+                  aria-label={t("donation")}
                 >
                   {t("donation")}
                 </Link>
               </li>
             </ul>
-          </div>
+          </nav>
 
-          <div>
+          <nav aria-label="Connect with us">
             <h3 className="text-church-gold text-xl font-semibold mb-4">
               {language === "en" ? "Connect With Us" : "ከእኛ ጋር ይገናኙ"}
             </h3>
@@ -100,6 +108,7 @@ const Footer: React.FC = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-church-gold transition-all hover:translate-x-1 block py-1 font-medium"
+                  aria-label="Facebook"
                 >
                   📘 Facebook
                 </a>
@@ -110,6 +119,7 @@ const Footer: React.FC = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-church-gold transition-all hover:translate-x-1 block py-1 font-medium"
+                  aria-label="Official Map"
                 >
                   <span role="img" aria-label="Map">
                     🗺️
@@ -123,6 +133,7 @@ const Footer: React.FC = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-church-gold transition-all hover:translate-x-1 block py-1 font-medium"
+                  aria-label="YouTube"
                 >
                   <span role="img" aria-label="YouTube">
                     ▶️
@@ -131,12 +142,12 @@ const Footer: React.FC = () => {
                 </a>
               </li>
             </ul>
-          </div>
+          </nav>
         </div>
 
         <div className="mt-12 pt-8 border-t border-white/20">
           <div className="text-center space-y-4">
-            <div className="flex justify-center space-x-4 mb-4">
+            <div className="flex justify-center space-x-4 mb-4" aria-hidden="true">
               <div className="w-8 h-2 bg-green-500 rounded"></div>
               <div className="w-8 h-2 bg-yellow-400 rounded"></div>
               <div className="w-8 h-2 bg-red-500 rounded"></div>
@@ -150,6 +161,7 @@ const Footer: React.FC = () => {
             <Link
               to="/admin/login"
               className="inline-block text-church-gold/70 hover:text-church-gold text-xs transition-all hover:scale-105 mt-4 px-3 py-1 rounded border border-church-gold/30 hover:border-church-gold/60"
+              aria-label={language === "en" ? "Administration" : "አስተዳደር"}
             >
               {language === "en" ? "🔐 Administration" : "🔐 አስተዳደር"}
             </Link>

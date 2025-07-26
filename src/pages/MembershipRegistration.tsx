@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import * as React from "react";
+import { useState } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
@@ -25,7 +26,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, User, CreditCard, MapPin } from "lucide-react";
+import { CheckCircle, User, Users, CreditCard, MapPin } from "lucide-react";
+import MemberDashboard from "../components/MemberDashboard";
 
 interface FormData {
   firstName: string;
@@ -48,7 +50,7 @@ interface FormData {
 }
 
 const MembershipRegistration = () => {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
 
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
@@ -75,12 +77,6 @@ const MembershipRegistration = () => {
     agreeToTerms: false,
   });
 
-  const [user, setUser] = useState<SupabaseUser | null>(null);
-  // Removed unused children state
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data?.user || null));
-  }, []);
 
   const totalSteps = 3;
   const progressPercentage = (currentStep / totalSteps) * 100;
@@ -145,13 +141,6 @@ const MembershipRegistration = () => {
 
   // Removed unused handleArrayChange function
 
-  const addChild = () => {
-    setChildren((prev) => [...prev, { name: "", age: "" }]);
-  };
-
-  const removeChild = (index: number) => {
-    setChildren((prev) => prev.filter((_, i) => i !== index));
-  };
 
   // Removed useEffect for children state
 
@@ -255,15 +244,15 @@ const MembershipRegistration = () => {
       if (response.error) {
         console.error("Function error:", response.error);
         throw new Error(
-          `Payment initiation failed: ${(supabaseResponse as any).error.message || "Unknown error"}`,
+          `Payment initiation failed: ${(response as any).error.message || "Unknown error"}`,
         );
       }
 
-      if (!(supabaseResponse as any).data?.url) {
+      if (!(response as any).data?.url) {
         throw new Error("No checkout URL received");
       }
 
-      window.location.href = (supabaseResponse as any).data.url;
+      window.location.href = (response as any).data.url;
     } catch (error: unknown) {
       let errorMessage = "Registration failed. Please try again.";
       if (typeof error === "object" && error !== null) {
@@ -781,7 +770,8 @@ const MembershipRegistration = () => {
           </CardContent>
         </Card>
       </div>
-      {user && <MemberDashboard />}
+      {/* TODO: Replace with real user logic */}
+      <MemberDashboard />
     </Layout>
   );
 };

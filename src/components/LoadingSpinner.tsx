@@ -5,13 +5,11 @@ interface LoadingSpinnerProps {
   size?: "sm" | "md" | "lg";
   className?: string;
   text?: string;
+  ariaLabel?: string;
 }
 
-export default function LoadingSpinner({
-  size = "md",
-  className,
-  text,
-}: LoadingSpinnerProps) {
+export default function LoadingSpinner(props: LoadingSpinnerProps) {
+  const { size = "md", className, text, ariaLabel } = props;
   const sizeClasses = {
     sm: "h-4 w-4",
     md: "h-6 w-6",
@@ -19,12 +17,18 @@ export default function LoadingSpinner({
   };
 
   return (
-    <div className={cn("flex items-center justify-center", className)}>
+    <div
+      className={cn("flex items-center justify-center", className)}
+      role="status"
+      aria-live="polite"
+      aria-label={ariaLabel || text || "Loading"}
+    >
       <div className="flex items-center space-x-2">
         <Loader2
           className={cn("animate-spin text-church-burgundy", sizeClasses[size])}
+          aria-hidden="true"
         />
-        {text && <span className="text-gray-600">{text}</span>}
+        {text && <span className="text-gray-600" aria-live="polite">{text}</span>}
       </div>
     </div>
   );

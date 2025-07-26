@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import {
   Table,
   TableBody,
@@ -32,6 +32,7 @@ interface Column<T> {
   render?: (item: T) => React.ReactNode;
   sortable?: boolean;
   filterable?: boolean;
+  filterOptions?: string[];
 }
 
 interface AdminDataTableProps<T> {
@@ -58,6 +59,7 @@ export default function AdminDataTable<T extends Record<string, any>>({
   onRefresh,
 }: AdminDataTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState("");
+  const tableRef = useRef<HTMLTableElement>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -128,14 +130,15 @@ export default function AdminDataTable<T extends Record<string, any>>({
 
   if (loading) {
     return (
-      <Card>
+      <Card aria-busy="true" aria-label="Loading data">
         <CardHeader>
           <CardTitle>{title}</CardTitle>
           {description && <CardDescription>{description}</CardDescription>}
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-church-burgundy"></div>
+          <div className="flex flex-col items-center justify-center h-64 gap-2">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-church-burgundy" aria-hidden="true"></div>
+            <span className="text-gray-500 text-sm">Loading data...</span>
           </div>
         </CardContent>
       </Card>
@@ -173,51 +176,57 @@ export default function AdminDataTable<T extends Record<string, any>>({
           {/* Column Filters */}
           {columns
             .filter((col) => col.filterable)
-            .map((column) => (
-              <Select
-                key={String(column.key)}
-                value={filters[String(column.key)] || ""}
-                onValueChange={(value) =>
-                  handleFilterChange(String(column.key), value)
-                }
-              >
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder={`Filter ${column.label}`} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">All {column.label}</SelectItem>
-                  {/* Add specific filter options based on column data */}
-                </SelectContent>
-              </Select>
-            ))}
+            .map((column) => {
+              // Dynamic filter options: use provided or infer from data
+              const options = column.filterOptions || Array.from(new Set(data.map(item => String(item[column.key] ?? "")).filter(Boolean)));
+              return (
+                <Select
+                  key={String(column.key)}
+                  value={filters[String(column.key)] || ""}
+                  onValueChange={(value) => handleFilterChange(String(column.key), value)}
+                >
+                  <SelectTrigger className="w-full sm:w-48" aria-label={`Filter by ${column.label}`} tabIndex={0}>
+                    <SelectValue placeholder={`Filter ${column.label}`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All {column.label}</SelectItem>
+                    {options.map((option) => (
+                      <SelectItem key={option} value={option}>{option}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              );
+            })}
         </div>
 
         {/* Data Table */}
-        <div className="overflow-x-auto">
-          <Table>
+        <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <Table ref={tableRef} aria-label={title} role="table">
             <TableHeader>
               <TableRow>
                 {columns.map((column) => (
                   <TableHead
                     key={String(column.key)}
-                    className={
-                      column.sortable ? "cursor-pointer hover:bg-gray-50" : ""
-                    }
-                    onClick={() =>
-                      column.sortable && handleSort(String(column.key))
-                    }
+                    className={column.sortable ? "cursor-pointer hover:bg-gray-50" : ""}
+                    onClick={() => column.sortable && handleSort(String(column.key))}
+                    aria-sort={sortColumn === String(column.key) ? (sortDirection === "asc" ? "ascending" : "descending") : undefined}
+                    tabIndex={column.sortable ? 0 : -1}
+                    onKeyDown={(e) => {
+                      if (column.sortable && (e.key === "Enter" || e.key === " ")) handleSort(String(column.key));
+                    }}
+                    scope="col"
                   >
                     <div className="flex items-center space-x-1">
                       <span>{column.label}</span>
                       {column.sortable && sortColumn === String(column.key) && (
-                        <span className="text-xs">
+                        <span className="text-xs" aria-label={sortDirection === "asc" ? "Sorted ascending" : "Sorted descending"}>
                           {sortDirection === "asc" ? "↑" : "↓"}
                         </span>
                       )}
                     </div>
                   </TableHead>
                 ))}
-                {actions && <TableHead>Actions</TableHead>}
+                {actions && <TableHead scope="col">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -227,9 +236,9 @@ export default function AdminDataTable<T extends Record<string, any>>({
                     colSpan={columns.length + (actions ? 1 : 0)}
                     className="text-center py-8"
                   >
-                    <div className="text-gray-500">
-                      {debouncedSearchTerm ||
-                      Object.values(filters).some((f) => f)
+                    <div className="flex flex-col items-center gap-2 text-gray-500">
+                      <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mx-auto mb-2"><circle cx="12" cy="12" r="10" strokeWidth="2" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01" /></svg>
+                      {debouncedSearchTerm || Object.values(filters).some((f) => f)
                         ? "No results found matching your criteria"
                         : "No data available"}
                     </div>
@@ -237,7 +246,7 @@ export default function AdminDataTable<T extends Record<string, any>>({
                 </TableRow>
               ) : (
                 paginatedData.map((item, index) => (
-                  <TableRow key={index}>
+                  <TableRow key={index} tabIndex={0}>
                     {columns.map((column) => (
                       <TableCell key={String(column.key)}>
                         {column.render
@@ -255,11 +264,9 @@ export default function AdminDataTable<T extends Record<string, any>>({
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-6">
+          <nav className="flex items-center justify-between mt-6" aria-label="Pagination">
             <div className="text-sm text-gray-600">
-              Showing {(currentPage - 1) * pageSize + 1} to{" "}
-              {Math.min(currentPage * pageSize, filteredAndSortedData.length)}{" "}
-              of {filteredAndSortedData.length} results
+              Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredAndSortedData.length)} of {filteredAndSortedData.length} results
             </div>
             <div className="flex items-center space-x-2">
               <Button
@@ -267,9 +274,10 @@ export default function AdminDataTable<T extends Record<string, any>>({
                 size="sm"
                 onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
+                aria-label="Previous page"
               >
                 <ChevronLeft className="h-4 w-4" />
-                Previous
+                <span className="sr-only">Previous</span>
               </Button>
               <span className="text-sm">
                 Page {currentPage} of {totalPages}
@@ -277,16 +285,15 @@ export default function AdminDataTable<T extends Record<string, any>>({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() =>
-                  setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-                }
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                 disabled={currentPage === totalPages}
+                aria-label="Next page"
               >
-                Next
+                <span className="sr-only">Next</span>
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-          </div>
+          </nav>
         )}
       </CardContent>
     </Card>

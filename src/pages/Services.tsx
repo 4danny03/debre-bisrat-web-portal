@@ -1,3 +1,5 @@
+import { useToast } from "@/components/ui/use-toast";
+  const { toast } = useToast();
 import React, { useState } from "react";
 // import React, { useState, useEffect } from "react"; // removed duplicate and unused
 import Layout from "../components/Layout";
@@ -5,7 +7,6 @@ import { useLanguage } from "../contexts/LanguageContext";
 import { Settings, CalendarCheck } from "lucide-react";
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogFooter,
@@ -30,7 +31,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -69,7 +69,6 @@ const getServiceImage = (title: string): string => {
 const Services: React.FC = () => {
   const { t, language } = useLanguage();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { toast } = useToast();
   const [showModal, setShowModal] = useState(false);
 
   const handleAppointmentSubmit = async (
@@ -87,7 +86,7 @@ const Services: React.FC = () => {
 
     try {
       // Use the appointment-request edge function for better validation and processing
-      const { data, error } = await supabase.functions.invoke(
+      const { error } = await supabase.functions.invoke(
         "supabase-functions-appointment-request",
         {
           body: {
@@ -264,12 +263,10 @@ const Services: React.FC = () => {
 
             {/* Single Request Appointment Button */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
                 <Button className="bg-church-burgundy hover:bg-church-burgundy/90 text-white px-8 py-3 text-lg">
                   <CalendarCheck className="h-5 w-5 mr-2" />
                   {language === "en" ? "Request Appointment" : "ቀጠሮ ይጠይቁ"}
                 </Button>
-              </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                   <DialogTitle>

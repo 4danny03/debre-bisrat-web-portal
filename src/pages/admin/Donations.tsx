@@ -1,27 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  safeDataLoader,
-  logAdminAction,
-  formatErrorMessage,
-} from "@/utils/adminHelpers";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -31,39 +18,47 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { toast } from "sonner";
 import {
-  Search,
-  DollarSign,
-  TrendingUp,
-  Users,
-  Calendar,
   Download,
+  Search,
   Filter,
+  DollarSign,
+  Users,
+  TrendingUp,
+  Calendar,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 interface Donation {
   id: string;
   amount: number;
+  donor_name: string;
   donor_email: string;
-  donor_name: string | null;
   purpose: string;
-  payment_status: string;
-  payment_id: string | null;
-  payment_method: string | null;
-  is_anonymous: boolean;
+  status: string;
   created_at: string;
+  payment_method?: string;
+  notes?: string;
 }
 
-export default function AdminDonations() {
+interface DonationStats {
+  total_amount: number;
+  total_donations: number;
+  monthly_growth: number;
+  average_donation: number;
+}
+
+const Donations = () => {
   const [donations, setDonations] = useState<Donation[]>([]);
   const [filteredDonations, setFilteredDonations] = useState<Donation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,76 +66,111 @@ export default function AdminDonations() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [purposeFilter, setPurposeFilter] = useState("all");
   const [dateRange, setDateRange] = useState({ from: "", to: "" });
-  const { toast } = useToast();
+  const [stats, setStats] = useState<DonationStats>({
+    total_amount: 0,
+    total_donations: 0,
+    monthly_growth: 0,
+    average_donation: 0,
+  });
+  const [error, setError] = useState<string | null>(null);
 
-  // useCallback for stable function references
-  // Clean up: use await for supabase query, remove unnecessary Promise.resolve
   const loadDonations = useCallback(async () => {
-    setLoading(true);
-    const { data, error } = await safeDataLoader(
-      async () =>
-        await supabase
-          .from("donations")
-          .select("*")
-          .order("created_at", { ascending: false }),
-      "donations",
-    );
-    if (error) {
-      toast({
-        title: "Error",
-        description: formatErrorMessage(error, "Failed to load donations"),
-        variant: "destructive",
-      });
-      setDonations([]);
-    } else {
-      // Ensure data has proper structure with safe array handling
-      const safeData = Array.isArray(data) ? data : [];
-      const processedData = safeData.map((donation) => ({
-        ...donation,
-        amount: Number(donation?.amount) || 0,
-        payment_status: donation?.payment_status || "pending",
-        is_anonymous: Boolean(donation?.is_anonymous),
-        donor_name: donation?.donor_name || null,
-        donor_email: donation?.donor_email || "",
-        purpose: donation?.purpose || "general_fund",
-      }));
-      setDonations(processedData);
-      logAdminAction("load", "donations", { count: processedData.length });
-    }
-    setLoading(false);
-  }, [toast]);
+    try {
+      setLoading(true);
+      setError(null);
 
-  const filterDonations = () => {
+      const { data, error } = await supabase
+        .from("donations")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error loading donations:", error);
+        setError("Failed to load donations. Please try again.");
+        toast.error("Failed to load donations");
+        return;
+      }
+
+      const donationsData = data || [];
+      setDonations(donationsData);
+
+      // Calculate stats
+      const totalAmount = donationsData.reduce(
+        (sum, donation) => sum + (donation.amount || 0),
+        0,
+      );
+      const totalDonations = donationsData.length;
+      const averageDonation =
+        totalDonations > 0 ? totalAmount / totalDonations : 0;
+
+      // Calculate monthly growth (simplified)
+      const currentMonth = new Date().getMonth();
+      const currentMonthDonations = donationsData.filter((d) => {
+        if (!d.created_at) return false;
+        try {
+          return new Date(d.created_at).getMonth() === currentMonth;
+        } catch {
+          return false;
+        }
+      });
+      const monthlyGrowth = currentMonthDonations.length;
+
+      setStats({
+        total_amount: totalAmount,
+        total_donations: totalDonations,
+        monthly_growth: monthlyGrowth,
+        average_donation: averageDonation,
+      });
+    } catch (err) {
+      console.error("Unexpected error loading donations:", err);
+      setError("An unexpected error occurred. Please try again.");
+      toast.error("An unexpected error occurred");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Filter donations based on search and filters
+  const filterDonations = useCallback(() => {
     if (!Array.isArray(donations)) {
+      console.warn("Donations is not an array:", donations);
       setFilteredDonations([]);
       return;
     }
 
-    let filtered = donations;
+    let filtered = [...donations];
+
+    // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(
-        (donation) =>
-          donation?.donor_email
-            ?.toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          donation?.donor_name
-            ?.toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          donation?.purpose?.toLowerCase().includes(searchTerm.toLowerCase()),
-      );
+      filtered = filtered.filter((donation) => {
+        if (!donation) return false;
+        const searchLower = searchTerm.toLowerCase();
+        return (
+          (donation.donor_name &&
+            donation.donor_name.toLowerCase().includes(searchLower)) ||
+          (donation.donor_email &&
+            donation.donor_email.toLowerCase().includes(searchLower)) ||
+          (donation.purpose &&
+            donation.purpose.toLowerCase().includes(searchLower))
+        );
+      });
     }
+
+    // Status filter
     if (statusFilter !== "all") {
       filtered = filtered.filter(
-        (donation) => donation?.payment_status === statusFilter,
+        (donation) => donation?.status === statusFilter,
       );
     }
+
+    // Purpose filter
     if (purposeFilter !== "all") {
       filtered = filtered.filter(
         (donation) => donation?.purpose === purposeFilter,
       );
     }
 
-    // Date range filter with safe date handling
+    // Date range filter
     if (dateRange.from) {
       filtered = filtered.filter((donation) => {
         if (!donation?.created_at) return false;
@@ -151,6 +181,7 @@ export default function AdminDonations() {
         }
       });
     }
+
     if (dateRange.to) {
       filtered = filtered.filter((donation) => {
         if (!donation?.created_at) return false;
@@ -172,214 +203,153 @@ export default function AdminDonations() {
     filterDonations();
   }, [filterDonations]);
 
-  const getStatusBadge = (status: string) => {
+  const exportToExcel = () => {
+    try {
+      const exportData = filteredDonations.map((donation) => ({
+        "Donor Name": donation.donor_name || "",
+        Email: donation.donor_email || "",
+        Amount: donation.amount || 0,
+        Purpose: donation.purpose || "",
+        Status: donation.status || "",
+        Date: donation.created_at
+          ? format(new Date(donation.created_at), "yyyy-MM-dd")
+          : "",
+        "Payment Method": donation.payment_method || "",
+        Notes: donation.notes || "",
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Donations");
+
+      const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const data = new Blob([excelBuffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      saveAs(data, `donations-${format(new Date(), "yyyy-MM-dd")}.xlsx`);
+
+      toast.success("Donations exported successfully");
+    } catch (err) {
+      console.error("Export error:", err);
+      toast.error("Failed to export donations");
+    }
+  };
+
+  const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case "completed":
-        return <Badge className="bg-green-100 text-green-800">Completed</Badge>;
+        return "default";
       case "pending":
-        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+        return "secondary";
       case "failed":
-        return <Badge className="bg-red-100 text-red-800">Failed</Badge>;
+        return "destructive";
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return "outline";
     }
   };
 
-  const getPurposeLabel = (purpose: string) => {
-    return purpose
-      .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(amount || 0);
   };
-
-  const calculateStats = () => {
-    if (!Array.isArray(donations)) {
-      return {
-        totalAmount: 0,
-        averageAmount: 0,
-        totalDonations: 0,
-        thisMonthAmount: 0,
-        thisMonthCount: 0,
-      };
-    }
-
-    const completedDonations = donations.filter(
-      (d) => d?.payment_status === "completed",
-    );
-    const totalAmount = completedDonations.reduce(
-      (sum, d) => sum + (Number(d?.amount) || 0),
-      0,
-    );
-    const averageAmount =
-      completedDonations.length > 0
-        ? totalAmount / completedDonations.length
-        : 0;
-
-    const currentMonth = new Date().getMonth();
-    const thisMonthDonations = completedDonations.filter((d) => {
-      if (!d?.created_at) return false;
-      try {
-        return new Date(d.created_at).getMonth() === currentMonth;
-      } catch {
-        return false;
-      }
-    });
-
-    const thisMonthAmount = thisMonthDonations.reduce(
-      (sum, d) => sum + (Number(d?.amount) || 0),
-      0,
-    );
-
-    return {
-      totalAmount,
-      averageAmount,
-      totalDonations: completedDonations.length,
-      thisMonthAmount,
-      thisMonthCount: thisMonthDonations.length,
-    };
-  };
-
-  const exportDonations = () => {
-    if (!Array.isArray(filteredDonations)) {
-      toast({
-        title: "Error",
-        description: "No donations to export",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const csvContent = [
-      [
-        "Date",
-        "Donor Name",
-        "Email",
-        "Amount",
-        "Purpose",
-        "Status",
-        "Payment Method",
-      ],
-      ...filteredDonations.map((donation) => {
-        const safeDate = donation?.created_at
-          ? format(new Date(donation.created_at), "yyyy-MM-dd HH:mm")
-          : "N/A";
-        return [
-          safeDate,
-          donation?.is_anonymous ? "Anonymous" : donation?.donor_name || "N/A",
-          donation?.is_anonymous ? "Anonymous" : donation?.donor_email || "N/A",
-          `${(Number(donation?.amount) || 0).toFixed(2)}`,
-          getPurposeLabel(donation?.purpose || "general_fund"),
-          donation?.payment_status || "N/A",
-          donation?.payment_method || "N/A",
-        ];
-      }),
-    ]
-      .map((row) => row.join(","))
-      .join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `donations-${format(new Date(), "yyyy-MM-dd")}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
-
-  const stats = calculateStats();
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-church-burgundy"></div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading donations...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-destructive mb-4">{error}</p>
+          <Button onClick={loadDonations} variant="outline">
+            Try Again
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 bg-background p-6">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-church-burgundy">
-            Donations Management
-          </h1>
-          <p className="text-gray-600">
-            Track and manage church donations and contributions
+          <h1 className="text-3xl font-bold tracking-tight">Donations</h1>
+          <p className="text-muted-foreground">
+            Manage and track all donations
           </p>
         </div>
-        <Button onClick={exportDonations} variant="outline">
-          <Download className="w-4 h-4 mr-2" />
-          Export CSV
+        <Button onClick={exportToExcel} className="flex items-center gap-2">
+          <Download className="h-4 w-4" />
+          Export to Excel
         </Button>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <DollarSign className="w-4 h-4 mr-2" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
               Total Donations
             </CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-church-burgundy">
-              ${stats.totalAmount.toFixed(2)}
+            <div className="text-2xl font-bold">
+              {formatCurrency(stats.total_amount)}
             </div>
-            <p className="text-xs text-gray-500">
-              {stats.totalDonations} completed donations
+            <p className="text-xs text-muted-foreground">
+              From {stats.total_donations} donations
             </p>
           </CardContent>
         </Card>
-
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <TrendingUp className="w-4 h-4 mr-2" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Donors</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.total_donations}</div>
+            <p className="text-xs text-muted-foreground">
+              Unique donations received
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">This Month</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.monthly_growth}</div>
+            <p className="text-xs text-muted-foreground">
+              Donations this month
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
               Average Donation
             </CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              ${stats.averageAmount.toFixed(2)}
+            <div className="text-2xl font-bold">
+              {formatCurrency(stats.average_donation)}
             </div>
-            <p className="text-xs text-gray-500">Per donation</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <Calendar className="w-4 h-4 mr-2" />
-              This Month
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              ${stats.thisMonthAmount.toFixed(2)}
-            </div>
-            <p className="text-xs text-gray-500">
-              {stats.thisMonthCount} donations
+            <p className="text-xs text-muted-foreground">
+              Per donation average
             </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <Users className="w-4 h-4 mr-2" />
-              Unique Donors
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
-              {Array.isArray(donations)
-                ? new Set(donations.map((d) => d?.donor_email).filter(Boolean))
-                    .size
-                : 0}
-            </div>
-            <p className="text-xs text-gray-500">Total donors</p>
           </CardContent>
         </Card>
       </div>
@@ -387,81 +357,61 @@ export default function AdminDonations() {
       {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg flex items-center">
-            <Filter className="w-5 h-5 mr-2" />
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
             Filters
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="search">Search</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  id="search"
-                  placeholder="Search donations..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="purpose">Purpose</Label>
-              <Select value={purposeFilter} onValueChange={setPurposeFilter}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Purposes</SelectItem>
-                  <SelectItem value="general_fund">General Fund</SelectItem>
-                  <SelectItem value="building_fund">Building Fund</SelectItem>
-                  <SelectItem value="youth_programs">Youth Programs</SelectItem>
-                  <SelectItem value="membership_fee">Membership Fee</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="dateFrom">From Date</Label>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
-                id="dateFrom"
-                type="date"
-                value={dateRange.from}
-                onChange={(e) =>
-                  setDateRange((prev) => ({ ...prev, from: e.target.value }))
-                }
+                placeholder="Search donations..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="dateTo">To Date</Label>
-              <Input
-                id="dateTo"
-                type="date"
-                value={dateRange.to}
-                onChange={(e) =>
-                  setDateRange((prev) => ({ ...prev, to: e.target.value }))
-                }
-              />
-            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="failed">Failed</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={purposeFilter} onValueChange={setPurposeFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Purpose" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Purposes</SelectItem>
+                <SelectItem value="general">General</SelectItem>
+                <SelectItem value="building">Building Fund</SelectItem>
+                <SelectItem value="missions">Missions</SelectItem>
+                <SelectItem value="youth">Youth Ministry</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input
+              type="date"
+              placeholder="From Date"
+              value={dateRange.from}
+              onChange={(e) =>
+                setDateRange((prev) => ({ ...prev, from: e.target.value }))
+              }
+            />
+            <Input
+              type="date"
+              placeholder="To Date"
+              value={dateRange.to}
+              onChange={(e) =>
+                setDateRange((prev) => ({ ...prev, to: e.target.value }))
+              }
+            />
           </div>
         </CardContent>
       </Card>
@@ -470,67 +420,73 @@ export default function AdminDonations() {
       <Card>
         <CardHeader>
           <CardTitle>Donations ({filteredDonations.length})</CardTitle>
-          <CardDescription>Manage and track all donations</CardDescription>
+          <CardDescription>Recent donations and their details</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          <div className="rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
                   <TableHead>Donor</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Purpose</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Date</TableHead>
                   <TableHead>Payment Method</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredDonations.map((donation) => (
-                  <TableRow key={donation.id}>
-                    <TableCell>
-                      {format(
-                        new Date(donation.created_at),
-                        "MMM d, yyyy HH:mm",
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">
-                          {donation.is_anonymous
-                            ? "Anonymous"
-                            : donation.donor_name || "N/A"}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {donation.is_anonymous ? "" : donation.donor_email}
-                        </div>
+                {filteredDonations.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8">
+                      <div className="text-muted-foreground">
+                        {donations.length === 0
+                          ? "No donations found"
+                          : "No donations match your filters"}
                       </div>
                     </TableCell>
-                    <TableCell className="font-medium">
-                      ${donation.amount.toFixed(2)}
-                    </TableCell>
-                    <TableCell>{getPurposeLabel(donation.purpose)}</TableCell>
-                    <TableCell>
-                      {getStatusBadge(donation.payment_status)}
-                    </TableCell>
-                    <TableCell>
-                      {donation.payment_method
-                        ? donation.payment_method.charAt(0).toUpperCase() +
-                          donation.payment_method.slice(1)
-                        : "N/A"}
-                    </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  filteredDonations.map((donation) => (
+                    <TableRow key={donation.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">
+                            {donation.donor_name || "Anonymous"}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {donation.donor_email}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {formatCurrency(donation.amount)}
+                      </TableCell>
+                      <TableCell>{donation.purpose || "General"}</TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusBadgeVariant(donation.status)}>
+                          {donation.status || "Unknown"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {donation.created_at
+                          ? format(
+                              new Date(donation.created_at),
+                              "MMM dd, yyyy",
+                            )
+                          : "N/A"}
+                      </TableCell>
+                      <TableCell>{donation.payment_method || "N/A"}</TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
-          {filteredDonations.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              No donations found matching your criteria.
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
   );
-}
+};
+
+export default Donations;
