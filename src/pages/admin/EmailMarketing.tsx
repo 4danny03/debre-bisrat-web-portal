@@ -59,7 +59,7 @@ interface EmailTemplate {
   created_at: string;
 }
 
-const EmailMarketing = () => {
+const EmailMarketing: React.FC = () => {
   const [campaigns, setCampaigns] = useState<EmailCampaign[]>([]);
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [loading, setLoading] = useState(true);

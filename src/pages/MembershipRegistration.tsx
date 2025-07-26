@@ -77,7 +77,6 @@ const MembershipRegistration = () => {
     agreeToTerms: false,
   });
 
-
   const totalSteps = 3;
   const progressPercentage = (currentStep / totalSteps) * 100;
 
@@ -141,7 +140,6 @@ const MembershipRegistration = () => {
 
   // Removed unused handleArrayChange function
 
-
   // Removed useEffect for children state
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -150,7 +148,6 @@ const MembershipRegistration = () => {
     setIsSubmitting(true);
     setError(null);
     try {
-
       // Determine membership fee based on type
       const membershipFees = {
         regular: "100",
@@ -185,7 +182,7 @@ const MembershipRegistration = () => {
 
       // First create the member record using the membership-management function
       const memberResponse = await supabase.functions.invoke(
-        "membership-management",
+        "supabase-functions-membership-management",
         {
           body: {
             action: "create_member",
@@ -258,7 +255,10 @@ const MembershipRegistration = () => {
       if (typeof error === "object" && error !== null) {
         if ("message" in error && typeof (error as any).message === "string") {
           errorMessage = (error as any).message;
-        } else if ("error_description" in error && typeof (error as any).error_description === "string") {
+        } else if (
+          "error_description" in error &&
+          typeof (error as any).error_description === "string"
+        ) {
           errorMessage = (error as any).error_description;
         } else {
           errorMessage = JSON.stringify(error);
@@ -271,7 +271,8 @@ const MembershipRegistration = () => {
         variant: "destructive",
         title: "Registration Error",
         description:
-          "There was an error processing your membership registration. " + errorMessage,
+          "There was an error processing your membership registration. " +
+          errorMessage,
       });
       setError(errorMessage);
     } finally {
