@@ -1,4 +1,8 @@
-import { corsHeaders } from "./cors.ts";
+export const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
 
 export function handleCorsOptions(req: Request) {
   if (req.method === "OPTIONS") {
@@ -76,3 +80,33 @@ export const checkRateLimit = (
   record.count++;
   return true;
 };
+
+// Admin authentication and role verification helper
+export async function verifyAdminAccess(
+  supabaseClient: any,
+  authHeader: string | null,
+): Promise<void> {
+  if (!authHeader) {
+    throw new Error("Authorization required");
+  }
+
+  const token = authHeader.replace("Bearer ", "");
+  const {
+    data: { user },
+    error: authError,
+  } = await supabaseClient.auth.getUser(token);
+
+  if (authError || !user) {
+    throw new Error("Unauthorized");
+  }
+
+  const { data: profile, error: profileError } = await supabaseClient
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError || profile?.role !== "admin") {
+    throw new Error("Admin access required");
+  }
+}

@@ -42,10 +42,9 @@ const MemberDashboard: React.FC = () => {
           api.members.getMemberDonations(user.id),
           api.members.getMemberEvents(user.id),
         ]);
-
-        setProfile(profileData);
-        setDonations(donationsData);
-        setEvents(eventsData);
+        // setProfile(profileData);
+        // setDonations(donationsData);
+        // setEvents(eventsData);
       } catch (error) {
         console.error("Error fetching member data:", error);
       } finally {

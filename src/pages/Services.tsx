@@ -1,7 +1,6 @@
 import { useToast } from "@/components/ui/use-toast";
 const { toast } = useToast();
 import React, { useState } from "react";
-// import React, { useState, useEffect } from "react"; // removed duplicate and unused
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
 import { Settings, CalendarCheck } from "lucide-react";
@@ -69,6 +68,7 @@ const Services: React.FC = () => {
   const { t, language } = useLanguage();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const { toast } = useToast();
 
   const handleAppointmentSubmit = async (
     e: React.FormEvent<HTMLFormElement>,

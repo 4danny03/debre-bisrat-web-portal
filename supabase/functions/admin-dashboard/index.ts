@@ -1,50 +1,34 @@
-import { corsHeaders } from "@shared/cors.ts";
+import dotenv from "dotenv";
+import { createClient } from "@supabase/supabase-js";
+import express from "express";
 import {
   handleCorsOptions,
   formatErrorResponse,
   formatSuccessResponse,
-} from "@shared/utils.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+  verifyAdminAccess,
+} from "../_shared/utils.ts";
 
-Deno.serve(async (req) => {
+// Load environment variables
+dotenv.config();
+
+const supabaseClient = createClient(
+  process.env.SUPABASE_URL || "",
+  process.env.SUPABASE_SERVICE_KEY || "",
+);
+
+// Replace Deno.serve with Node.js-compatible server setup
+const app = express();
+app.use(express.json());
+
+app.post("/admin-dashboard", async (req, res) => {
   const corsResponse = handleCorsOptions(req);
   if (corsResponse) return corsResponse;
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_KEY") ?? "",
-    );
+    const { action } = req.body;
 
-    const url = new URL(req.url);
-    const action = url.searchParams.get("action") || "dashboard";
-
-    // Verify admin authentication
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("Authorization required");
-    }
-
-    const token = authHeader.replace("Bearer ", "");
-    const {
-      data: { user },
-      error: authError,
-    } = await supabaseClient.auth.getUser(token);
-
-    if (authError || !user) {
-      throw new Error("Unauthorized");
-    }
-
-    // Verify admin role
-    const { data: profile, error: profileError } = await supabaseClient
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (profileError || profile?.role !== "admin") {
-      throw new Error("Admin access required");
-    }
+    // Verify admin authentication and role
+    await verifyAdminAccess(supabaseClient, req.headers.get("Authorization"));
 
     switch (action) {
       case "dashboard":
@@ -144,7 +128,7 @@ Deno.serve(async (req) => {
           pendingAppointments: appointmentsRes.count || 0,
         };
 
-        return formatSuccessResponse({ dashboard: dashboardData });
+        return res.status(200).send(formatSuccessResponse({ dashboard: dashboardData }));
 
       case "recent_activity":
         // Get recent activity across all tables
@@ -183,7 +167,7 @@ Deno.serve(async (req) => {
           prayerRequests: recentPrayerRequests.data || [],
         };
 
-        return formatSuccessResponse({ activity: recentActivity });
+        return res.status(200).send(formatSuccessResponse({ activity: recentActivity }));
 
       case "system_health":
         // Check system health
@@ -245,7 +229,7 @@ Deno.serve(async (req) => {
           });
         }
 
-        return formatSuccessResponse({ health: healthChecks });
+        return res.status(200).send(formatSuccessResponse({ health: healthChecks }));
 
       case "export_data":
         // Export data for backup
@@ -280,13 +264,15 @@ Deno.serve(async (req) => {
           exportData.sermons = sermons;
         }
 
-        return formatSuccessResponse({
-          export: {
-            type: exportType,
-            timestamp: new Date().toISOString(),
-            data: exportData,
-          },
-        });
+        return res.status(200).send(
+          formatSuccessResponse({
+            export: {
+              type: exportType,
+              timestamp: new Date().toISOString(),
+              data: exportData,
+            },
+          }),
+        );
 
       case "cleanup":
         // Cleanup old data
@@ -312,12 +298,16 @@ Deno.serve(async (req) => {
           cleanupResult.inactive_members = `Cleaned up ${count || 0} inactive members`;
         }
 
-        return formatSuccessResponse({ cleanup: cleanupResult });
+        return res.status(200).send(formatSuccessResponse({ cleanup: cleanupResult }));
 
       default:
         throw new Error(`Unknown action: ${action}`);
     }
   } catch (error) {
-    return formatErrorResponse(error as Error);
+    return res.status(500).send(formatErrorResponse(error as Error));
   }
+});
+
+app.listen(3000, () => {
+  console.log("Server is running on port 3000");
 });
