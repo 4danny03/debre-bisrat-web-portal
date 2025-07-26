@@ -1,10 +1,20 @@
-
-
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
-import { Database, Server, Shield, Zap, CheckCircle, AlertTriangle, XCircle } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "@/components/ui/collapsible";
+import {
+  Database,
+  Server,
+  Shield,
+  Zap,
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
+} from "lucide-react";
 
 export interface TestResult {
   name: string;
@@ -29,13 +39,22 @@ export const groupResultsByCategory = (
   };
   results.forEach((result) => {
     const { name } = result;
-    if (name.includes("Database") || name.includes("Table Access")) categories.Database.push(result);
+    if (name.includes("Database") || name.includes("Table Access"))
+      categories.Database.push(result);
     else if (name.includes("API:")) categories.API.push(result);
-    else if (name.includes("Authentication")) categories.Authentication.push(result);
-    else if (name.includes("Edge Function")) categories["Edge Functions"].push(result);
-    else if (name.includes("Admin Helper")) categories["Admin Helpers"].push(result);
+    else if (name.includes("Authentication"))
+      categories.Authentication.push(result);
+    else if (name.includes("Edge Function"))
+      categories["Edge Functions"].push(result);
+    else if (name.includes("Admin Helper"))
+      categories["Admin Helpers"].push(result);
     else if (name.includes("Data Sync")) categories["Data Sync"].push(result);
-    else if (name.includes("Email") || name.includes("Newsletter") || name.includes("Campaign")) categories["Email Marketing"].push(result);
+    else if (
+      name.includes("Email") ||
+      name.includes("Newsletter") ||
+      name.includes("Campaign")
+    )
+      categories["Email Marketing"].push(result);
     else categories.Other.push(result);
   });
   Object.keys(categories).forEach((key) => {
@@ -44,20 +63,28 @@ export const groupResultsByCategory = (
   return categories;
 };
 
-export const getCategoryIconComponent = (category: string) => {
+export const getCategoryIconComponent = (category: string): React.ReactNode => {
   switch (category) {
-    case "Database": return <Database className="h-4 w-4" />;
-    case "API": return <Server className="h-4 w-4" />;
-    case "Authentication": return <Shield className="h-4 w-4" />;
-    case "Edge Functions": return <Zap className="h-4 w-4" />;
-    default: return <CheckCircle className="h-4 w-4" />;
+    case "Database":
+      return <Database className="h-4 w-4" />;
+    case "API":
+      return <Server className="h-4 w-4" />;
+    case "Authentication":
+      return <Shield className="h-4 w-4" />;
+    case "Edge Functions":
+      return <Zap className="h-4 w-4" />;
+    default:
+      return <CheckCircle className="h-4 w-4" />;
   }
 };
 
 export const isValidTestResult = (result: any): result is TestResult => {
   return (
-    result && typeof result === "object" && typeof result.name === "string" &&
-    typeof result.status === "string" && ["pass", "fail", "warning"].includes(result.status) &&
+    result &&
+    typeof result === "object" &&
+    typeof result.name === "string" &&
+    typeof result.status === "string" &&
+    ["pass", "fail", "warning"].includes(result.status) &&
     typeof result.message === "string"
   );
 };
@@ -84,7 +111,9 @@ const statusIcon = {
   warning: <AlertTriangle className="h-4 w-4 text-yellow-700" />,
 };
 
-export const AdminDiagnostics: React.FC<AdminDiagnosticsProps> = ({ results }) => {
+export const AdminDiagnostics: React.FC<AdminDiagnosticsProps> = ({
+  results,
+}) => {
   const validResults = sanitizeTestResults(results);
   const grouped = groupResultsByCategory(validResults);
   const summary = validResults.reduce(
@@ -92,7 +121,7 @@ export const AdminDiagnostics: React.FC<AdminDiagnosticsProps> = ({ results }) =
       acc[r.status]++;
       return acc;
     },
-    { pass: 0, fail: 0, warning: 0 }
+    { pass: 0, fail: 0, warning: 0 },
   );
   const [open, setOpen] = React.useState<Record<string, boolean>>({});
 
@@ -103,13 +132,23 @@ export const AdminDiagnostics: React.FC<AdminDiagnosticsProps> = ({ results }) =
           <CardTitle>System Diagnostics Summary</CardTitle>
         </CardHeader>
         <CardContent className="flex gap-4">
-          <Badge className="bg-green-50 text-green-700 border border-green-200">Pass: {summary.pass}</Badge>
-          <Badge className="bg-yellow-50 text-yellow-700 border border-yellow-200">Warning: {summary.warning}</Badge>
-          <Badge className="bg-red-50 text-red-700 border border-red-200">Fail: {summary.fail}</Badge>
+          <Badge className="bg-green-50 text-green-700 border border-green-200">
+            Pass: {summary.pass}
+          </Badge>
+          <Badge className="bg-yellow-50 text-yellow-700 border border-yellow-200">
+            Warning: {summary.warning}
+          </Badge>
+          <Badge className="bg-red-50 text-red-700 border border-red-200">
+            Fail: {summary.fail}
+          </Badge>
         </CardContent>
       </Card>
       {Object.entries(grouped).map(([category, tests]) => (
-        <Collapsible key={category} open={!!open[category]} onOpenChange={(v) => setOpen((o) => ({ ...o, [category]: v }))}>
+        <Collapsible
+          key={category}
+          open={!!open[category]}
+          onOpenChange={(v) => setOpen((o) => ({ ...o, [category]: v }))}
+        >
           <CollapsibleTrigger asChild>
             <Card className="cursor-pointer hover:shadow-md transition">
               <CardHeader className="flex flex-row items-center gap-2">
@@ -122,11 +161,18 @@ export const AdminDiagnostics: React.FC<AdminDiagnosticsProps> = ({ results }) =
           <CollapsibleContent>
             <CardContent className="space-y-2">
               {tests.map((test, i) => (
-                <div key={i} className={`flex items-center gap-2 border rounded px-2 py-1 ${statusColor[test.status]}`}> 
+                <div
+                  key={i}
+                  className={`flex items-center gap-2 border rounded px-2 py-1 ${statusColor[test.status]}`}
+                >
                   {statusIcon[test.status]}
                   <span className="font-medium">{test.name}</span>
                   <span className="text-xs">{test.message}</span>
-                  {test.error && <span className="text-xs text-red-500">{String(test.error)}</span>}
+                  {test.error && (
+                    <span className="text-xs text-red-500">
+                      {String(test.error)}
+                    </span>
+                  )}
                 </div>
               ))}
             </CardContent>

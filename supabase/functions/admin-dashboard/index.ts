@@ -56,11 +56,14 @@ Deno.serve(async (req) => {
           sermonsRes,
           prayerRequestsRes,
           testimonialsRes,
+          appointmentsRes,
         ] = await Promise.all([
-          supabaseClient.from("membership_statistics").select("*").single(),
+          supabaseClient
+            .from("members")
+            .select("membership_status", { count: "exact", head: true }),
           supabaseClient
             .from("donations")
-            .select("amount, created_at")
+            .select("amount, created_at, status")
             .gte(
               "created_at",
               new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
@@ -80,23 +83,65 @@ Deno.serve(async (req) => {
             .from("testimonials")
             .select("*", { count: "exact", head: true })
             .eq("is_approved", false),
+          supabaseClient
+            .from("appointments")
+            .select("*", { count: "exact", head: true })
+            .eq("status", "pending"),
         ]);
 
-        const totalDonations =
-          donationsRes.data?.reduce((sum, d) => sum + d.amount, 0) || 0;
-        const donationCount = donationsRes.data?.length || 0;
+        // Calculate donation statistics
+        const completedDonations =
+          donationsRes.data?.filter((d) => d.status === "completed") || [];
+        const totalDonations = completedDonations.reduce(
+          (sum, d) => sum + d.amount,
+          0,
+        );
+        const donationCount = completedDonations.length;
+
+        // Calculate monthly donations
+        const currentMonth = new Date().getMonth();
+        const monthlyDonations = completedDonations.filter(
+          (d) => new Date(d.created_at).getMonth() === currentMonth,
+        );
+        const monthlyTotal = monthlyDonations.reduce(
+          (sum, d) => sum + d.amount,
+          0,
+        );
+
+        // Get member statistics
+        const memberStats = await supabaseClient
+          .from("members")
+          .select("membership_status");
+
+        const membersByStatus =
+          memberStats.data?.reduce(
+            (acc, member) => {
+              acc[member.membership_status] =
+                (acc[member.membership_status] || 0) + 1;
+              return acc;
+            },
+            {} as Record<string, number>,
+          ) || {};
 
         const dashboardData = {
-          members: membersRes.data || {},
+          members: {
+            total: membersRes.count || 0,
+            active: membersByStatus.active || 0,
+            pending: membersByStatus.pending || 0,
+            inactive: membersByStatus.inactive || 0,
+          },
           donations: {
             total: totalDonations,
             count: donationCount,
-            thisMonth: totalDonations,
+            thisMonth: monthlyTotal,
+            monthlyCount: monthlyDonations.length,
+            average: donationCount > 0 ? totalDonations / donationCount : 0,
           },
           upcomingEvents: eventsRes.count || 0,
           totalSermons: sermonsRes.count || 0,
           pendingPrayerRequests: prayerRequestsRes.count || 0,
           pendingTestimonials: testimonialsRes.count || 0,
+          pendingAppointments: appointmentsRes.count || 0,
         };
 
         return formatSuccessResponse({ dashboard: dashboardData });

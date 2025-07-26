@@ -1,5 +1,5 @@
 import { useToast } from "@/components/ui/use-toast";
-  const { toast } = useToast();
+const { toast } = useToast();
 import React, { useState } from "react";
 // import React, { useState, useEffect } from "react"; // removed duplicate and unused
 import Layout from "../components/Layout";
@@ -33,7 +33,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-
 
 // Religious service images mapping with verified paths
 const religiousServiceImages = {
@@ -81,12 +80,14 @@ const Services: React.FC = () => {
     const phone = formData.get("phone") as string;
     const date = formData.get("date") as string;
     const time = formData.get("time") as string;
-    const service = formData.get("service") as string || formData.get("serviceType") as string;
+    const service =
+      (formData.get("service") as string) ||
+      (formData.get("serviceType") as string);
     const notes = formData.get("notes") as string;
 
     try {
       // Use the appointment-request edge function for better validation and processing
-      const { error } = await supabase.functions.invoke(
+      const { data, error } = await supabase.functions.invoke(
         "supabase-functions-appointment-request",
         {
           body: {
@@ -107,6 +108,10 @@ const Services: React.FC = () => {
         );
       }
 
+      if (!data?.success) {
+        throw new Error(data?.error || "Failed to submit appointment request");
+      }
+
       toast({
         title: language === "en" ? "Appointment Request Sent" : "የቀጠሮ ጥያቄ ተልኳል",
         description:
@@ -120,7 +125,8 @@ const Services: React.FC = () => {
     } catch (error: any) {
       console.error("Error submitting appointment:", error);
       let errorMsg =
-        (error && (error.message || error.error_description || error.toString())) ||
+        (error &&
+          (error.message || error.error_description || error.toString())) ||
         (typeof error === "object" ? JSON.stringify(error) : String(error));
       toast({
         title: language === "en" ? "Error" : "ስህተት",
@@ -263,10 +269,10 @@ const Services: React.FC = () => {
 
             {/* Single Request Appointment Button */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <Button className="bg-church-burgundy hover:bg-church-burgundy/90 text-white px-8 py-3 text-lg">
-                  <CalendarCheck className="h-5 w-5 mr-2" />
-                  {language === "en" ? "Request Appointment" : "ቀጠሮ ይጠይቁ"}
-                </Button>
+              <Button className="bg-church-burgundy hover:bg-church-burgundy/90 text-white px-8 py-3 text-lg">
+                <CalendarCheck className="h-5 w-5 mr-2" />
+                {language === "en" ? "Request Appointment" : "ቀጠሮ ይጠይቁ"}
+              </Button>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                   <DialogTitle>
