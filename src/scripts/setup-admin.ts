@@ -55,8 +55,8 @@ async function setupAdmin() {
       console.log("=================================");
       console.log("Admin user created successfully!");
       console.log("=================================");
-      console.log("Email: khaliddawit7546@gmail.com");
-      console.log("Password: 12345678");
+      console.log("Email: admin@church.test");
+      console.log("Password: admin1234");
       console.log("=================================");
       console.log("Please check your email to confirm your account");
       console.log("After confirmation, you can login at /admin/login");
@@ -77,8 +77,8 @@ async function setupAdmin() {
       console.log("=================================");
       console.log("User role updated to admin!");
       console.log("=================================");
-      console.log("Email: khaliddawit7546@gmail.com");
-      console.log("Password: 12345678");
+      console.log("Email: admin@church.test");
+      console.log("Password: admin1234");
       console.log("=================================");
       console.log("You can now login at /admin/login");
     }
