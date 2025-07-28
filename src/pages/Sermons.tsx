@@ -119,9 +119,9 @@ const Sermons: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await api.sermons.getSermons();
-      const validatedData = Array.isArray(data) ? data : [];
-      setSermons(validatedData);
+      // const data = await api.sermons.getSermons();
+      // const validatedData = Array.isArray(data) ? data : [];
+      // setSermons(validatedData);
     } catch (err) {
       console.error("Error fetching sermons:", err);
       setSermons([]);

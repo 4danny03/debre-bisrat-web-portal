@@ -1,5 +1,5 @@
 import { useToast } from "@/components/ui/use-toast";
-const { toast } = useToast();
+
 import React, { useState } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
