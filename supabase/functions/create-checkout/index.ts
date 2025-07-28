@@ -1,54 +1,132 @@
-import { serve } from "std/http/server.ts";
+import { corsHeaders } from "@shared/cors.ts";
+import {
+  handleCorsOptions,
+  formatErrorResponse,
+  formatSuccessResponse,
+  sanitizeString,
+  validateEmail,
+  checkRateLimit,
+} from "@shared/utils.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+interface CheckoutRequest {
+  amount: string;
+  donationType: string;
+  purpose: string;
+  email: string;
+  name?: string;
+  address?: string;
+  memberId?: string;
+}
 
-// Demo Stripe test key - this is a public test key from Stripe docs, safe to include
-const STRIPE_TEST_KEY =
-  "sk_test_51OvQQnCXpYQQZZQQZZQQZZQQZZQQZZQQZZQQZZQQZZQQZZQQ";
+// Input validation helper
+function validateInput(data: CheckoutRequest): {
+  isValid: boolean;
+  errors: string[];
+} {
+  const errors: string[] = [];
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  // Validate amount
+  const amount = parseFloat(data.amount);
+  if (isNaN(amount) || amount < 1 || amount > 10000) {
+    errors.push("Amount must be between $1 and $10,000");
+  }
+
+  // Validate donation type
+  const validDonationTypes = ["one_time", "monthly", "quarterly", "annually"];
+  if (!validDonationTypes.includes(data.donationType)) {
+    errors.push("Invalid donation type");
+  }
+
+  // Validate purpose
+  const validPurposes = [
+    "general_fund",
+    "building_fund",
+    "youth_programs",
+    "charity",
+    "membership_fee",
+  ];
+  if (!validPurposes.includes(data.purpose)) {
+    errors.push("Invalid donation purpose");
+  }
+
+  // Validate email format
+  if (!validateEmail(data.email)) {
+    errors.push("Invalid email format");
+  }
+
+  // Sanitize string inputs
+  if (data.name && sanitizeString(data.name, 100) !== data.name) {
+    errors.push("Name contains invalid characters or is too long");
+  }
+
+  if (data.address && sanitizeString(data.address, 200) !== data.address) {
+    errors.push("Address contains invalid characters or is too long");
+  }
+
+  return { isValid: errors.length === 0, errors };
+}
+
+Deno.serve(async (req: Request) => {
+  const corsResponse = handleCorsOptions(req);
+  if (corsResponse) return corsResponse;
+
+  // Rate limiting
+  const clientIP =
+    req.headers.get("x-forwarded-for") ||
+    req.headers.get("x-real-ip") ||
+    "unknown";
+  if (!checkRateLimit(clientIP, 10, 60000)) {
+    return formatErrorResponse(new Error("Rate limit exceeded"), 429);
   }
 
   try {
-    // Create a Supabase client
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
 
-    // Get request data
-    const { amount, donationType, purpose, email, name, address, memberId } =
-      await req.json();
+    const requestData: CheckoutRequest = await req.json();
 
-    // Validate the input
+    // Validate input data
+    const validation = validateInput(requestData);
+    if (!validation.isValid) {
+      return new Response(
+        JSON.stringify({ error: validation.errors.join(", ") }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        },
+      );
+    }
+
+    const { amount, donationType, purpose, email, name, address, memberId } =
+      requestData;
+
     if (!amount || !donationType || !purpose || !email) {
       throw new Error(
         "Missing required fields: amount, donationType, purpose, email",
       );
     }
 
-    // Initialize Stripe with the test API key for demo purposes
-    // In production, you would use: Deno.env.get("STRIPE_SECRET_KEY")
-    const stripe = new Stripe(STRIPE_TEST_KEY, {
+    // Use demo key for testing - in production, set STRIPE_SECRET_KEY environment variable
+    const stripeKey =
+      Deno.env.get("STRIPE_SECRET_KEY") || "sk_test_51234567890abcdef";
+
+    if (!stripeKey || stripeKey === "sk_test_51234567890abcdef") {
+      console.log("Using demo Stripe key - this is for testing purposes only");
+    }
+
+    const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
     });
 
-    // Check if a Stripe customer exists for this email
     const customers = await stripe.customers.list({ email, limit: 1 });
     let customerId;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
 
-      // Update customer with latest info if provided
       if (name || address) {
         await stripe.customers.update(customerId, {
           name: name || undefined,
@@ -60,7 +138,6 @@ serve(async (req) => {
         });
       }
     } else {
-      // Create a new customer if one doesn't exist
       const customer = await stripe.customers.create({
         email,
         name: name || undefined,
@@ -73,7 +150,6 @@ serve(async (req) => {
       customerId = customer.id;
     }
 
-    // Set up the payment details
     const amountInCents = Math.round(parseFloat(amount) * 100);
     const productName =
       purpose === "general_fund"
@@ -86,10 +162,9 @@ serve(async (req) => {
               ? "Membership Fee"
               : "Charitable Donation";
 
-    // Configure payment type based on donationType (one-time vs recurring)
     const isRecurring = donationType !== "one_time";
 
-    const sessionConfig = {
+    const sessionConfig: Stripe.Checkout.SessionCreateParams = {
       customer: customerId,
       payment_method_types: ["card"],
       line_items: [
@@ -124,41 +199,46 @@ serve(async (req) => {
         email,
         donationType,
         memberId: memberId || "",
-        demo_mode: "true", // Flag to indicate this is a demo transaction
+        demo_mode: "true",
       },
     };
 
-    // Create a checkout session
     const session = await stripe.checkout.sessions.create(sessionConfig);
 
-    // Store donation record in database
     try {
-      await supabaseClient.from("donations").insert([
-        {
-          amount: parseFloat(amount),
-          donor_email: email,
-          donor_name: name || null,
-          purpose: purpose,
-          payment_status: "pending",
-          payment_id: session.id,
-          payment_method: "stripe",
-          is_anonymous: false,
-        },
-      ]);
+      console.log("Storing donation record in database");
+      const { data: donationData, error: donationError } = await supabaseClient
+        .from("donations")
+        .insert([
+          {
+            amount: parseFloat(amount),
+            donor_email: email,
+            donor_name: name || null,
+            purpose: purpose,
+            payment_status: "pending",
+            payment_id: session.id,
+            payment_method: "stripe",
+            is_anonymous: false,
+            created_at: new Date().toISOString(),
+          },
+        ])
+        .select()
+        .single();
+
+      if (donationError) {
+        console.error("Error storing donation record:", donationError);
+      } else {
+        console.log("Donation record stored successfully:", donationData);
+      }
     } catch (dbError) {
-      console.error("Error storing donation record:", dbError);
-      // Continue with checkout even if database insert fails
+      console.error("Exception storing donation record:", dbError);
     }
 
-    return new Response(JSON.stringify({ url: session.url }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+    return formatSuccessResponse({ url: session.url });
   } catch (error) {
     console.error("Error in create-checkout function:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    return formatErrorResponse(new Error(errorMessage), 500);
   }
 });

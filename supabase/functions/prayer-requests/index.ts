@@ -1,13 +1,16 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { corsHeaders } from "@shared/cors.ts";
+import { corsHeaders } from "../_shared/cors.ts";
 import {
   handleCorsOptions,
   formatErrorResponse,
   formatSuccessResponse,
-} from "@shared/utils.ts";
+  sanitizeString,
+  validateEmail,
+  checkRateLimit,
+  verifyAdminAccess,
+} from "../_shared/utils.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
   const corsResponse = handleCorsOptions(req);
   if (corsResponse) return corsResponse;
@@ -28,26 +31,8 @@ serve(async (req) => {
         throw new Error("Authorization header is required");
       }
 
-      const token = authHeader.replace("Bearer ", "");
-      const {
-        data: { user },
-        error: authError,
-      } = await supabaseClient.auth.getUser(token);
-
-      if (authError || !user) {
-        throw new Error("Unauthorized");
-      }
-
-      // Verify admin role
-      const { data: profile, error: profileError } = await supabaseClient
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-
-      if (profileError || profile?.role !== "admin") {
-        throw new Error("Unauthorized: Admin access required");
-      }
+      // Verify admin authentication and role
+      await verifyAdminAccess(supabaseClient, authHeader);
 
       // Get all prayer requests or a specific one
       let query = supabaseClient.from("prayer_requests").select("*");
@@ -72,12 +57,29 @@ serve(async (req) => {
         throw new Error("Name and prayer request are required");
       }
 
+      // Rate limiting for prayer request submissions
+      const clientIP =
+        req.headers.get("x-forwarded-for") ||
+        req.headers.get("x-real-ip") ||
+        "unknown";
+      if (!checkRateLimit(`prayer_${clientIP}`, 5, 300000)) {
+        // 5 requests per 5 minutes
+        throw new Error(
+          "Too many prayer requests. Please wait before submitting another.",
+        );
+      }
+
+      // Validate email if provided
+      if (email && !validateEmail(email)) {
+        throw new Error("Invalid email format");
+      }
+
       const { data, error } = await supabaseClient
         .from("prayer_requests")
         .insert({
-          name,
-          email,
-          request,
+          name: sanitizeString(name, 100),
+          email: email ? sanitizeString(email, 100) : null,
+          request: sanitizeString(request, 1000),
           is_public: is_public || false,
         })
         .select()
@@ -93,26 +95,8 @@ serve(async (req) => {
         throw new Error("Authorization header is required");
       }
 
-      const token = authHeader.replace("Bearer ", "");
-      const {
-        data: { user },
-        error: authError,
-      } = await supabaseClient.auth.getUser(token);
-
-      if (authError || !user) {
-        throw new Error("Unauthorized");
-      }
-
-      // Verify admin role
-      const { data: profile, error: profileError } = await supabaseClient
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-
-      if (profileError || profile?.role !== "admin") {
-        throw new Error("Unauthorized: Admin access required");
-      }
+      // Verify admin authentication and role
+      await verifyAdminAccess(supabaseClient, authHeader);
 
       const { is_answered } = await req.json();
 
@@ -136,6 +120,6 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    return formatErrorResponse(error);
+    return formatErrorResponse(error as Error);
   }
 });

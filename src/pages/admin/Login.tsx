@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -7,20 +7,15 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function AdminLogin() {
   const [loading, setLoading] = useState(false);
@@ -32,39 +27,64 @@ export default function AdminLogin() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    
+
     const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-    
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data, error: signInError } =
+        await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
       if (signInError) throw signInError;
 
       // Check if user has admin role
       const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.user.id)
+        .from("profiles")
+        .select("role")
+        .eq("id", data.user.id)
         .single();
 
-      if (profileError) throw profileError;
-      
-      if (profile?.role !== 'admin') {
-        throw new Error('Unauthorized. Admin access required.');
+      if (profileError) {
+        console.error("Profile fetch error:", profileError);
+        // If profile doesn't exist, create one for the first user as admin
+        const { count: existingProfilesCount } = await supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true });
+
+        if (existingProfilesCount === 0) {
+          // First user becomes admin
+          const { error: createError } = await supabase
+            .from("profiles")
+            .insert({
+              id: data.user.id,
+              email: data.user.email,
+              role: "admin",
+            });
+
+          if (createError) {
+            console.error("Error creating admin profile:", createError);
+            throw new Error("Failed to create admin profile");
+          }
+
+          console.log("Created first admin user");
+        } else {
+          throw new Error("Profile not found. Please contact administrator.");
+        }
+      } else if (profile?.role !== "admin") {
+        throw new Error("Unauthorized. Admin access required.");
       }
 
       toast({
         title: "Welcome back!",
         description: "Successfully logged in to admin dashboard",
       });
-      navigate('/admin/dashboard');
+      navigate("/admin/dashboard");
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to log in');
+      setError(error instanceof Error ? error.message : "Failed to log in");
     } finally {
       setLoading(false);
     }
@@ -74,49 +94,59 @@ export default function AdminLogin() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    
+
     const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-    const confirmPassword = formData.get('confirmPassword') as string;
-    const secretCode = formData.get('secretCode') as string;
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    const confirmPassword = formData.get("confirmPassword") as string;
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       setLoading(false);
       return;
     }
 
-    // Verify secret code (you should store this securely, perhaps in Supabase)
-    const ADMIN_SECRET = 'your-secret-code'; // This should be stored securely
-    if (secretCode !== ADMIN_SECRET) {
-      setError('Invalid admin registration code');
+    // Check if this email was pre-authorized by an existing admin
+    const { data: existingProfile, error: profileCheckError } = await supabase
+      .from("profiles")
+      .select("email, role")
+      .eq("email", email)
+      .single();
+
+    if (
+      profileCheckError ||
+      !existingProfile ||
+      existingProfile.role !== "admin"
+    ) {
+      setError(
+        "This email is not authorized for admin registration. Please contact an existing admin to add you.",
+      );
       setLoading(false);
       return;
     }
-    
+
     try {
-      const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+      const {
+        data: { user },
+        error: signUpError,
+      } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            role: 'admin' // This will be validated by security rules
-          }
-        }
+            role: "admin", // This will be validated by security rules
+          },
+        },
       });
 
       if (signUpError) throw signUpError;
 
       if (user) {
-        // Create admin profile
+        // Update the existing profile with the user ID
         const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([{
-            id: user.id,
-            role: 'admin',
-            email: user.email
-          }]);
+          .from("profiles")
+          .update({ id: user.id })
+          .eq("email", user.email);
 
         if (profileError) throw profileError;
 
@@ -126,7 +156,7 @@ export default function AdminLogin() {
         });
       }
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to register');
+      setError(error instanceof Error ? error.message : "Failed to register");
     } finally {
       setLoading(false);
     }
@@ -136,14 +166,17 @@ export default function AdminLogin() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    
+
     const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
-    
+    const email = formData.get("email") as string;
+
     try {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/admin/reset-password',
-      });
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        email,
+        {
+          redirectTo: window.location.origin + "/admin/reset-password",
+        },
+      );
 
       if (resetError) throw resetError;
 
@@ -152,7 +185,9 @@ export default function AdminLogin() {
         description: "We've sent you a password reset link",
       });
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to send reset email');
+      setError(
+        error instanceof Error ? error.message : "Failed to send reset email",
+      );
     } finally {
       setLoading(false);
     }
@@ -162,7 +197,9 @@ export default function AdminLogin() {
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Admin Portal</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center">
+            Admin Portal
+          </CardTitle>
           <CardDescription className="text-center">
             Manage your church's digital presence
           </CardDescription>
@@ -203,7 +240,7 @@ export default function AdminLogin() {
                       Signing in...
                     </>
                   ) : (
-                    'Sign in'
+                    "Sign in"
                   )}
                 </Button>
               </form>
@@ -239,16 +276,11 @@ export default function AdminLogin() {
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="secret-code">Admin Registration Code</Label>
-                  <Input
-                    id="secret-code"
-                    name="secretCode"
-                    type="password"
-                    required
-                  />
-                  <p className="text-sm text-gray-500">
-                    Contact the system administrator for the registration code
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                  <p className="text-sm text-blue-800">
+                    <strong>Note:</strong> Your email must be pre-authorized by
+                    an existing admin before you can register. Contact an admin
+                    to add your email to the system first.
                   </p>
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
@@ -258,7 +290,7 @@ export default function AdminLogin() {
                       Registering...
                     </>
                   ) : (
-                    'Register'
+                    "Register"
                   )}
                 </Button>
               </form>
@@ -283,7 +315,7 @@ export default function AdminLogin() {
                       Sending reset link...
                     </>
                   ) : (
-                    'Send Reset Link'
+                    "Send Reset Link"
                   )}
                 </Button>
               </form>

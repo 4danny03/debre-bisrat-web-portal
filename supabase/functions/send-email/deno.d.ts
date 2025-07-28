@@ -10,10 +10,10 @@ declare module "std/http/server.ts" {
     hostname?: string;
     handler?: (request: Request) => Response | Promise<Response>;
   }
-  
+
   export function serve(
     handler: (request: Request) => Response | Promise<Response>,
-    init?: ServeInit
+    init?: ServeInit,
   ): void;
 }
 

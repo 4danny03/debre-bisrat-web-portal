@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
-import { Play, Pause, Calendar, Book, User } from "lucide-react";
+import { Play, Pause, Calendar, Book, User, RefreshCw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { api } from "@/integrations/supabase/api";
 import { format } from "date-fns";
+import { useDataRefresh } from "@/hooks/useDataRefresh";
 
 interface Sermon {
   id: string;
@@ -114,25 +115,43 @@ const Sermons: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchSermons = async () => {
-      try {
-        const data = await api.sermons.getSermons();
-        setSermons(data || []);
-      } catch (err) {
-        console.error("Error fetching sermons:", err);
-        setError(
-          language === "en"
-            ? "Failed to load sermons. Please try again later."
-            : "ስብከቶችን መጫን አልተቻለም። እባክዎ ቆይተው እንደገና ይሞክሩ።",
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchSermons = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await api.sermons.getSermons();
+      const validatedData = Array.isArray(data) ? data : [];
+      setSermons(validatedData);
+    } catch (err) {
+      console.error("Error fetching sermons:", err);
+      setSermons([]);
+      setError(
+        language === "en"
+          ? "Failed to load sermons. Please try again later."
+          : "ስብከቶችን መጫን አልተቻለም። እባክዎ ቆይተው እንደገና ይሞክሩ።",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchSermons();
-  }, [language]);
+  }, [language, fetchSermons]);
+
+  // Use enhanced data refresh hook
+  const { manualRefresh, forceSyncData } = useDataRefresh(
+    fetchSermons,
+    3 * 60 * 1000, // Refresh every 3 minutes
+    [language],
+    "sermons",
+  );
+
+  const handleManualRefresh = async () => {
+    console.log("Manual refresh triggered for sermons");
+    await manualRefresh();
+    await forceSyncData();
+  };
 
   return (
     <Layout>
@@ -142,11 +161,23 @@ const Sermons: React.FC = () => {
             <h1 className="text-4xl font-serif text-church-burgundy mb-4">
               {language === "en" ? "Sermons" : "ስብከቶች"}
             </h1>
-            <p className="max-w-2xl mx-auto text-lg">
+            <p className="max-w-2xl mx-auto text-lg mb-4">
               {language === "en"
                 ? "Listen to recent sermons from our church services"
                 : "ከቤተክርስቲያን አገልግሎቶቻችን የቅርብ ጊዜ ስብከቶችን ያዳምጡ"}
             </p>
+            <Button
+              onClick={handleManualRefresh}
+              variant="outline"
+              size="sm"
+              disabled={loading}
+              className="inline-flex items-center"
+            >
+              <RefreshCw
+                className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+              />
+              {language === "en" ? "Refresh Sermons" : "ስብከቶች አድስ"}
+            </Button>
           </div>
 
           {loading ? (

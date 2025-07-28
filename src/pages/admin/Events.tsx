@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Table,
   TableBody,
@@ -46,11 +46,14 @@ import {
   Calendar,
   MapPin,
   Clock,
-  Image as ImageIcon,
+  Upload,
+  Loader2,
 } from "lucide-react";
 import { api } from "@/integrations/supabase/api";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
+import { Progress } from "@/components/ui/progress";
 
 interface Event {
   id: string;
@@ -64,6 +67,141 @@ interface Event {
   created_at: string;
 }
 
+interface FileUploadProps {
+  onFileUpload: (_url: string) => void;
+  defaultImageUrl?: string | null;
+}
+
+// File Upload Component
+const FileUpload: React.FC<FileUploadProps> = ({
+  onFileUpload,
+  defaultImageUrl,
+}) => {
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(
+    defaultImageUrl || null,
+  );
+  const { toast } = useToast();
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const selectedFile = e.target.files[0];
+      setFile(selectedFile);
+
+      // Create a preview URL
+      const objectUrl = URL.createObjectURL(selectedFile);
+      setPreviewUrl(objectUrl);
+    }
+  };
+
+  const uploadFile = async () => {
+    if (!file) {
+      toast({
+        title: "No file selected",
+        description: "Please select a file to upload",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploading(true);
+    setProgress(0);
+
+    try {
+      // Create a unique file path
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      const filePath = `events/${fileName}`;
+
+      // Upload the file to Supabase Storage - removed onUploadProgress
+      const { error } = await supabase.storage
+        .from("images")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (error) throw error;
+
+      // Simulate progress for user feedback
+      setProgress(100);
+
+      // Get the public URL
+      const { data: publicUrlData } = supabase.storage
+        .from("images")
+        .getPublicUrl(filePath);
+
+      // Pass the URL back to the parent component
+      onFileUpload(publicUrlData.publicUrl);
+
+      toast({
+        title: "Upload successful",
+        description: "Image has been uploaded successfully",
+      });
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      toast({
+        title: "Upload failed",
+        description:
+          error instanceof Error
+            ? error.message
+            : "An error occurred during upload",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-4">
+        <Input
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          disabled={uploading}
+        />
+        <Button
+          type="button"
+          onClick={uploadFile}
+          disabled={!file || uploading}
+          variant="secondary"
+        >
+          {uploading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Uploading...
+            </>
+          ) : (
+            <>
+              <Upload className="mr-2 h-4 w-4" />
+              Upload
+            </>
+          )}
+        </Button>
+      </div>
+
+      {uploading && <Progress value={progress} className="h-2" />}
+
+      {previewUrl && (
+        <div className="mt-4">
+          <p className="text-sm font-medium mb-2">Preview:</p>
+          <div className="relative w-full h-40 bg-gray-100 rounded-md overflow-hidden">
+            <img
+              src={previewUrl}
+              alt="Preview"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function AdminEvents() {
   const [events, setEvents] = useState<Event[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
@@ -71,17 +209,11 @@ export default function AdminEvents() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    loadEvents();
-  }, []);
-
-  useEffect(() => {
-    filterEvents();
-  }, [events, searchTerm]);
-
-  const loadEvents = async () => {
+  // useCallback for stable function references
+  const loadEvents = useCallback(async () => {
     try {
       const data = await api.events.getEvents();
       setEvents(data || []);
@@ -95,11 +227,10 @@ export default function AdminEvents() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-  const filterEvents = () => {
+  const filterEvents = useCallback(() => {
     let filtered = events;
-
     if (searchTerm) {
       filtered = filtered.filter(
         (event) =>
@@ -108,94 +239,107 @@ export default function AdminEvents() {
           event.location?.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
-
     setFilteredEvents(filtered);
-  };
+  }, [events, searchTerm]);
 
-  const handleAddEvent = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const form = e.target as HTMLFormElement;
-    const formData = new FormData(form);
+  useEffect(() => {
+    loadEvents();
+  }, [loadEvents]);
 
-    try {
-      await api.events.createEvent({
-        title: formData.get("title") as string,
-        description: formData.get("description") as string,
-        event_date: formData.get("event_date") as string,
-        event_time: (formData.get("event_time") as string) || null,
-        location: (formData.get("location") as string) || null,
-        image_url: (formData.get("image_url") as string) || null,
-        is_featured: formData.get("is_featured") === "on",
-      });
+  useEffect(() => {
+    filterEvents();
+  }, [filterEvents]);
 
-      toast({
-        title: "Success",
-        description: "Event added successfully",
-      });
-      loadEvents();
-      setIsAddDialogOpen(false);
-      form.reset();
-    } catch (error) {
-      console.error("Error adding event:", error);
-      toast({
-        title: "Error",
-        description: "Failed to add event",
-        variant: "destructive",
-      });
-    }
-  };
+  const handleAddEvent = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      const form = e.target as HTMLFormElement;
+      const formData = new FormData(form);
+      try {
+        await api.events.createEvent({
+          title: formData.get("title") as string,
+          description: formData.get("description") as string,
+          event_date: formData.get("event_date") as string,
+          event_time: (formData.get("event_time") as string) || null,
+          location: (formData.get("location") as string) || null,
+          image_url: uploadedImageUrl || null,
+          is_featured: formData.get("is_featured") === "on",
+        });
+        toast({
+          title: "Success",
+          description: "Event added successfully",
+        });
+        loadEvents();
+        setIsAddDialogOpen(false);
+        setUploadedImageUrl(null);
+        form.reset();
+      } catch (error) {
+        console.error("Error adding event:", error);
+        toast({
+          title: "Error",
+          description: "Failed to add event",
+          variant: "destructive",
+        });
+      }
+    },
+    [uploadedImageUrl, toast, loadEvents],
+  );
 
-  const handleUpdateEvent = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingEvent) return;
+  const handleUpdateEvent = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!editingEvent) return;
+      const form = e.target as HTMLFormElement;
+      const formData = new FormData(form);
+      try {
+        await api.events.updateEvent(editingEvent.id, {
+          title: formData.get("title") as string,
+          description: formData.get("description") as string,
+          event_date: formData.get("event_date") as string,
+          event_time: (formData.get("event_time") as string) || null,
+          location: (formData.get("location") as string) || null,
+          image_url: uploadedImageUrl || editingEvent.image_url,
+          is_featured: formData.get("is_featured") === "on",
+        });
+        toast({
+          title: "Success",
+          description: "Event updated successfully",
+        });
+        loadEvents();
+        setEditingEvent(null);
+        setUploadedImageUrl(null);
+      } catch (error) {
+        console.error("Error updating event:", error);
+        toast({
+          title: "Error",
+          description: "Failed to update event",
+          variant: "destructive",
+        });
+      }
+    },
+    [editingEvent, uploadedImageUrl, toast, loadEvents],
+  );
 
-    const form = e.target as HTMLFormElement;
-    const formData = new FormData(form);
-
-    try {
-      await api.events.updateEvent(editingEvent.id, {
-        title: formData.get("title") as string,
-        description: formData.get("description") as string,
-        event_date: formData.get("event_date") as string,
-        event_time: (formData.get("event_time") as string) || null,
-        location: (formData.get("location") as string) || null,
-        image_url: (formData.get("image_url") as string) || null,
-        is_featured: formData.get("is_featured") === "on",
-      });
-
-      toast({
-        title: "Success",
-        description: "Event updated successfully",
-      });
-      loadEvents();
-      setEditingEvent(null);
-    } catch (error) {
-      console.error("Error updating event:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update event",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteEvent = async (id: string) => {
-    try {
-      await api.events.deleteEvent(id);
-      toast({
-        title: "Success",
-        description: "Event deleted successfully",
-      });
-      loadEvents();
-    } catch (error) {
-      console.error("Error deleting event:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete event",
-        variant: "destructive",
-      });
-    }
-  };
+  const handleDeleteEvent = useCallback(
+    async (id: string) => {
+      try {
+        await api.events.deleteEvent(id);
+        toast({
+          title: "Success",
+          description: "Event deleted successfully",
+        });
+        loadEvents();
+      } catch (error) {
+        console.error("Error deleting event:", error);
+        toast({
+          title: "Error",
+          description: "Failed to delete event",
+          variant: "destructive",
+        });
+      }
+    },
+    [toast, loadEvents],
+  );
 
   if (loading) {
     return (
@@ -259,13 +403,8 @@ export default function AdminEvents() {
                 <Input id="location" name="location" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="image_url">Image URL</Label>
-                <Input
-                  id="image_url"
-                  name="image_url"
-                  type="url"
-                  placeholder="https://..."
-                />
+                <Label htmlFor="image_upload">Event Image</Label>
+                <FileUpload onFileUpload={setUploadedImageUrl} />
               </div>
               <div className="flex items-center space-x-2">
                 <Switch id="is_featured" name="is_featured" />
@@ -517,12 +656,10 @@ export default function AdminEvents() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit_image_url">Image URL</Label>
-                <Input
-                  id="edit_image_url"
-                  name="image_url"
-                  type="url"
-                  defaultValue={editingEvent.image_url || ""}
+                <Label htmlFor="edit_image_upload">Event Image</Label>
+                <FileUpload
+                  onFileUpload={setUploadedImageUrl}
+                  defaultImageUrl={editingEvent.image_url}
                 />
               </div>
               <div className="flex items-center space-x-2">

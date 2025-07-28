@@ -1,4 +1,5 @@
-import { type FC, useState, useEffect } from "react";
+import * as React from "react";
+import { useState } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
@@ -23,83 +24,39 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  CheckCircle,
-  User,
-  CreditCard,
-  FileText,
-  AlertCircle,
-  Phone,
-  Mail,
-  MapPin,
-  Calendar,
-  Users,
-  Heart,
-} from "lucide-react";
+import { CheckCircle, User, Users, CreditCard, MapPin } from "lucide-react";
+import MemberDashboard from "../components/MemberDashboard";
 
 interface FormData {
-  // Personal Information
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
   dateOfBirth: string;
   gender: string;
-
-  // Address Information
-  address: string;
+  streetAddress: string;
   city: string;
-  state: string;
-  zipCode: string;
+  stateProvinceRegion: string;
+  postalZipCode: string;
   country: string;
-
-  // Membership Information
   membershipType: string;
-  previousMember: boolean;
-  previousChurch: string;
-  baptized: boolean;
-  baptismDate: string;
-
-  // Family Information
-  maritalStatus: string;
-  spouseName: string;
-  children: Array<{ name: string; age: string }>;
-
-  // Contact Preferences
+  ministryInterests: string;
   preferredLanguage: string;
-  contactMethod: string;
   emailUpdates: boolean;
-  smsUpdates: boolean;
-
-  // Ministry Interests
-  ministryInterests: string[];
-  volunteerInterests: string[];
-  skills: string;
-
-  // Emergency Contact
-  emergencyName: string;
-  emergencyPhone: string;
-  emergencyRelation: string;
-
-  // Additional Information
-  howDidYouHear: string;
-  additionalNotes: string;
   agreeToTerms: boolean;
-  agreeToPhotos: boolean;
+  // Removed unused children field for cleanup
 }
 
-const MembershipRegistration: FC = () => {
-  const { t, language } = useLanguage();
+const MembershipRegistration = () => {
+  const { t } = useLanguage();
+
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [children, setChildren] = useState<
-    Array<{ name: string; age: string }>
-  >([{ name: "", age: "" }]);
+  const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
@@ -108,63 +65,22 @@ const MembershipRegistration: FC = () => {
     phone: "",
     dateOfBirth: "",
     gender: "",
-    address: "",
+    streetAddress: "",
     city: "",
-    state: "",
-    zipCode: "",
+    stateProvinceRegion: "",
+    postalZipCode: "",
     country: "United States",
     membershipType: "regular",
-    previousMember: false,
-    previousChurch: "",
-    baptized: false,
-    baptismDate: "",
-    maritalStatus: "single",
-    spouseName: "",
-    children: [],
+    ministryInterests: "",
     preferredLanguage: "english",
-    contactMethod: "email",
     emailUpdates: true,
-    smsUpdates: false,
-    ministryInterests: [],
-    volunteerInterests: [],
-    skills: "",
-    emergencyName: "",
-    emergencyPhone: "",
-    emergencyRelation: "",
-    howDidYouHear: "",
-    additionalNotes: "",
     agreeToTerms: false,
-    agreeToPhotos: false,
   });
 
-  const totalSteps = 5;
+  const totalSteps = 3;
   const progressPercentage = (currentStep / totalSteps) * 100;
 
-  const ministryOptions = [
-    "Sunday School",
-    "Youth Ministry",
-    "Music Ministry",
-    "Prayer Ministry",
-    "Outreach Ministry",
-    "Women's Ministry",
-    "Men's Ministry",
-    "Children's Ministry",
-    "Hospitality Ministry",
-    "Media Ministry",
-  ];
-
-  const volunteerOptions = [
-    "Event Planning",
-    "Cleaning & Maintenance",
-    "Food Service",
-    "Transportation",
-    "Translation Services",
-    "Technical Support",
-    "Administrative Support",
-    "Fundraising",
-    "Community Outreach",
-    "Teaching",
-  ];
+  // Removed unused ministryOptions and volunteerOptions arrays
 
   const validateStep = (step: number): boolean => {
     const errors: Record<string, string> = {};
@@ -184,30 +100,17 @@ const MembershipRegistration: FC = () => {
         if (!formData.gender) errors.gender = "Gender is required";
         break;
       case 2:
-        if (!formData.address.trim()) errors.address = "Address is required";
+        if (!formData.streetAddress.trim())
+          errors.streetAddress = "Street address is required";
         if (!formData.city.trim()) errors.city = "City is required";
-        if (!formData.state.trim()) errors.state = "State is required";
-        if (!formData.zipCode.trim()) errors.zipCode = "ZIP code is required";
+        if (!formData.stateProvinceRegion.trim())
+          errors.stateProvinceRegion = "State/Province/Region is required";
+        if (!formData.postalZipCode.trim())
+          errors.postalZipCode = "Postal/ZIP code is required";
         break;
       case 3:
         if (!formData.membershipType)
           errors.membershipType = "Membership type is required";
-        if (formData.previousMember && !formData.previousChurch.trim()) {
-          errors.previousChurch = "Previous church name is required";
-        }
-        if (formData.baptized && !formData.baptismDate) {
-          errors.baptismDate = "Baptism date is required";
-        }
-        break;
-      case 4:
-        if (!formData.emergencyName.trim())
-          errors.emergencyName = "Emergency contact name is required";
-        if (!formData.emergencyPhone.trim())
-          errors.emergencyPhone = "Emergency contact phone is required";
-        if (!formData.emergencyRelation.trim())
-          errors.emergencyRelation = "Emergency contact relation is required";
-        break;
-      case 5:
         if (!formData.agreeToTerms)
           errors.agreeToTerms = "You must agree to the terms and conditions";
         break;
@@ -227,7 +130,7 @@ const MembershipRegistration: FC = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
   };
 
-  const handleInputChange = (field: keyof FormData, value: any) => {
+  const handleInputChange = (field: keyof FormData, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (formErrors[field]) {
@@ -235,108 +138,143 @@ const MembershipRegistration: FC = () => {
     }
   };
 
-  const handleArrayChange = (field: keyof FormData, values: string[]) => {
-    setFormData((prev) => ({ ...prev, [field]: values }));
-  };
+  // Removed unused handleArrayChange function
 
-  const addChild = () => {
-    setChildren((prev) => [...prev, { name: "", age: "" }]);
-  };
+  // Removed useEffect for children state
 
-  const removeChild = (index: number) => {
-    setChildren((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const updateChild = (index: number, field: "name" | "age", value: string) => {
-    setChildren((prev) =>
-      prev.map((child, i) =>
-        i === index ? { ...child, [field]: value } : child,
-      ),
-    );
-  };
-
-  useEffect(() => {
-    setFormData((prev) => ({ ...prev, children }));
-  }, [children]);
-
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!validateStep(currentStep)) return;
-
     setIsSubmitting(true);
-
+    setError(null);
     try {
-      // Create member record
-      const { data: memberData, error: memberError } = await supabase
-        .from("members")
-        .insert([
-          {
-            full_name: `${formData.firstName} ${formData.lastName}`,
-            email: formData.email,
-            phone: formData.phone,
-            address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`,
-            membership_type: formData.membershipType,
-            membership_status: "pending",
-            join_date: new Date().toISOString(),
-            date_of_birth: formData.dateOfBirth,
-            gender: formData.gender,
-            marital_status: formData.maritalStatus,
-            spouse_name: formData.spouseName || null,
-            emergency_contact_name: formData.emergencyName,
-            emergency_contact_phone: formData.emergencyPhone,
-            emergency_contact_relation: formData.emergencyRelation,
-            preferred_language: formData.preferredLanguage,
-            ministry_interests: formData.ministryInterests,
-            volunteer_interests: formData.volunteerInterests,
-            skills: formData.skills || null,
-            how_did_you_hear: formData.howDidYouHear || null,
-            additional_notes: formData.additionalNotes || null,
-            baptized: formData.baptized,
-            baptism_date: formData.baptismDate || null,
-            previous_member: formData.previousMember,
-            previous_church: formData.previousChurch || null,
-            children: formData.children.filter((child) => child.name.trim()),
-            email_updates: formData.emailUpdates,
-            sms_updates: formData.smsUpdates,
-            photo_consent: formData.agreeToPhotos,
-          },
-        ])
-        .select()
-        .single();
-
-      if (memberError) {
-        throw memberError;
-      }
+      // Determine membership fee based on type
+      const membershipFees = {
+        regular: "100",
+        student: "50",
+        senior: "75",
+        family: "200",
+      };
+      const membershipFee =
+        membershipFees[
+          formData.membershipType as keyof typeof membershipFees
+        ] || "100";
 
       // Create Stripe checkout session using the existing edge function
-      const response = await supabase.functions.invoke(
-        "supabase-functions-create-checkout",
+      const checkoutData = {
+        amount: membershipFee,
+        donationType: "one_time",
+        purpose: "membership_fee",
+        email: formData.email,
+        name: `${formData.firstName} ${formData.lastName}`,
+        address: `${formData.streetAddress}, ${formData.city}, ${formData.stateProvinceRegion} ${formData.postalZipCode}`,
+        // memberId will be set after member creation
+        membershipType: formData.membershipType,
+      };
+
+      console.log("Invoking create-checkout function with data:", checkoutData);
+      console.log(
+        "Membership fee for type",
+        formData.membershipType,
+        ":",
+        membershipFee,
+      );
+
+      // First create the member record using the membership-management function
+      const memberResponse = await supabase.functions.invoke(
+        "supabase-functions-membership-management",
         {
           body: {
-            amount: "100",
-            donationType: "one_time",
-            purpose: "membership_fee",
-            email: formData.email,
-            name: `${formData.firstName} ${formData.lastName}`,
-            address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`,
-            memberId: memberData.id,
+            action: "create_member",
+            member_data: {
+              full_name: `${formData.firstName} ${formData.lastName}`,
+              first_name: formData.firstName,
+              last_name: formData.lastName,
+              email: formData.email,
+              phone: formData.phone,
+              address: `${formData.streetAddress}, ${formData.city}, ${formData.stateProvinceRegion} ${formData.postalZipCode}`,
+              street_address: formData.streetAddress,
+              city: formData.city,
+              state_province_region: formData.stateProvinceRegion,
+              postal_zip_code: formData.postalZipCode,
+              country: formData.country,
+              date_of_birth: formData.dateOfBirth,
+              gender: formData.gender,
+              membership_type: formData.membershipType,
+              preferred_language: formData.preferredLanguage,
+              ministry_interests: formData.ministryInterests,
+              email_updates: formData.emailUpdates,
+              terms_accepted: formData.agreeToTerms,
+              newsletter_consent: formData.emailUpdates,
+            },
           },
         },
       );
 
-      if (response.error) {
-        throw new Error("Payment initiation failed");
+      if (memberResponse.error) {
+        console.error("Member creation error:", memberResponse.error);
+        throw new Error(
+          `Member registration failed: ${memberResponse.error.message || "Unknown error"}`,
+        );
       }
 
-      // Redirect to Stripe checkout
-      window.location.href = response.data.url;
-    } catch (error) {
+      const newMember = memberResponse.data?.member;
+      if (!newMember) {
+        throw new Error("Failed to create member record");
+      }
+
+      // Then create the checkout session
+      const response = await supabase.functions.invoke("webhook-handler", {
+        body: {
+          action: "create_checkout",
+          checkout_data: {
+            ...checkoutData,
+            memberId: newMember.id,
+          },
+        },
+      });
+
+      console.log("Checkout function response:", response);
+      console.log("Response data:", response.data);
+      console.log("Response error:", response.error);
+
+      if (response.error) {
+        console.error("Function error:", response.error);
+        throw new Error(
+          `Payment initiation failed: ${(response as any).error.message || "Unknown error"}`,
+        );
+      }
+
+      if (!(response as any).data?.url) {
+        throw new Error("No checkout URL received");
+      }
+
+      window.location.href = (response as any).data.url;
+    } catch (error: unknown) {
+      let errorMessage = "Registration failed. Please try again.";
+      if (typeof error === "object" && error !== null) {
+        if ("message" in error && typeof (error as any).message === "string") {
+          errorMessage = (error as any).message;
+        } else if (
+          "error_description" in error &&
+          typeof (error as any).error_description === "string"
+        ) {
+          errorMessage = (error as any).error_description;
+        } else {
+          errorMessage = JSON.stringify(error);
+        }
+      } else if (typeof error === "string") {
+        errorMessage = error;
+      }
       console.error("Membership registration error:", error);
       toast({
         variant: "destructive",
         title: "Registration Error",
         description:
-          "There was an error processing your membership registration. Please try again.",
+          "There was an error processing your membership registration. " +
+          errorMessage,
       });
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -352,6 +290,7 @@ const MembershipRegistration: FC = () => {
               <h3 className="text-lg font-semibold">Personal Information</h3>
             </div>
 
+            {/* Name Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First Name *</Label>
@@ -384,6 +323,7 @@ const MembershipRegistration: FC = () => {
               </div>
             </div>
 
+            {/* Contact Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address *</Label>
@@ -466,19 +406,23 @@ const MembershipRegistration: FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="address">Street Address *</Label>
+              <Label htmlFor="streetAddress">Street Address *</Label>
               <Input
-                id="address"
-                value={formData.address}
-                onChange={(e) => handleInputChange("address", e.target.value)}
-                className={formErrors.address ? "border-red-500" : ""}
+                id="streetAddress"
+                value={formData.streetAddress}
+                onChange={(e) =>
+                  handleInputChange("streetAddress", e.target.value)
+                }
+                className={formErrors.streetAddress ? "border-red-500" : ""}
               />
-              {formErrors.address && (
-                <p className="text-red-500 text-sm">{formErrors.address}</p>
+              {formErrors.streetAddress && (
+                <p className="text-red-500 text-sm">
+                  {formErrors.streetAddress}
+                </p>
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="city">City *</Label>
                 <Input
@@ -493,48 +437,60 @@ const MembershipRegistration: FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="state">State *</Label>
+                <Label htmlFor="stateProvinceRegion">State/Province *</Label>
                 <Input
-                  id="state"
-                  value={formData.state}
-                  onChange={(e) => handleInputChange("state", e.target.value)}
-                  className={formErrors.state ? "border-red-500" : ""}
+                  id="stateProvinceRegion"
+                  value={formData.stateProvinceRegion}
+                  onChange={(e) =>
+                    handleInputChange("stateProvinceRegion", e.target.value)
+                  }
+                  className={
+                    formErrors.stateProvinceRegion ? "border-red-500" : ""
+                  }
                 />
-                {formErrors.state && (
-                  <p className="text-red-500 text-sm">{formErrors.state}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="zipCode">ZIP Code *</Label>
-                <Input
-                  id="zipCode"
-                  value={formData.zipCode}
-                  onChange={(e) => handleInputChange("zipCode", e.target.value)}
-                  className={formErrors.zipCode ? "border-red-500" : ""}
-                />
-                {formErrors.zipCode && (
-                  <p className="text-red-500 text-sm">{formErrors.zipCode}</p>
+                {formErrors.stateProvinceRegion && (
+                  <p className="text-red-500 text-sm">
+                    {formErrors.stateProvinceRegion}
+                  </p>
                 )}
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="country">Country</Label>
-              <Select
-                value={formData.country}
-                onValueChange={(value) => handleInputChange("country", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="United States">United States</SelectItem>
-                  <SelectItem value="Canada">Canada</SelectItem>
-                  <SelectItem value="Ethiopia">Ethiopia</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="postalZipCode">ZIP/Postal Code *</Label>
+                <Input
+                  id="postalZipCode"
+                  value={formData.postalZipCode}
+                  onChange={(e) =>
+                    handleInputChange("postalZipCode", e.target.value)
+                  }
+                  className={formErrors.postalZipCode ? "border-red-500" : ""}
+                />
+                {formErrors.postalZipCode && (
+                  <p className="text-red-500 text-sm">
+                    {formErrors.postalZipCode}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="country">Country</Label>
+                <Select
+                  value={formData.country}
+                  onValueChange={(value) => handleInputChange("country", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="United States">United States</SelectItem>
+                    <SelectItem value="Canada">Canada</SelectItem>
+                    <SelectItem value="Ethiopia">Ethiopia</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         );
@@ -543,9 +499,9 @@ const MembershipRegistration: FC = () => {
         return (
           <div className="space-y-6">
             <div className="flex items-center gap-2 mb-4">
-              <FileText className="h-5 w-5 text-church-burgundy" />
+              <CheckCircle className="h-5 w-5 text-church-burgundy" />
               <h3 className="text-lg font-semibold">
-                Membership & Family Information
+                Membership Details & Preferences
               </h3>
             </div>
 
@@ -584,439 +540,53 @@ const MembershipRegistration: FC = () => {
               )}
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="previousMember"
-                  checked={formData.previousMember}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("previousMember", checked)
-                  }
-                />
-                <Label htmlFor="previousMember">
-                  I was previously a member of another Orthodox church
-                </Label>
-              </div>
-
-              {formData.previousMember && (
-                <div className="space-y-2">
-                  <Label htmlFor="previousChurch">Previous Church Name *</Label>
-                  <Input
-                    id="previousChurch"
-                    value={formData.previousChurch}
-                    onChange={(e) =>
-                      handleInputChange("previousChurch", e.target.value)
-                    }
-                    className={
-                      formErrors.previousChurch ? "border-red-500" : ""
-                    }
-                  />
-                  {formErrors.previousChurch && (
-                    <p className="text-red-500 text-sm">
-                      {formErrors.previousChurch}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="baptized"
-                  checked={formData.baptized}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("baptized", checked)
-                  }
-                />
-                <Label htmlFor="baptized">I have been baptized</Label>
-              </div>
-
-              {formData.baptized && (
-                <div className="space-y-2">
-                  <Label htmlFor="baptismDate">Baptism Date *</Label>
-                  <Input
-                    id="baptismDate"
-                    type="date"
-                    value={formData.baptismDate}
-                    onChange={(e) =>
-                      handleInputChange("baptismDate", e.target.value)
-                    }
-                    className={formErrors.baptismDate ? "border-red-500" : ""}
-                  />
-                  {formErrors.baptismDate && (
-                    <p className="text-red-500 text-sm">
-                      {formErrors.baptismDate}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-4">
-              <Label>Marital Status</Label>
-              <RadioGroup
-                value={formData.maritalStatus}
-                onValueChange={(value) =>
-                  handleInputChange("maritalStatus", value)
+            <div className="space-y-2">
+              <Label htmlFor="ministryInterests">Ministry Interests</Label>
+              <Textarea
+                id="ministryInterests"
+                value={formData.ministryInterests}
+                onChange={(e) =>
+                  handleInputChange("ministryInterests", e.target.value)
                 }
-                className="grid grid-cols-2 gap-4"
+                placeholder="Please describe any ministries or volunteer activities you're interested in..."
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Preferred Language</Label>
+              <RadioGroup
+                value={formData.preferredLanguage}
+                onValueChange={(value) =>
+                  handleInputChange("preferredLanguage", value)
+                }
+                className="flex gap-6"
               >
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="single" id="single" />
-                  <Label htmlFor="single">Single</Label>
+                  <RadioGroupItem value="english" id="english" />
+                  <Label htmlFor="english">English</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="married" id="married" />
-                  <Label htmlFor="married">Married</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="divorced" id="divorced" />
-                  <Label htmlFor="divorced">Divorced</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="widowed" id="widowed" />
-                  <Label htmlFor="widowed">Widowed</Label>
+                  <RadioGroupItem value="amharic" id="amharic" />
+                  <Label htmlFor="amharic">Amharic</Label>
                 </div>
               </RadioGroup>
             </div>
 
-            {formData.maritalStatus === "married" && (
-              <div className="space-y-2">
-                <Label htmlFor="spouseName">Spouse's Name</Label>
-                <Input
-                  id="spouseName"
-                  value={formData.spouseName}
-                  onChange={(e) =>
-                    handleInputChange("spouseName", e.target.value)
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="emailUpdates"
+                  checked={formData.emailUpdates}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("emailUpdates", checked)
                   }
                 />
-              </div>
-            )}
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label>Children</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addChild}
-                >
-                  Add Child
-                </Button>
-              </div>
-
-              {children.map((child, index) => (
-                <div key={index} className="grid grid-cols-2 gap-2">
-                  <Input
-                    placeholder="Child's name"
-                    value={child.name}
-                    onChange={(e) => updateChild(index, "name", e.target.value)}
-                  />
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Age"
-                      value={child.age}
-                      onChange={(e) =>
-                        updateChild(index, "age", e.target.value)
-                      }
-                    />
-                    {children.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeChild(index)}
-                      >
-                        Remove
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-
-      case 4:
-        return (
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Heart className="h-5 w-5 text-church-burgundy" />
-              <h3 className="text-lg font-semibold">
-                Ministry Interests & Emergency Contact
-              </h3>
-            </div>
-
-            <div className="space-y-4">
-              <Label>Ministry Interests (Select all that apply)</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {ministryOptions.map((ministry) => (
-                  <div key={ministry} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={ministry}
-                      checked={formData.ministryInterests.includes(ministry)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          handleArrayChange("ministryInterests", [
-                            ...formData.ministryInterests,
-                            ministry,
-                          ]);
-                        } else {
-                          handleArrayChange(
-                            "ministryInterests",
-                            formData.ministryInterests.filter(
-                              (m) => m !== ministry,
-                            ),
-                          );
-                        }
-                      }}
-                    />
-                    <Label htmlFor={ministry} className="text-sm">
-                      {ministry}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <Label>Volunteer Interests (Select all that apply)</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {volunteerOptions.map((volunteer) => (
-                  <div key={volunteer} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={volunteer}
-                      checked={formData.volunteerInterests.includes(volunteer)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          handleArrayChange("volunteerInterests", [
-                            ...formData.volunteerInterests,
-                            volunteer,
-                          ]);
-                        } else {
-                          handleArrayChange(
-                            "volunteerInterests",
-                            formData.volunteerInterests.filter(
-                              (v) => v !== volunteer,
-                            ),
-                          );
-                        }
-                      }}
-                    />
-                    <Label htmlFor={volunteer} className="text-sm">
-                      {volunteer}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="skills">Special Skills or Talents</Label>
-              <Textarea
-                id="skills"
-                value={formData.skills}
-                onChange={(e) => handleInputChange("skills", e.target.value)}
-                placeholder="Please describe any special skills, talents, or professional expertise you'd like to share..."
-              />
-            </div>
-
-            <Separator />
-
-            <div className="space-y-4">
-              <h4 className="font-semibold text-church-burgundy">
-                Emergency Contact Information
-              </h4>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="emergencyName">
-                    Emergency Contact Name *
-                  </Label>
-                  <Input
-                    id="emergencyName"
-                    value={formData.emergencyName}
-                    onChange={(e) =>
-                      handleInputChange("emergencyName", e.target.value)
-                    }
-                    className={formErrors.emergencyName ? "border-red-500" : ""}
-                  />
-                  {formErrors.emergencyName && (
-                    <p className="text-red-500 text-sm">
-                      {formErrors.emergencyName}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="emergencyPhone">
-                    Emergency Contact Phone *
-                  </Label>
-                  <Input
-                    id="emergencyPhone"
-                    type="tel"
-                    value={formData.emergencyPhone}
-                    onChange={(e) =>
-                      handleInputChange("emergencyPhone", e.target.value)
-                    }
-                    className={
-                      formErrors.emergencyPhone ? "border-red-500" : ""
-                    }
-                  />
-                  {formErrors.emergencyPhone && (
-                    <p className="text-red-500 text-sm">
-                      {formErrors.emergencyPhone}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="emergencyRelation">
-                  Relationship to Emergency Contact *
+                <Label htmlFor="emailUpdates">
+                  I would like to receive email updates about church events and
+                  news
                 </Label>
-                <Input
-                  id="emergencyRelation"
-                  value={formData.emergencyRelation}
-                  onChange={(e) =>
-                    handleInputChange("emergencyRelation", e.target.value)
-                  }
-                  className={
-                    formErrors.emergencyRelation ? "border-red-500" : ""
-                  }
-                  placeholder="e.g., Spouse, Parent, Sibling, Friend"
-                />
-                {formErrors.emergencyRelation && (
-                  <p className="text-red-500 text-sm">
-                    {formErrors.emergencyRelation}
-                  </p>
-                )}
               </div>
-            </div>
-          </div>
-        );
-
-      case 5:
-        return (
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 mb-4">
-              <CheckCircle className="h-5 w-5 text-church-burgundy" />
-              <h3 className="text-lg font-semibold">Final Details & Review</h3>
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Preferred Language</Label>
-                <RadioGroup
-                  value={formData.preferredLanguage}
-                  onValueChange={(value) =>
-                    handleInputChange("preferredLanguage", value)
-                  }
-                  className="flex gap-6"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="english" id="english" />
-                    <Label htmlFor="english">English</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="amharic" id="amharic" />
-                    <Label htmlFor="amharic">Amharic</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Preferred Contact Method</Label>
-                <RadioGroup
-                  value={formData.contactMethod}
-                  onValueChange={(value) =>
-                    handleInputChange("contactMethod", value)
-                  }
-                  className="flex gap-6"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="email" id="contact-email" />
-                    <Label htmlFor="contact-email">Email</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="phone" id="contact-phone" />
-                    <Label htmlFor="contact-phone">Phone</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="emailUpdates"
-                    checked={formData.emailUpdates}
-                    onCheckedChange={(checked) =>
-                      handleInputChange("emailUpdates", checked)
-                    }
-                  />
-                  <Label htmlFor="emailUpdates">
-                    I would like to receive email updates about church events
-                    and news
-                  </Label>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="smsUpdates"
-                    checked={formData.smsUpdates}
-                    onCheckedChange={(checked) =>
-                      handleInputChange("smsUpdates", checked)
-                    }
-                  />
-                  <Label htmlFor="smsUpdates">
-                    I would like to receive SMS updates for urgent announcements
-                  </Label>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="howDidYouHear">
-                How did you hear about our church?
-              </Label>
-              <Select
-                value={formData.howDidYouHear}
-                onValueChange={(value) =>
-                  handleInputChange("howDidYouHear", value)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Please select..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="friend">
-                    Friend or Family Member
-                  </SelectItem>
-                  <SelectItem value="website">Church Website</SelectItem>
-                  <SelectItem value="social-media">Social Media</SelectItem>
-                  <SelectItem value="community-event">
-                    Community Event
-                  </SelectItem>
-                  <SelectItem value="drove-by">Drove by the Church</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="additionalNotes">
-                Additional Notes or Comments
-              </Label>
-              <Textarea
-                id="additionalNotes"
-                value={formData.additionalNotes}
-                onChange={(e) =>
-                  handleInputChange("additionalNotes", e.target.value)
-                }
-                placeholder="Please share anything else you'd like us to know..."
-              />
             </div>
 
             <Separator />
@@ -1046,24 +616,6 @@ const MembershipRegistration: FC = () => {
                   {formErrors.agreeToTerms}
                 </p>
               )}
-
-              <div className="flex items-start space-x-2">
-                <Checkbox
-                  id="agreeToPhotos"
-                  checked={formData.agreeToPhotos}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("agreeToPhotos", checked)
-                  }
-                />
-                <Label
-                  htmlFor="agreeToPhotos"
-                  className="text-sm leading-relaxed"
-                >
-                  I consent to having my photo taken during church events and
-                  activities for use in church publications, website, and social
-                  media.
-                </Label>
-              </div>
             </div>
 
             <div className="bg-church-cream p-4 rounded-lg">
@@ -1072,7 +624,18 @@ const MembershipRegistration: FC = () => {
               </h4>
               <p className="text-sm text-gray-600 mb-2">
                 Annual membership fee:{" "}
-                <span className="font-semibold">$100</span>
+                <span className="font-semibold">
+                  $
+                  {formData.membershipType === "regular"
+                    ? "100"
+                    : formData.membershipType === "student"
+                      ? "50"
+                      : formData.membershipType === "senior"
+                        ? "75"
+                        : formData.membershipType === "family"
+                          ? "200"
+                          : "100"}
+                </span>
               </p>
               <p className="text-xs text-gray-500">
                 After submitting this form, you will be redirected to a secure
@@ -1109,14 +672,18 @@ const MembershipRegistration: FC = () => {
     <Layout>
       <div className="container mx-auto p-4 max-w-4xl">
         <Card className="bg-white shadow-lg">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl text-church-burgundy">
-              {t("membership.title") || "Membership Registration"}
-            </CardTitle>
-            <CardDescription className="text-lg">
-              {t("membership.description") ||
-                "Join our church community by registering as a member"}
-            </CardDescription>
+          <CardHeader className="text-center bg-gradient-to-r from-church-gold/10 to-church-burgundy/10 rounded-t-lg py-8 mb-4">
+            <div className="flex flex-col items-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-church-gold/80 rounded-full mb-4 shadow-lg">
+                <Users size={36} className="text-church-burgundy" />
+              </div>
+              <CardTitle className="text-3xl md:text-4xl font-serif text-church-burgundy mb-2">
+                {t("membership_registration_title")}
+              </CardTitle>
+              <CardDescription className="text-lg text-gray-700 max-w-2xl mx-auto">
+                {t("membership_registration_description")}
+              </CardDescription>
+            </div>
           </CardHeader>
 
           <CardContent>
@@ -1135,14 +702,6 @@ const MembershipRegistration: FC = () => {
                   {getStepIcon(3)}
                   <span className="text-sm font-medium">Membership</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  {getStepIcon(4)}
-                  <span className="text-sm font-medium">Ministry</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {getStepIcon(5)}
-                  <span className="text-sm font-medium">Review</span>
-                </div>
               </div>
               <Progress value={progressPercentage} className="h-2" />
               <p className="text-sm text-gray-600 mt-2 text-center">
@@ -1153,6 +712,13 @@ const MembershipRegistration: FC = () => {
             {/* Step Content */}
             <div className="min-h-[400px]">{renderStepContent()}</div>
 
+            {/* Error Message */}
+            {error && (
+              <div className="text-red-600 bg-red-50 border border-red-200 rounded p-2 mb-4">
+                {error}
+              </div>
+            )}
+
             {/* Navigation Buttons */}
             <div className="flex justify-between mt-8 pt-6 border-t">
               <Button
@@ -1161,7 +727,7 @@ const MembershipRegistration: FC = () => {
                 onClick={handlePrevious}
                 disabled={currentStep === 1}
               >
-                Previous
+                {t("previous")}
               </Button>
 
               {currentStep < totalSteps ? (
@@ -1170,7 +736,7 @@ const MembershipRegistration: FC = () => {
                   onClick={handleNext}
                   className="bg-church-burgundy hover:bg-church-burgundy/90"
                 >
-                  Next
+                  {t("next")}
                 </Button>
               ) : (
                 <Button
@@ -1182,12 +748,21 @@ const MembershipRegistration: FC = () => {
                   {isSubmitting ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Processing...
+                      {t("processing")}
                     </>
                   ) : (
                     <>
                       <CreditCard className="h-4 w-4 mr-2" />
-                      Complete Registration & Pay $100
+                      {t("complete_registration")} $
+                      {formData.membershipType === "regular"
+                        ? "100"
+                        : formData.membershipType === "student"
+                          ? "50"
+                          : formData.membershipType === "senior"
+                            ? "75"
+                            : formData.membershipType === "family"
+                              ? "200"
+                              : "100"}
                     </>
                   )}
                 </Button>
@@ -1196,6 +771,8 @@ const MembershipRegistration: FC = () => {
           </CardContent>
         </Card>
       </div>
+      {/* TODO: Replace with real user logic */}
+      <MemberDashboard />
     </Layout>
   );
 };

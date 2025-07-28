@@ -1,129 +1,146 @@
-import { serve } from "std/http/server.ts";
-import Stripe from "https://esm.sh/stripe@14.21.0";
+import express, { Request, Response } from "express";
+import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+const app = express();
+app.use(
+  express.json({
+    verify: (req, res, buf) => {
+      (req as any).rawBody = buf;
+    },
+  }),
+);
 
-// Demo Stripe test key - this is a placeholder, replace with your test webhook secret
-const STRIPE_WEBHOOK_SECRET = "whsec_test_placeholder";
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+if (!stripeSecretKey)
+  throw new Error("Missing STRIPE_SECRET_KEY environment variable");
+if (!stripeWebhookSecret)
+  throw new Error("Missing STRIPE_WEBHOOK_SECRET environment variable");
+if (!supabaseUrl) throw new Error("Missing SUPABASE_URL environment variable");
+if (!supabaseServiceRoleKey)
+  throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY environment variable");
+
+const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
+
+app.post("/webhook", async (req: Request, res: Response) => {
+  const signature = req.headers["stripe-signature"] as string | undefined;
+  if (!signature) {
+    return res.status(400).send("Missing Stripe signature");
   }
-
+  let event: Stripe.Event;
   try {
-    // Get the signature from the header
-    const signature = req.headers.get("stripe-signature");
-    if (!signature) {
-      return new Response(JSON.stringify({ error: "No signature provided" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      });
-    }
-
-    // Get the raw body
-    const body = await req.text();
-
-    // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2023-10-16",
-    });
-
-    // Verify the webhook signature
-    let event;
-    try {
-      event = stripe.webhooks.constructEvent(
-        body,
-        signature,
-        Deno.env.get("STRIPE_WEBHOOK_SECRET") || STRIPE_WEBHOOK_SECRET,
-      );
-    } catch (err) {
-      console.error(`Webhook signature verification failed: ${err.message}`);
-      return new Response(
-        JSON.stringify({ error: `Webhook signature verification failed` }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 400,
-        },
-      );
-    }
-
-    // Create a Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+    event = stripe.webhooks.constructEvent(
+      (req as any).rawBody,
+      signature,
+      stripeWebhookSecret,
     );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("Webhook error:", message);
+    return res.status(400).send(`Webhook error: ${message}`);
+  }
 
-    // Handle the event
-    switch (event.type) {
-      case "checkout.session.completed": {
-        const session = event.data.object;
+  const supabaseClient = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-        // Update donation status in database
-        const { error } = await supabaseClient
-          .from("donations")
-          .update({
-            payment_status: "completed",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("payment_id", session.id);
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    // Update donation status
+    const { error: updateError } = await supabaseClient
+      .from("donations")
+      .update({
+        payment_status: "completed",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("payment_id", session.id);
 
-        if (error) {
-          console.error("Error updating donation status:", error);
-        }
-
-        // If this was a membership fee payment, update the member's status
-        if (
-          session.metadata?.purpose === "membership_fee" &&
-          session.metadata?.memberId
-        ) {
-          const { error: memberError } = await supabaseClient
-            .from("members")
-            .update({
-              membership_status: "active",
-              membership_date: new Date().toISOString(),
-            })
-            .eq("id", session.metadata.memberId);
-
-          if (memberError) {
-            console.error("Error updating member status:", memberError);
-          }
-        }
-        break;
-      }
-      case "payment_intent.succeeded": {
-        const paymentIntent = event.data.object;
-        console.log(
-          `PaymentIntent for ${paymentIntent.amount} was successful!`,
-        );
-        break;
-      }
-      case "payment_intent.payment_failed": {
-        const paymentIntent = event.data.object;
-        console.log(
-          `Payment failed: ${paymentIntent.last_payment_error?.message}`,
-        );
-        break;
-      }
-      default:
-        console.log(`Unhandled event type ${event.type}`);
+    if (updateError) {
+      console.error("Error updating donation:", updateError);
     }
 
-    return new Response(JSON.stringify({ received: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
-  } catch (error) {
-    console.error("Error in webhook handler:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    // Get donation details for email
+    const { data: donation, error: donationError } = await supabaseClient
+      .from("donations")
+      .select("*")
+      .eq("payment_id", session.id)
+      .single();
+
+    if (donationError) {
+      console.error("Error fetching donation:", donationError);
+    }
+
+    // --- AUTOMATE MEMBERSHIP FEE PAID FLAG ---
+    if (
+      donation &&
+      donation.purpose === "membership_fee" &&
+      donation.memberId
+    ) {
+      const { error: memberError } = await supabaseClient
+        .from("members")
+        .update({ membership_fee_paid: true })
+        .eq("id", donation.memberId);
+      if (memberError) {
+        console.error("Error updating member as paid:", memberError);
+      }
+    }
+    // --- END AUTOMATION ---
+
+    if (donation) {
+      // Get site settings
+      const { data: settings, error: settingsError } = await supabaseClient
+        .from("site_settings")
+        .select("admin_email, enable_email_notifications")
+        .single();
+      if (settingsError) {
+        console.error("Error fetching site settings:", settingsError);
+      }
+
+      // Send confirmation email to donor
+      if (donation.donor_email && !donation.is_anonymous) {
+        await supabaseClient.functions.invoke("send-email", {
+          body: {
+            type: "donation_confirmation",
+            data: {
+              donor_name: donation.donor_name,
+              amount: donation.amount,
+              purpose: donation.purpose,
+              date: new Date(donation.created_at).toISOString().split("T")[0],
+            },
+            recipients: [donation.donor_email],
+          },
+        });
+      }
+
+      // Send notification to admin
+      if (settings?.admin_email && settings?.enable_email_notifications) {
+        await supabaseClient.functions.invoke("send-email", {
+          body: {
+            type: "admin_notification",
+            data: {
+              donor_name: donation.donor_name || "Anonymous",
+              donor_email: donation.donor_email || "Not provided",
+              amount: donation.amount,
+              purpose: donation.purpose,
+              date: new Date(donation.created_at).toISOString().split("T")[0],
+              status: "completed",
+            },
+            recipients: [settings.admin_email],
+          },
+        });
+      }
+    }
+  } else {
+    // For unsupported event types, just acknowledge
+    return res.status(200).json({ received: true, ignored: true });
   }
+
+  res.status(200).json({ received: true });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Webhook handler listening on port ${PORT}`);
 });

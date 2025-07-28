@@ -1,12 +1,196 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
 import { api } from "@/integrations/supabase/api";
 import { format } from "date-fns";
-import { Calendar, MapPin, Clock } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Clock,
+  RefreshCw,
+  Church,
+  Users,
+  BookOpen,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDataRefresh } from "@/hooks/useDataRefresh";
+
+const baseUrl = import.meta.env.BASE_URL;
+
+// Placeholder Events Component
+const PlaceholderEvents = () => {
+  const { language } = useLanguage();
+  const placeholderEvents = [
+    {
+      id: "placeholder-1",
+      title: language === "en" ? "Sunday Divine Liturgy" : "የእሁድ ቅዳሴ",
+      description:
+        language === "en"
+          ? "Join us every Sunday for our traditional Divine Liturgy service. Experience the ancient traditions of the Ethiopian Orthodox Tewahedo Church."
+          : "በየእሁድ ለባህላዊ የቅዳሴ አገልግሎታችን ይቀላቀሉን። የኢትዮጵያ ኦርቶዶክስ ተዋሕዶ ቤተክርስቲያንን ጥንታዊ ወጎች ይለማመዱ።",
+      date: "Every Sunday",
+      time: "7:00 AM - 12:00 PM",
+      location: "Main Sanctuary",
+      image: baseUrl + "images/gallery/church-service.jpg",
+      icon: Church,
+    },
+    {
+      id: "placeholder-2",
+      title:
+        language === "en"
+          ? "St. Gabriel Monthly Commemoration"
+          : "የቅዱስ ገብርኤል ወርሃዊ ተዝካር",
+      description:
+        language === "en"
+          ? "Monthly celebration honoring St. Gabriel the Archangel, our church's patron saint. Special prayers and blessings."
+          : "የቤተክርስቲያናችንን ጠባቂ ቅዱስ ገብርኤል መልአከ አምላክን የሚያከብር ወርሃዊ በዓል። ልዩ ጸሎቶች እና በረከቶች።",
+      date: "19th of Every Month",
+      time: "10:00 AM - 2:00 PM",
+      location: "Church Grounds",
+      image: baseUrl + "images/religious/palm-sunday.jpg",
+      icon: Church,
+    },
+    {
+      id: "placeholder-3",
+      title:
+        language === "en"
+          ? "Sunday School for Children"
+          : "የሰንበት ትምህርት ቤት ለልጆች",
+      description:
+        language === "en"
+          ? "Educational program for children ages 5-12. Learn about Orthodox faith, Bible stories, and Ethiopian traditions."
+          : "ከ5-12 ዓመት ለሆኑ ልጆች የትምህርት ፕሮግራም። ስለ ኦርቶዶክስ እምነት፣ የመጽሐፍ ቅዱስ ታሪኮች እና የኢትዮጵያ ወጎች ይማሩ።",
+      date: "Every Sunday",
+      time: "9:00 AM - 12:00 PM",
+      location: "Education Hall",
+      image: baseUrl + "images/gallery/ceremony-1.jpg",
+      icon: BookOpen,
+    },
+    {
+      id: "placeholder-4",
+      title: language === "en" ? "Community Fellowship" : "የማህበረሰብ ህብረት",
+      description:
+        language === "en"
+          ? "Monthly community gathering for fellowship, sharing meals, and strengthening bonds within our church family."
+          : "ለህብረት፣ ምግብ ለመካፈል እና በቤተክርስቲያን ቤተሰባችን ውስጥ ትስስርን ለማጠናከር ወርሃዊ የማህበረሰብ ስብሰባ።",
+      date: "First Saturday of Every Month",
+      time: "2:00 PM - 6:00 PM",
+      location: "Community Hall",
+      image: baseUrl + "images/gallery/ceremony-2.jpg",
+      icon: Users,
+    },
+    {
+      id: "placeholder-5",
+      title: language === "en" ? "Youth Program" : "የወጣቶች ፕሮግራም",
+      description:
+        language === "en"
+          ? "Weekly program for teenagers focusing on spiritual growth, community service, and cultural activities."
+          : "በመንፈሳዊ ዕድገት፣ የማህበረሰብ አገልግሎት እና የባህል ስራዎች ላይ የሚያተኩር ለወጣቶች ሳምንታዊ ፕሮግራም።",
+      date: "Every Saturday",
+      time: "3:00 PM - 6:00 PM",
+      location: "Youth Center",
+      image: baseUrl + "images/gallery/ceremony-3.jpg",
+      icon: Users,
+    },
+    {
+      id: "placeholder-6",
+      title: language === "en" ? "Amharic Language Classes" : "የአማርኛ ቋንቋ ትምህርት",
+      description:
+        language === "en"
+          ? "Learn to read and write in Amharic. Classes for all ages to connect with Ethiopian heritage and culture."
+          : "አማርኛ ማንበብና መጻፍ ይማሩ። ከኢትዮጵያዊ ሀረግ እና ባህል ጋር ለመገናኘት ለሁሉም ዕድሜ ክፍሎች።",
+      date: "Every Saturday",
+      time: "10:00 AM - 12:00 PM",
+      location: "Language Center",
+      image: baseUrl + "images/gallery/timket.jpg",
+      icon: BookOpen,
+    },
+  ];
+
+  return (
+    <div>
+      <div className="text-center py-8 mb-8 bg-church-cream/30 rounded-lg">
+        <h3 className="text-2xl font-bold text-church-burgundy mb-2">
+          {language === "en"
+            ? "Regular Church Activities"
+            : "መደበኛ የቤተክርስቲያን ስራዎች"}
+        </h3>
+        <p className="text-gray-600 max-w-2xl mx-auto">
+          {language === "en"
+            ? "While we don't have specific upcoming events scheduled, here are our regular activities and services that happen throughout the year."
+            : "ልዩ የወደፊት ዝግጅቶች ባይኖሩንም፣ በዓመቱ ውስጥ የሚካሄዱ መደበኛ ስራዎቻችን እና አገልግሎቶቻችን እነኚሁ ናቸው።"}
+        </p>
+      </div>
+
+      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        {placeholderEvents.map((event) => {
+          const IconComponent = event.icon;
+          return (
+            <Card
+              key={event.id}
+              className="overflow-hidden hover:shadow-lg transition-shadow"
+            >
+              <div className="h-56 bg-cover bg-center relative overflow-hidden">
+                <img
+                  src={event.image}
+                  alt={event.title}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    if (target.src.includes("church-service.jpg")) {
+                      target.src =
+                        baseUrl + "images/gallery/church-gathering.jpg";
+                    } else if (target.src.includes("church-gathering.jpg")) {
+                      target.src = baseUrl + "images/gallery/ceremony-1.jpg";
+                    } else if (target.src.includes("ceremony-1.jpg")) {
+                      target.src = baseUrl + "images/gallery/timket.jpg";
+                    } else {
+                      target.src =
+                        baseUrl + "images/gallery/church-service.jpg";
+                    }
+                  }}
+                />
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                  <IconComponent className="h-12 w-12 text-white" />
+                </div>
+              </div>
+              <CardContent className="p-6">
+                <h3 className="text-xl font-bold text-church-burgundy mb-2">
+                  {event.title}
+                </h3>
+                <div className="flex items-center text-gray-600 mb-2">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  <span className="text-sm font-medium">{event.date}</span>
+                </div>
+                <div className="flex items-center text-gray-600 mb-2">
+                  <Clock className="h-4 w-4 mr-2" />
+                  <span className="text-sm">{event.time}</span>
+                </div>
+                <div className="flex items-center text-gray-600 mb-4">
+                  <MapPin className="h-4 w-4 mr-2" />
+                  <span className="text-sm">{event.location}</span>
+                </div>
+                <p className="text-gray-600 mb-6 text-sm leading-relaxed">
+                  {event.description}
+                </p>
+                <div className="flex justify-between">
+                  <Button
+                    variant="outline"
+                    className="text-church-burgundy border-church-burgundy hover:bg-church-burgundy hover:text-white"
+                  >
+                    {language === "en" ? "Learn More" : "ተጨማሪ መረጃ"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 interface Event {
   id: string;
@@ -20,25 +204,68 @@ interface Event {
   created_at: string;
 }
 
+// Religious event images mapping with verified paths
+const religiousEventImages = [
+  baseUrl + "images/religious/palm-sunday.jpg",
+  baseUrl + "images/religious/crucifixion.jpg",
+  baseUrl + "images/religious/procession.jpg",
+  baseUrl + "images/gallery/timket.jpg",
+  baseUrl + "images/gallery/church-service.jpg",
+  baseUrl + "images/gallery/church-gathering.jpg",
+  baseUrl + "images/gallery/ceremony-1.jpg",
+  baseUrl + "images/gallery/ceremony-2.jpg",
+  baseUrl + "images/gallery/ceremony-3.jpg",
+];
+
+// Function to get a religious image based on event data
+const getReligiousImage = (event: Event): string => {
+  // If the event already has an image, use it
+  if (event.image_url) return event.image_url;
+
+  // Otherwise, assign a religious image based on the event id (for consistency)
+  const imageIndex =
+    parseInt(event.id.charAt(0), 16) % religiousEventImages.length;
+  return religiousEventImages[imageIndex];
+};
+
 export default function Events() {
   const { t } = useLanguage();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const loadEvents = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await api.events.getEvents();
+      const validatedData = Array.isArray(data) ? data : [];
+      setEvents(validatedData);
+    } catch (error) {
+      console.error("Error loading events:", error);
+      // Only show error if we have no events to display
+      if (events.length === 0) {
+        console.error("Failed to load events on initial load");
+        setEvents([]);
+      }
+    }
+    setLoading(false);
+  }, []);
+
   useEffect(() => {
     loadEvents();
   }, []);
 
-  const loadEvents = async () => {
-    try {
-      setLoading(true);
-      const data = await api.events.getEvents();
-      setEvents(data || []);
-    } catch (error) {
-      console.error("Error loading events:", error);
-    } finally {
-      setLoading(false);
-    }
+  // Use enhanced data refresh hook
+  const { manualRefresh, forceSyncData } = useDataRefresh(
+    loadEvents,
+    5 * 60 * 1000, // Refresh every 5 minutes
+    [],
+    "events",
+  );
+
+  const handleManualRefresh = async () => {
+    console.log("Manual refresh triggered for events");
+    await manualRefresh();
+    await forceSyncData();
   };
 
   return (
@@ -48,11 +275,23 @@ export default function Events() {
           <h1 className="text-3xl md:text-4xl font-bold text-church-burgundy mb-4">
             {t("events") || "Church Events"}
           </h1>
-          <p className="text-gray-600 max-w-2xl mx-auto">
+          <p className="text-gray-600 max-w-2xl mx-auto mb-4">
             Join us for our upcoming events and celebrations. Our church hosts
             various activities throughout the year for all members of our
             community.
           </p>
+          <Button
+            onClick={handleManualRefresh}
+            variant="outline"
+            size="sm"
+            disabled={loading}
+            className="inline-flex items-center"
+          >
+            <RefreshCw
+              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+            />
+            Refresh Events
+          </Button>
         </div>
 
         {loading ? (
@@ -75,16 +314,27 @@ export default function Events() {
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {events.map((event) => (
               <Card key={event.id} className="overflow-hidden">
-                {event.image_url ? (
-                  <div
-                    className="h-48 bg-cover bg-center"
-                    style={{ backgroundImage: `url(${event.image_url})` }}
+                <div className="h-56 bg-cover bg-center relative overflow-hidden">
+                  <img
+                    src={getReligiousImage(event)}
+                    alt={event.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      if (target.src.includes("church-service.jpg")) {
+                        target.src =
+                          baseUrl + "images/gallery/church-gathering.jpg";
+                      } else if (target.src.includes("church-gathering.jpg")) {
+                        target.src = baseUrl + "images/gallery/ceremony-1.jpg";
+                      } else if (target.src.includes("ceremony-1.jpg")) {
+                        target.src = baseUrl + "images/gallery/timket.jpg";
+                      } else {
+                        target.src =
+                          baseUrl + "images/gallery/church-service.jpg";
+                      }
+                    }}
                   />
-                ) : (
-                  <div className="h-48 bg-church-burgundy/10 flex items-center justify-center">
-                    <Calendar className="h-12 w-12 text-church-burgundy/30" />
-                  </div>
-                )}
+                </div>
                 <CardContent className="p-6">
                   <h3 className="text-xl font-bold text-church-burgundy mb-2">
                     {event.title}
@@ -120,14 +370,7 @@ export default function Events() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-12">
-            <h3 className="text-xl text-gray-600">
-              No upcoming events at this time.
-            </h3>
-            <p className="mt-2 text-gray-500">
-              Please check back later for future events.
-            </p>
-          </div>
+          <PlaceholderEvents />
         )}
       </div>
     </Layout>

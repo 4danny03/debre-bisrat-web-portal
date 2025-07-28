@@ -1,112 +1,201 @@
-
-import React, { useState, useEffect } from 'react';
-
-interface SlideProps {
-  image: string;
-  title: string;
-  content: string;
-}
+import { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface ImageSliderProps {
-  slides: SlideProps[];
+  slides: {
+    image: string;
+    title: string;
+    content: string;
+  }[];
+  autoPlay?: boolean;
+  interval?: number;
+  ariaLabel?: string;
 }
 
-const ImageSlider: React.FC<ImageSliderProps> = ({ slides }) => {
+export default function ImageSlider({
+  slides = [],
+  autoPlay = false,
+  interval = 3000,
+  ariaLabel,
+}: ImageSliderProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [imageLoaded, setImageLoaded] = useState<boolean[]>(
+    new Array(slides.length).fill(false),
+  );
 
   useEffect(() => {
-    // Auto advance slides every 5 seconds
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
-    }, 5000);
+    if (!autoPlay || slides.length <= 1) return;
 
-    return () => clearInterval(interval);
-  }, [slides.length]);
+    const autoAdvance = setInterval(() => {
+      setCurrentSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
+    }, 7000); // 7 seconds for better readability
+
+    return () => clearInterval(autoAdvance);
+  }, [autoPlay, slides.length]);
+
+  // Preload next image for better performance
+  useEffect(() => {
+    if (slides.length > 0) {
+      const nextIndex = (currentSlide + 1) % slides.length;
+      const img = new Image();
+      img.src = slides[nextIndex].image;
+    }
+  }, [currentSlide, slides]);
+
+  const handleImageLoad = (index: number) => {
+    setImageLoaded((prev) => {
+      const newLoaded = [...prev];
+      newLoaded[index] = true;
+      return newLoaded;
+    });
+  };
+
+  const handleImageError = (index: number) => {
+    console.warn(`Image at index ${index} failed to load.`);
+  };
 
   const goToSlide = (index: number) => {
     setCurrentSlide(index);
   };
 
-  const nextSlide = () => {
-    setCurrentSlide(current => 
-      current === slides.length - 1 ? 0 : current + 1
-    );
+  const prevSlide = () => {
+    setCurrentSlide(currentSlide === 0 ? slides.length - 1 : currentSlide - 1);
   };
 
-  const prevSlide = () => {
-    setCurrentSlide(current => 
-      current === 0 ? slides.length - 1 : current - 1
-    );
+  const nextSlide = () => {
+    setCurrentSlide(currentSlide === slides.length - 1 ? 0 : currentSlide + 1);
   };
+
+  if (!slides || slides.length === 0) {
+    return (
+      <div className="w-full h-64 bg-gray-200 flex items-center justify-center" role="region" aria-label={ariaLabel || "Image slider"}>
+        No slides available
+      </div>
+    );
+  }
 
   return (
-    <div className="slider relative">
+    <div
+      className="relative w-full h-[450px] md:h-[550px] lg:h-[650px] overflow-hidden rounded-2xl shadow-2xl border border-church-gold/20"
+      role="region"
+      aria-label={ariaLabel || "Image slider"}
+      aria-roledescription="carousel"
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-church-burgundy/5 via-transparent to-church-gold/5 pointer-events-none z-10"></div>
       {slides.map((slide, index) => (
         <div
           key={index}
-          className={`slide ${index === currentSlide ? 'active' : ''}`}
-          style={{
-            backgroundImage: `url(${slide.image})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
+          className={`absolute inset-0 transition-all duration-1200 ease-in-out ${
+            index === currentSlide
+              ? "opacity-100 scale-100"
+              : "opacity-0 scale-110 pointer-events-none"
+          }`}
+          role="group"
+          aria-roledescription="slide"
+          aria-label={`Slide ${index + 1} of ${slides.length}`}
+          aria-hidden={index !== currentSlide}
         >
-          <div className="slider-content">
-            <div className="slider-text">
-              {/* Ethiopian flag colors accent above title */}
-              <div className="flex justify-center mb-3">
-                <div className="h-1 w-12 bg-church-green"></div>
-                <div className="h-1 w-12 bg-church-yellow"></div>
-                <div className="h-1 w-12 bg-church-red"></div>
-              </div>
-              
-              <h2 className="text-3xl font-serif mb-4 text-church-gold">{slide.title}</h2>
-              <p className="text-lg">{slide.content}</p>
-              
-              {/* Ethiopian flag colors accent below content */}
-              <div className="flex justify-center mt-3">
-                <div className="h-1 w-12 bg-church-green"></div>
-                <div className="h-1 w-12 bg-church-yellow"></div>
-                <div className="h-1 w-12 bg-church-red"></div>
+          {!imageLoaded[index] && index === currentSlide && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-church-burgundy/10 to-church-gold/10">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-church-gold border-t-transparent"></div>
+            </div>
+          )}
+          <img
+            src={slide.image}
+            alt={`Slide ${index + 1}`}
+            className={`w-full h-full object-cover transition-all duration-1000 ${
+              imageLoaded[index] ? "opacity-100" : "opacity-0"
+            }`}
+            onLoad={() => handleImageLoad(index)}
+            onError={() => handleImageError(index)}
+            loading={index === 0 ? "eager" : "lazy"}
+          />
+          {/* Reduced gradient overlay for better image visibility */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-black/20"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-church-burgundy/20 via-transparent to-church-gold/15"></div>
+
+          {/* Content overlay with reduced opacity for better background visibility */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-6 md:p-8 z-20">
+            <div className="text-center max-w-5xl mx-auto backdrop-blur-md bg-gradient-to-br from-church-burgundy/35 via-church-burgundy/25 to-church-burgundy/40 rounded-2xl p-8 md:p-10 border border-church-gold/40 shadow-2xl animate-slide-up">
+              <div className="absolute inset-0 bg-gradient-to-br from-church-gold/8 via-transparent to-church-gold/4 rounded-2xl"></div>
+              <div className="relative z-10">
+                <h2
+                  className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-4 md:mb-6 text-church-gold font-serif"
+                  style={{
+                    textShadow:
+                      "4px 4px 8px rgba(0,0,0,0.95), 2px 2px 4px rgba(0,0,0,0.8)",
+                  }}
+                  aria-live={index === currentSlide ? "polite" : undefined}
+                  tabIndex={index === currentSlide ? 0 : -1}
+                >
+                  {slide.title}
+                </h2>
+                <div className="w-24 h-1 bg-gradient-to-r from-transparent via-church-gold to-transparent mx-auto mb-4 md:mb-6"></div>
+                <p
+                  className="text-base md:text-lg lg:text-xl xl:text-2xl text-center leading-relaxed font-medium text-white/98"
+                  style={{
+                    textShadow:
+                      "3px 3px 6px rgba(0,0,0,0.9), 1px 1px 3px rgba(0,0,0,0.7)",
+                  }}
+                >
+                  {slide.content}
+                </p>
               </div>
             </div>
           </div>
         </div>
       ))}
 
-      {/* Navigation arrows */}
-      <button 
-        onClick={prevSlide} 
-        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white rounded-full p-2 z-20 transition-colors"
-        aria-label="Previous slide"
+      <button
+        onClick={prevSlide}
+        className="absolute left-4 md:left-6 top-1/2 transform -translate-y-1/2 bg-church-burgundy/80 hover:bg-church-burgundy/90 text-church-gold p-3 md:p-4 rounded-full transition-all duration-300 hover:scale-110 backdrop-blur-md border border-church-gold/30 shadow-lg z-30"
+        aria-label="Previous image"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="15 18 9 12 15 6"></polyline>
-        </svg>
-      </button>
-      
-      <button 
-        onClick={nextSlide} 
-        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white rounded-full p-2 z-20 transition-colors"
-        aria-label="Next slide"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="9 18 15 12 9 6"></polyline>
-        </svg>
+        <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
       </button>
 
-      <div className="slider-nav">
+      <button
+        onClick={nextSlide}
+        className="absolute right-4 md:right-6 top-1/2 transform -translate-y-1/2 bg-church-burgundy/80 hover:bg-church-burgundy/90 text-church-gold p-3 md:p-4 rounded-full transition-all duration-300 hover:scale-110 backdrop-blur-md border border-church-gold/30 shadow-lg z-30"
+        aria-label="Next image"
+      >
+        <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
+      </button>
+
+      <div className="absolute bottom-6 md:bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-3 z-30">
         {slides.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}
-            className={`${index === currentSlide ? 'active' : ''} border border-white/30`}
+            className={`relative transition-all duration-400 ${
+              index === currentSlide
+                ? "w-4 h-4 md:w-5 md:h-5"
+                : "w-3 h-3 md:w-4 md:h-4 hover:scale-110"
+            }`}
             aria-label={`Go to slide ${index + 1}`}
-          ></button>
+          >
+            <div
+              className={`w-full h-full rounded-full transition-all duration-400 ${
+                index === currentSlide
+                  ? "bg-church-gold shadow-lg animate-pulse-glow"
+                  : "bg-white/60 hover:bg-white/80 backdrop-blur-sm"
+              }`}
+            />
+            {index === currentSlide && (
+              <div className="absolute inset-0 rounded-full border-2 border-church-gold/50 animate-ping"></div>
+            )}
+          </button>
         ))}
+      </div>
+
+      <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-black/30 via-black/20 to-black/30">
+        <div
+          className="h-full bg-gradient-to-r from-church-gold via-church-gold/80 to-church-gold transition-all duration-500 ease-out shadow-sm"
+          style={{
+            width: `${((currentSlide + 1) / slides.length) * 100}%`,
+          }}
+        ></div>
       </div>
     </div>
   );
-};
-
-export default ImageSlider;
+}

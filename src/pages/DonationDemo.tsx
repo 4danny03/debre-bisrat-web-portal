@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
@@ -51,20 +51,26 @@ export default function DonationDemo() {
       }
 
       // Call the Supabase Edge Function to create a checkout session
+      const checkoutData = {
+        amount,
+        donationType,
+        purpose,
+        email,
+        name: name || "",
+      };
+
+
       const { data, error: fnError } = await supabase.functions.invoke(
-        "supabase-functions-create-checkout",
+        "create-checkout",
         {
-          body: {
-            amount,
-            donationType,
-            purpose,
-            email,
-            name,
-          },
+          body: checkoutData,
         },
       );
 
-      if (fnError) throw new Error(fnError.message);
+
+      if (fnError) {
+        throw new Error(fnError.message);
+      }
 
       // Redirect to Stripe checkout
       if (data?.url) {
@@ -73,7 +79,6 @@ export default function DonationDemo() {
         throw new Error("No checkout URL returned");
       }
     } catch (err) {
-      console.error("Error creating checkout session:", err);
       setError(
         err instanceof Error ? err.message : "Failed to process donation",
       );

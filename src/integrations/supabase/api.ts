@@ -1,30 +1,22 @@
+// API integration layer for Supabase
 import { supabase } from "./client";
 
+// Members API
 export const api = {
-  sermons: {
-    getSermons: async () => {
+  members: {
+    async getMembers() {
       const { data, error } = await supabase
-        .from("sermons")
+        .from("members")
         .select("*")
-        .order("sermon_date", { ascending: false });
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data;
     },
-    getFeaturedSermons: async (limit = 3) => {
-      const { data, error } = await supabase
-        .from("sermons")
-        .select("*")
-        .eq("is_featured", true)
-        .order("sermon_date", { ascending: false })
-        .limit(limit);
 
-      if (error) throw error;
-      return data;
-    },
-    getSermonById: async (id: string) => {
+    async getMember(id: string) {
       const { data, error } = await supabase
-        .from("sermons")
+        .from("members")
         .select("*")
         .eq("id", id)
         .single();
@@ -32,36 +24,232 @@ export const api = {
       if (error) throw error;
       return data;
     },
-    createSermon: async (sermon: any) => {
+
+    async getMemberProfile(userId: string) {
       const { data, error } = await supabase
-        .from("sermons")
-        .insert([sermon])
-        .select()
+        .from("members")
+        .select("*")
+        .eq("id", userId)
         .single();
 
       if (error) throw error;
       return data;
     },
-    updateSermon: async (id: string, updates: any) => {
+
+    async getMemberDonations(userId: string) {
       const { data, error } = await supabase
-        .from("sermons")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
+        .from("donations")
+        .select("*")
+        .eq("member_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(10);
 
       if (error) throw error;
-      return data;
+      return data || [];
     },
-    deleteSermon: async (id: string) => {
-      const { error } = await supabase.from("sermons").delete().eq("id", id);
+
+    async getMemberEvents(userId: string) {
+      const { data, error } = await supabase
+        .from("event_registrations")
+        .select(
+          `
+          *,
+          events (
+            id,
+            title,
+            event_date
+          )
+        `,
+        )
+        .eq("member_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(10);
 
       if (error) throw error;
-      return true;
+      return data || [];
+    },
+
+    async createMember(member: any) {
+      // Use the membership-management edge function for better handling
+      const { data, error } = await supabase.functions.invoke(
+        "supabase-functions-membership-management",
+        {
+          body: {
+            action: "create_member",
+            member_data: member,
+          },
+        },
+      );
+
+      if (error) throw error;
+      return data.member;
+    },
+
+    async updateMember(id: string, updates: any) {
+      const { data, error } = await supabase.functions.invoke(
+        "supabase-functions-membership-management",
+        {
+          body: {
+            action: "update_member",
+            member_id: id,
+            update_data: updates,
+          },
+        },
+      );
+
+      if (error) throw error;
+      return data.member;
+    },
+
+    async activateMembership(id: string) {
+      const { data, error } = await supabase.functions.invoke(
+        "supabase-functions-membership-management",
+        {
+          body: {
+            action: "activate_membership",
+            member_id: id,
+          },
+        },
+      );
+
+      if (error) throw error;
+      return data.member;
+    },
+
+    async deleteMember(id: string) {
+      const { error } = await supabase.from("members").delete().eq("id", id);
+
+      if (error) throw error;
     },
   },
+
+  // Appointments API
+  appointments: {
+    async getAppointments() {
+      const { data, error } = await supabase
+        .from("appointments")
+        .select(
+          `
+          *,
+          responded_by_profile:profiles!appointments_responded_by_fkey(
+            email
+          )
+        `,
+        )
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+
+    async getAppointmentsByStatus(status: string) {
+      const { data, error } = await supabase
+        .from("appointments")
+        .select(
+          `
+          *,
+          responded_by_profile:profiles!appointments_responded_by_fkey(
+            email
+          )
+        `,
+        )
+        .eq("status", status)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+
+    async createAppointment(appointment: any) {
+      // Use the appointment-request edge function for public submissions
+      const { data, error } = await supabase.functions.invoke(
+        "supabase-functions-appointment-request",
+        {
+          body: appointment,
+        },
+      );
+
+      if (error) throw error;
+      return data.appointment;
+    },
+
+    async respondToAppointment(id: string, response: any) {
+      const { data, error } = await supabase
+        .from("appointments")
+        .update({
+          ...response,
+          responded_at: new Date().toISOString(),
+        })
+        .eq("id", id)
+        .select(
+          `
+          *,
+          responded_by_profile:profiles!appointments_responded_by_fkey(
+            email
+          )
+        `,
+        )
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+  },
+
+  // Donations API
+  donations: {
+    async getDonations() {
+      const { data, error } = await supabase
+        .from("donations")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+
+    async createDonation(donation: any) {
+      const { data, error } = await supabase
+        .from("donations")
+        .insert(donation)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async getDonationStats() {
+      const { data, error } = await supabase
+        .from("donations")
+        .select("amount, created_at, status")
+        .eq("status", "completed");
+
+      if (error) throw error;
+
+      const total = data?.reduce((sum, d) => sum + d.amount, 0) || 0;
+      const count = data?.length || 0;
+      const average = count > 0 ? total / count : 0;
+
+      // Calculate monthly growth
+      const currentMonth = new Date().getMonth();
+      const monthlyDonations =
+        data?.filter(
+          (d) => new Date(d.created_at).getMonth() === currentMonth,
+        ) || [];
+
+      return {
+        total_amount: total,
+        total_donations: count,
+        average_donation: average,
+        monthly_growth: monthlyDonations.length,
+      };
+    },
+  },
+
+  // Events API
   events: {
-    getEvents: async () => {
+    async getEvents() {
       const { data, error } = await supabase
         .from("events")
         .select("*")
@@ -70,39 +258,31 @@ export const api = {
       if (error) throw error;
       return data;
     },
-    getUpcomingEvents: async (limit = 3) => {
-      const today = new Date().toISOString().split("T")[0];
+
+    async getUpcomingEvents() {
       const { data, error } = await supabase
         .from("events")
         .select("*")
-        .gte("event_date", today)
+        .gte("event_date", new Date().toISOString().split("T")[0])
         .order("event_date", { ascending: true })
-        .limit(limit);
+        .limit(10);
 
       if (error) throw error;
       return data;
     },
-    getEventById: async (id: string) => {
-      const { data, error } = await supabase
-        .from("events")
-        .select("*")
-        .eq("id", id)
-        .single();
 
-      if (error) throw error;
-      return data;
-    },
-    createEvent: async (event: any) => {
+    async createEvent(event: any) {
       const { data, error } = await supabase
         .from("events")
-        .insert([event])
+        .insert(event)
         .select()
         .single();
 
       if (error) throw error;
       return data;
     },
-    updateEvent: async (id: string, updates: any) => {
+
+    async updateEvent(id: string, updates: any) {
       const { data, error } = await supabase
         .from("events")
         .update(updates)
@@ -113,244 +293,40 @@ export const api = {
       if (error) throw error;
       return data;
     },
-    deleteEvent: async (id: string) => {
+
+    async deleteEvent(id: string) {
       const { error } = await supabase.from("events").delete().eq("id", id);
 
       if (error) throw error;
-      return true;
     },
   },
-  members: {
-    getMembers: async () => {
-      const { data, error } = await supabase
-        .from("members")
-        .select("*")
-        .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      return data;
-    },
-    getMemberById: async (id: string) => {
-      const { data, error } = await supabase
-        .from("members")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    createMember: async (member: any) => {
-      const { data, error } = await supabase
-        .from("members")
-        .insert([member])
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    updateMember: async (id: string, updates: any) => {
-      const { data, error } = await supabase
-        .from("members")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    deleteMember: async (id: string) => {
-      const { error } = await supabase.from("members").delete().eq("id", id);
-
-      if (error) throw error;
-      return true;
-    },
-  },
-  gallery: {
-    getGalleryImages: async () => {
-      const { data, error } = await supabase
-        .from("gallery")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      return data;
-    },
-    getImageById: async (id: string) => {
-      const { data, error } = await supabase
-        .from("gallery")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    addImage: async (image: any) => {
-      const { data, error } = await supabase
-        .from("gallery")
-        .insert([image])
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    updateImage: async (id: string, updates: any) => {
-      const { data, error } = await supabase
-        .from("gallery")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    deleteImage: async (id: string) => {
-      const { error } = await supabase.from("gallery").delete().eq("id", id);
-
-      if (error) throw error;
-      return true;
-    },
-  },
-  testimonials: {
-    getTestimonials: async (approvedOnly = true) => {
-      let query = supabase.from("testimonials").select("*");
-
-      if (approvedOnly) {
-        query = query.eq("is_approved", true);
-      }
-
-      const { data, error } = await query.order("created_at", {
-        ascending: false,
-      });
-
-      if (error) throw error;
-      return data;
-    },
-    getTestimonialById: async (id: string) => {
-      const { data, error } = await supabase
-        .from("testimonials")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    addTestimonial: async (testimonial: any) => {
-      const { data, error } = await supabase
-        .from("testimonials")
-        .insert([testimonial])
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    updateTestimonial: async (id: string, updates: any) => {
-      const { data, error } = await supabase
-        .from("testimonials")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    deleteTestimonial: async (id: string) => {
-      const { error } = await supabase
-        .from("testimonials")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-      return true;
-    },
-  },
+  // Prayer Requests API
   prayerRequests: {
-    getPrayerRequests: async (publicOnly = true) => {
-      let query = supabase.from("prayer_requests").select("*");
-
-      if (publicOnly) {
-        query = query.eq("is_public", true);
-      }
-
-      const { data, error } = await query.order("created_at", {
-        ascending: false,
-      });
-
-      if (error) throw error;
-      return data;
-    },
-    getPrayerRequestById: async (id: string) => {
+    async getPrayerRequests() {
       const { data, error } = await supabase
         .from("prayer_requests")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    addPrayerRequest: async (request: any) => {
-      const { data, error } = await supabase
-        .from("prayer_requests")
-        .insert([request])
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    updatePrayerRequest: async (id: string, updates: any) => {
-      const { data, error } = await supabase
-        .from("prayer_requests")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    deletePrayerRequest: async (id: string) => {
-      const { error } = await supabase
-        .from("prayer_requests")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-      return true;
-    },
-  },
-  donations: {
-    getDonations: async () => {
-      const { data, error } = await supabase
-        .from("donations")
         .select("*")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data;
     },
-    getDonationById: async (id: string) => {
+
+    async createPrayerRequest(request: any) {
       const { data, error } = await supabase
-        .from("donations")
-        .select("*")
-        .eq("id", id)
+        .from("prayer_requests")
+        .insert(request)
+        .select()
         .single();
 
       if (error) throw error;
       return data;
     },
-    updateDonation: async (id: string, updates: any) => {
+
+    async updatePrayerRequest(id: string, updates: any) {
       const { data, error } = await supabase
-        .from("donations")
+        .from("prayer_requests")
         .update(updates)
         .eq("id", id)
         .select()
@@ -360,29 +336,44 @@ export const api = {
       return data;
     },
   },
-  users: {
-    getUsers: async () => {
+
+  // Testimonials API
+  testimonials: {
+    async getTestimonials() {
       const { data, error } = await supabase
-        .from("profiles")
+        .from("testimonials")
         .select("*")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data;
     },
-    getUserById: async (id: string) => {
+
+    async getApprovedTestimonials() {
       const { data, error } = await supabase
-        .from("profiles")
+        .from("testimonials")
         .select("*")
-        .eq("id", id)
+        .eq("is_approved", true)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+
+    async createTestimonial(testimonial: any) {
+      const { data, error } = await supabase
+        .from("testimonials")
+        .insert(testimonial)
+        .select()
         .single();
 
       if (error) throw error;
       return data;
     },
-    updateUser: async (id: string, updates: any) => {
+
+    async updateTestimonial(id: string, updates: any) {
       const { data, error } = await supabase
-        .from("profiles")
+        .from("testimonials")
         .update(updates)
         .eq("id", id)
         .select()
@@ -391,11 +382,44 @@ export const api = {
       if (error) throw error;
       return data;
     },
-    deleteUser: async (id: string) => {
-      const { error } = await supabase.from("profiles").delete().eq("id", id);
+  },
+
+  // Admin API
+  admin: {
+    async getDashboardStats() {
+      const { data, error } = await supabase.functions.invoke(
+        "supabase-functions-admin-dashboard",
+        {
+          body: { action: "dashboard" },
+        },
+      );
 
       if (error) throw error;
-      return true;
+      return data.dashboard;
+    },
+
+    async getRecentActivity() {
+      const { data, error } = await supabase.functions.invoke(
+        "supabase-functions-admin-dashboard",
+        {
+          body: { action: "recent_activity" },
+        },
+      );
+
+      if (error) throw error;
+      return data.activity;
+    },
+
+    async getSystemHealth() {
+      const { data, error } = await supabase.functions.invoke(
+        "supabase-functions-admin-dashboard",
+        {
+          body: { action: "system_health" },
+        },
+      );
+
+      if (error) throw error;
+      return data.health;
     },
   },
 };
