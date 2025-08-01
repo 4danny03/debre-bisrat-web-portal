@@ -110,11 +110,11 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Use demo key for testing - in production, set STRIPE_SECRET_KEY environment variable
+    // Use demo key for testing - in production, set VITE_STRIPE_SECRET_KEY environment variable
     const stripeKey =
-      Deno.env.get("STRIPE_SECRET_KEY") || "sk_test_51234567890abcdef";
+      Deno.env.get("VITE_STRIPE_SECRET_KEY") || "sk_test_51ROOqvPp3jAs3nkg9jWMW5dZtXdeGAB9SvrBjc5DonIXUtTLYGPeq2XusT45cXQeiQ0ELAsSOIKtc7ekmhwrOD2r00bbE6pqt9";
 
-    if (!stripeKey || stripeKey === "sk_test_51234567890abcdef") {
+    if (!stripeKey || stripeKey === "sk_test_51ROOqvPp3jAs3nkg9jWMW5dZtXdeGAB9SvrBjc5DonIXUtTLYGPeq2XusT45cXQeiQ0ELAsSOIKtc7ekmhwrOD2r00bbE6pqt9") {
       console.log("Using demo Stripe key - this is for testing purposes only");
     }
 
@@ -192,8 +192,8 @@ Deno.serve(async (req: Request) => {
         },
       ],
       mode: isRecurring ? "subscription" : "payment",
-      success_url: `${req.headers.get("origin")}/donation-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get("origin")}/donation`,
+      success_url: `${req.headers.get("origin")}${purpose === "membership_fee" ? "/membership-success" : "/donation-success"}?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.get("origin")}${purpose === "membership_fee" ? "/membership-registration" : "/donation"}`,
       metadata: {
         purpose,
         email,
@@ -215,10 +215,12 @@ Deno.serve(async (req: Request) => {
             donor_email: email,
             donor_name: name || null,
             purpose: purpose,
-            payment_status: "pending",
-            payment_id: session.id,
+            status: "pending",
             payment_method: "stripe",
-            is_anonymous: false,
+            stripe_payment_intent_id: session.id,
+            member_id: memberId || null,
+            is_membership_fee: purpose === "membership_fee",
+            notes: purpose === "membership_fee" ? "Member data stored in session metadata" : null,
             created_at: new Date().toISOString(),
           },
         ])

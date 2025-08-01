@@ -29,7 +29,7 @@ const DonationSuccess: React.FC = () => {
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+    useEffect(() => {
     const fetchSessionData = async () => {
       try {
         const sessionId = searchParams.get("session_id");
@@ -43,7 +43,6 @@ const DonationSuccess: React.FC = () => {
         }
 
         // Call the get-session function to get session details
-        // Using params in the URL path instead of query option
         const { data, error: sessionError } = await supabase.functions.invoke(
           "get-session",
           {
@@ -101,30 +100,13 @@ const DonationSuccess: React.FC = () => {
         };
 
         setSessionData(sessionDetails);
-
-        // Send email notifications
-        await supabase.functions.invoke("send-email", {
-          body: {
-            donorEmail: email,
-            amount: amount,
-            purpose: purpose,
-            donationType: donationType,
-          },
-        });
-
         setIsLoading(false);
       } catch (error) {
+        console.error("Error fetching session data:", error);
         setError(
-          "Failed to process your donation information. Please contact support.",
+          "Failed to process your payment information. Please contact support.",
         );
         setIsLoading(false);
-
-        toast({
-          title: "Error",
-          description:
-            "There was an issue retrieving your donation information.",
-          variant: "destructive",
-        });
       }
     };
 

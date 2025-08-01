@@ -229,18 +229,19 @@ CREATE TABLE IF NOT EXISTS site_settings (
 
 -- Insert default site settings
 INSERT INTO site_settings (key, value, description) VALUES
-  ('church_name', to_jsonb('Debre Bisrat Ethiopian Orthodox Tewahedo Church'), 'Church name'),
-  ('church_address', to_jsonb('123 Church Street, City, State 12345'), 'Church address'),
-  ('church_phone', to_jsonb('+1-555-123-4567'), 'Church phone number'),
-  ('church_email', to_jsonb('info@debrebishrat.org'), 'Church email'),
+  ('church_name', to_jsonb('Debre Bisrat Ethiopian Orthodox Tewahedo Church'::text), 'Church name'),
+  ('church_address', to_jsonb('123 Church Street, City, State 12345'::text), 'Church address'),
+  ('church_phone', to_jsonb('+1-555-123-4567'::text), 'Church phone number'),
+  ('church_email', to_jsonb('info@debrebishrat.org'::text), 'Church email'),
   ('enable_donations', to_jsonb(true), 'Enable donation functionality'),
   ('enable_appointments', to_jsonb(true), 'Enable appointment booking'),
   ('enable_events', to_jsonb(true), 'Enable events functionality'),
-  ('membership_fee_regular', to_jsonb(100), 'Regular membership fee'),
-  ('membership_fee_student', to_jsonb(50), 'Student membership fee'),
-  ('membership_fee_senior', to_jsonb(75), 'Senior membership fee'),
-  ('membership_fee_family', to_jsonb(200), 'Family membership fee')
+  ('membership_fee_regular', to_jsonb(100::int), 'Regular membership fee'),
+  ('membership_fee_student', to_jsonb(50::int), 'Student membership fee'),
+  ('membership_fee_senior', to_jsonb(75::int), 'Senior membership fee'),
+  ('membership_fee_family', to_jsonb(200::int), 'Family membership fee')
 ON CONFLICT (key) DO NOTHING;
+
 
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_members_email ON members(email);

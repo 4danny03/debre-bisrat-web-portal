@@ -169,7 +169,6 @@ const MembershipRegistration = () => {
         name: `${formData.firstName} ${formData.lastName}`,
         address: `${formData.streetAddress}, ${formData.city}, ${formData.stateProvinceRegion} ${formData.postalZipCode}`,
         // memberId will be set after member creation
-        membershipType: formData.membershipType,
       };
 
       console.log("Invoking create-checkout function with data:", checkoutData);
@@ -182,7 +181,7 @@ const MembershipRegistration = () => {
 
       // First create the member record using the membership-management function
       const memberResponse = await supabase.functions.invoke(
-        "supabase-functions-membership-management",
+        "membership-management",
         {
           body: {
             action: "create_member",
@@ -224,13 +223,11 @@ const MembershipRegistration = () => {
       }
 
       // Then create the checkout session
-      const response = await supabase.functions.invoke("webhook-handler", {
+      console.log("About to invoke create-checkout function...");
+      const response = await supabase.functions.invoke("create-checkout", {
         body: {
-          action: "create_checkout",
-          checkout_data: {
-            ...checkoutData,
-            memberId: newMember.id,
-          },
+          ...checkoutData,
+          memberId: newMember.id,
         },
       });
 
@@ -240,16 +237,15 @@ const MembershipRegistration = () => {
 
       if (response.error) {
         console.error("Function error:", response.error);
-        throw new Error(
-          `Payment initiation failed: ${(response as any).error.message || "Unknown error"}`,
-        );
+        const errorMessage = response.error.message || response.error.error_description || "Unknown error";
+        throw new Error(`Payment initiation failed: ${errorMessage}`);
       }
 
-      if (!(response as any).data?.url) {
+      if (!response.data?.url) {
         throw new Error("No checkout URL received");
       }
 
-      window.location.href = (response as any).data.url;
+      window.location.href = response.data.url;
     } catch (error: unknown) {
       let errorMessage = "Registration failed. Please try again.";
       if (typeof error === "object" && error !== null) {

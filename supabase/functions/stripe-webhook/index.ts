@@ -26,17 +26,17 @@ Deno.serve(async (req) => {
     }
 
     // Get environment variables
-    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
-    const stripeWebhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+    const stripeSecretKey = Deno.env.get("VITE_STRIPE_SECRET_KEY") || "sk_test_51ROOqvPp3jAs3nkg9jWMW5dZtXdeGAB9SvrBjc5DonIXUtTLYGPeq2XusT45cXQeiQ0ELAsSOIKtc7ekmhwrOD2r00bbE6pqt9";
+    const stripeWebhookSecret = Deno.env.get("VITE_STRIPE_WEBHOOK_SECRET");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     // Validate required environment variables
     if (!stripeSecretKey) {
-      throw new Error("Missing STRIPE_SECRET_KEY environment variable");
+      throw new Error("Missing VITE_STRIPE_SECRET_KEY environment variable");
     }
     if (!stripeWebhookSecret) {
-      throw new Error("Missing STRIPE_WEBHOOK_SECRET environment variable");
+      throw new Error("Missing VITE_STRIPE_WEBHOOK_SECRET environment variable");
     }
     if (!supabaseUrl) {
       throw new Error("Missing SUPABASE_URL environment variable");

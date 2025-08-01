@@ -8,9 +8,19 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // const supabaseClient = createClient(
+    //   Deno.env.get("SUPABASE_URL") ?? "",
+    //   Deno.env.get("SUPABASE_SERVICE_KEY") ?? "",
+    // );
+
+    const authHeader = req.headers.get("authorization") || "";
+    const token = authHeader.replace("Bearer ", "").trim();
+
+    const supabaseKey = (token || Deno.env.get("SUPABASE_SERVICE_KEY")) ?? "";
+
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_KEY") ?? "",
+      supabaseKey,
     );
 
     const { action, member_data, member_id, update_data } = await req.json();
