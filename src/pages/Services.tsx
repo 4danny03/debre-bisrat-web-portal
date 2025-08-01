@@ -68,6 +68,8 @@ const Services: React.FC = () => {
   const { t, language } = useLanguage();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [submittedAppointment, setSubmittedAppointment] = useState<any>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const { toast } = useToast();
 
   const handleAppointmentSubmit = async (
@@ -88,7 +90,7 @@ const Services: React.FC = () => {
     try {
       // Use the appointment-request edge function for better validation and processing
       const { data, error } = await supabase.functions.invoke(
-        "supabase-functions-appointment-request",
+        "appointment-request",
         {
           body: {
             name,
@@ -112,6 +114,20 @@ const Services: React.FC = () => {
         throw new Error(data?.error || "Failed to submit appointment request");
       }
 
+      // Store the submitted appointment details
+      setSubmittedAppointment({
+        name,
+        email,
+        phone,
+        service_title: service,
+        requested_date: date,
+        requested_time: time,
+        notes,
+        id: data.appointment?.id,
+        status: "pending"
+      });
+
+      // Show success toast
       toast({
         title: language === "en" ? "Appointment Request Sent" : "የቀጠሮ ጥያቄ ተልኳል",
         description:
@@ -121,6 +137,7 @@ const Services: React.FC = () => {
       });
 
       setIsDialogOpen(false);
+      setShowConfirmation(true);
       (e.target as HTMLFormElement).reset();
     } catch (error: any) {
       console.error("Error submitting appointment:", error);
@@ -269,7 +286,10 @@ const Services: React.FC = () => {
 
             {/* Single Request Appointment Button */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <Button className="bg-church-burgundy hover:bg-church-burgundy/90 text-white px-8 py-3 text-lg">
+              <Button 
+                onClick={() => setIsDialogOpen(true)}
+                className="bg-church-burgundy hover:bg-church-burgundy/90 text-white px-8 py-3 text-lg"
+              >
                 <CalendarCheck className="h-5 w-5 mr-2" />
                 {language === "en" ? "Request Appointment" : "ቀጠሮ ይጠይቁ"}
               </Button>
@@ -418,6 +438,97 @@ const Services: React.FC = () => {
                     </Button>
                   </DialogFooter>
                 </form>
+              </DialogContent>
+            </Dialog>
+
+            {/* Confirmation Dialog */}
+            <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle className="text-green-600">
+                    {language === "en" ? "Appointment Requested" : "የቀጠሮ ጥያቄ ተረጋግጧል"}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {language === "en"
+                      ? "Your appointment request has been successfully submitted. Here are the details:"
+                      : "የቀጠሮ ጥያቄዎ በተሳካም ሁኔታ ተልኳል። እነሆ ዝርዝሮቹ:"}
+                  </DialogDescription>
+                </DialogHeader>
+                {submittedAppointment && (
+                  <div className="space-y-4">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-semibold text-gray-700">
+                            {language === "en" ? "Name:" : "ስም:"}
+                          </span>
+                          <p className="text-gray-900">{submittedAppointment.name}</p>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-gray-700">
+                            {language === "en" ? "Email:" : "ኢሜይል:"}
+                          </span>
+                          <p className="text-gray-900">{submittedAppointment.email}</p>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-gray-700">
+                            {language === "en" ? "Phone:" : "ስልክ:"}
+                          </span>
+                          <p className="text-gray-900">{submittedAppointment.phone || "N/A"}</p>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-gray-700">
+                            {language === "en" ? "Service:" : "አገልግሎት:"}
+                          </span>
+                          <p className="text-gray-900">{submittedAppointment.service_title}</p>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-gray-700">
+                            {language === "en" ? "Date:" : "ቀን:"}
+                          </span>
+                          <p className="text-gray-900">{submittedAppointment.requested_date}</p>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-gray-700">
+                            {language === "en" ? "Time:" : "ሰዓት:"}
+                          </span>
+                          <p className="text-gray-900">{submittedAppointment.requested_time}</p>
+                        </div>
+                        {submittedAppointment.notes && (
+                          <div className="col-span-2">
+                            <span className="font-semibold text-gray-700">
+                              {language === "en" ? "Notes:" : "ማስታወሻዎች:"}
+                            </span>
+                            <p className="text-gray-900">{submittedAppointment.notes}</p>
+                          </div>
+                        )}
+                        <div className="col-span-2">
+                          <span className="font-semibold text-gray-700">
+                            {language === "en" ? "Status:" : "ሁኔታ:"}
+                          </span>
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            {language === "en" ? "Pending Confirmation" : "ያረጋግጥ ይታለቃል"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <p className="text-sm text-blue-800">
+                        {language === "en"
+                          ? "We will contact you within 24-48 hours to confirm your appointment. Please check your email and phone for updates."
+                          : "በ24-48 ሰዓታት ውስጥ የቀጠሮዎን ለማረጋገጥ እናገኝዎታለን። ለዝመናዎች ኢሜይልዎን እና ስልክዎን ያረጋግጡ።"}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                <DialogFooter>
+                  <Button
+                    onClick={() => setShowConfirmation(false)}
+                    className="bg-church-burgundy hover:bg-church-burgundy/90"
+                  >
+                    {language === "en" ? "Close" : "ዝጋ"}
+                  </Button>
+                </DialogFooter>
               </DialogContent>
             </Dialog>
           </div>

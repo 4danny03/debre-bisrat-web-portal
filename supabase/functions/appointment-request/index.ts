@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
     }
 
     // Create Supabase client with service role key
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_KEY");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (!supabaseKey) {
       return new Response(
         JSON.stringify({
