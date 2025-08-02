@@ -95,6 +95,7 @@ export default function AdminLayout() {
     { to: "/admin/prayer-requests", icon: "Heart", label: "Prayer Requests", description: "Manage prayer requests" },
     { to: "/admin/donations", icon: "DollarSign", label: "Donations", description: "Track donations" },
     { to: "/admin/appointments", icon: "CalendarCheck", label: "Appointments", description: "Manage appointment requests" },
+    { to: "/admin/contact-messages", icon: "Mail", label: "Contact Messages", description: "View contact form messages" },
     { to: "/admin/email-marketing", icon: "Mail", label: "Email Marketing", description: "Newsletter campaigns" },
     { to: "/admin/users", icon: "Users", label: "Users", description: "Manage admin users" },
     { to: "/admin/analytics", icon: "TrendingUp", label: "Analytics", description: "Data insights" },

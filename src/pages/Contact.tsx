@@ -35,6 +35,7 @@ const Contact: React.FC = () => {
         title: "Message Sent",
         description: "Thank you for your message. We'll get back to you soon.",
       });
+      console.log('response', data);
       form.reset();
     } catch (error) {
       toast({
