@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Contact: React.FC = () => {
   const { language } = useLanguage();
@@ -16,17 +17,25 @@ const Contact: React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    try {
-      // Simulate form submission
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
+    const name = formData.get("name") as string;
+    const email = formData.get("email") as string;
+    const subject = formData.get("subject") as string;
+    const message = formData.get("message") as string;
 
+    try {
+      const { data, error } = await supabase.functions.invoke("contact-form", {
+        body: { name, email, subject, message },
+      });
+      if (error || !data?.success) {
+        throw new Error((error && error.message) || data?.error || "Failed to send message");
+      }
       toast({
         title: "Message Sent",
         description: "Thank you for your message. We'll get back to you soon.",
       });
-
-      // Reset form
-      (e.target as HTMLFormElement).reset();
+      form.reset();
     } catch (error) {
       toast({
         title: "Error",

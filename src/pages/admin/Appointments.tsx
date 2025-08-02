@@ -83,7 +83,7 @@ const AdminAppointments: React.FC = () => {
     useState<Appointment | null>(null);
   const [responseDialog, setResponseDialog] = useState(false);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [currentUser, setCurrentUser] = useState<SupabaseUser | null>(null);
   const { toast } = useToast();
 
@@ -262,13 +262,13 @@ const AdminAppointments: React.FC = () => {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
-          <Select value={statusFilter || ""} onValueChange={setStatusFilter}>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full sm:w-40">
               <RefreshCw className="w-4 h-4 mr-2" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Status</SelectItem>
+              <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="approved">Approved</SelectItem>
               <SelectItem value="rejected">Rejected</SelectItem>
@@ -288,7 +288,7 @@ const AdminAppointments: React.FC = () => {
           onChange={(e) => setSearch(e.target.value)}
         />
         <Select
-          value={statusFilter || "all"}
+          value={statusFilter}
           onValueChange={setStatusFilter}
         >
           <SelectTrigger>
