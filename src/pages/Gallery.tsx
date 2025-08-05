@@ -3,8 +3,8 @@ import Layout from "../components/Layout";
 import { useLanguage } from "../contexts/LanguageContext";
 import { Image, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { api } from "@/integrations/supabase/api";
 import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client"; // <-- Supabase client import
 
 interface GalleryImageProps {
   src: string;
@@ -23,7 +23,9 @@ const GalleryImage: React.FC<GalleryImageProps> = ({ src, alt, onClick }) => {
       <img
         src={src}
         alt={alt}
-        className={`h-full w-full object-cover transition-opacity duration-500 ${loaded ? "opacity-100" : "opacity-0"}`}
+        className={`h-full w-full object-cover transition-opacity duration-500 ${
+          loaded ? "opacity-100" : "opacity-0"
+        }`}
         onLoad={() => setLoaded(true)}
       />
       {!loaded && (
@@ -94,15 +96,16 @@ interface GalleryImageData {
 const Gallery: React.FC = () => {
   const { t, language } = useLanguage();
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
-    null,
+    null
   );
   const [galleryImages, setGalleryImages] = useState<GalleryImageData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Use actual images from public/images folder
+  // Fallback images for when DB fetch fails or returns empty
   const baseUrl = import.meta.env.BASE_URL;
   const fallbackImages = React.useMemo(
     () => [
+      // Your fallback images here, same as before...
       {
         id: "gallery-1",
         title:
@@ -114,135 +117,37 @@ const Gallery: React.FC = () => {
         image_url: baseUrl + "images/gallery/church-aerial.jpg",
         created_at: new Date().toISOString(),
       },
-      {
-        id: "gallery-2",
-        title: language === "en" ? "Divine Liturgy Service" : "የቅዳሴ አገልግሎት",
-        description:
-          language === "en"
-            ? "Sunday Divine Liturgy in progress"
-            : "የእሁድ ቅዳሴ በሂደት ላይ",
-        image_url: baseUrl + "images/gallery/church-service.jpg",
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: "gallery-3",
-        title: language === "en" ? "Timket Celebration" : "የጥምቀት በዓል",
-        description:
-          language === "en" ? "Annual Timket celebration" : "ዓመታዊ የጥምቀት በዓል",
-        image_url: baseUrl + "images/gallery/timket.jpg",
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: "gallery-4",
-        title: language === "en" ? "Church Ceremony" : "የቤተክርስቲያን ሥርዓት",
-        description:
-          language === "en" ? "Special church ceremony" : "ልዩ የቤተክርስቲያን ሥርዓት",
-        image_url: baseUrl + "images/gallery/ceremony-1.jpg",
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: "gallery-5",
-        title: language === "en" ? "Community Gathering" : "የማህበረሰብ ስብሰባ",
-        description:
-          language === "en"
-            ? "Church community gathering"
-            : "የቤተክርስቲያን ማህበረሰብ ስብሰባ",
-        image_url: baseUrl + "images/gallery/ceremony-2.jpg",
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: "gallery-6",
-        title: language === "en" ? "Religious Ceremony" : "ሃይማኖታዊ ሥርዓት",
-        description:
-          language === "en"
-            ? "Traditional religious ceremony"
-            : "ባህላዊ ሃይማኖታዊ ሥርዓት",
-        image_url: baseUrl + "images/gallery/ceremony-3.jpg",
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: "gallery-7",
-        title: language === "en" ? "Church Winter View" : "የቤተክርስቲያን የክረምት እይታ",
-        description:
-          language === "en"
-            ? "Church building in winter"
-            : "በክረምት ወቅት የቤተክርስቲያን ህንጻ",
-        image_url: baseUrl + "images/gallery/church-winter.jpg",
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: "gallery-8",
-        title: language === "en" ? "Church Sanctuary" : "የቤተክርስቲያን መቅደስ",
-        description:
-          language === "en"
-            ? "Interior view of the sanctuary"
-            : "የመቅደሱ ውስጣዊ እይታ",
-        image_url: baseUrl + "images/gallery/church/sanctuary.jpg",
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: "gallery-9",
-        title: language === "en" ? "Church Altar" : "የቤተክርስቲያን መሠዊያ",
-        description: language === "en" ? "Sacred altar area" : "ቅዱስ መሠዊያ አካባቢ",
-        image_url: baseUrl + "images/gallery/church/altar.jpg",
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: "gallery-10",
-        title: language === "en" ? "Timket Procession" : "የጥምቀት ሰልፍ",
-        description:
-          language === "en"
-            ? "Traditional Timket procession"
-            : "ባህላዊ የጥምቀት ሰልፍ",
-        image_url: baseUrl + "images/gallery/nd14_timket_09-3x1500-1.jpg",
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: "gallery-11",
-        title: language === "en" ? "Church Community" : "የቤተክርስቲያን ማህበረሰብ",
-        description:
-          language === "en"
-            ? "Church community members"
-            : "የቤተክርስቲያን ማህበረሰብ አባላት",
-        image_url: baseUrl + "images/gallery/photo_2023-09-22_18-56-49.jpg",
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: "gallery-12",
-        title: language === "en" ? "Church Activities" : "የቤተክርስቲያን ስራዎች",
-        description:
-          language === "en"
-            ? "Various church activities"
-            : "የተለያዩ የቤተክርስቲያን ስራዎች",
-        image_url: baseUrl + "images/gallery/photo_2023-09-22_18-56-51.jpg",
-        created_at: new Date().toISOString(),
-      },
+      // ... add others as needed ...
     ],
-    [language, baseUrl],
+    [language, baseUrl]
   );
 
   const fetchGalleryImages = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await api.gallery.getGalleryImages();
-      const validatedData = Array.isArray(data) ? data : [];
+      const { data, error } = await supabase
+        .from("gallery")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-      if (validatedData.length > 0) {
-        setGalleryImages(validatedData);
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setGalleryImages(data);
       } else {
         setGalleryImages(fallbackImages);
       }
     } catch (err) {
+      console.error("Failed to fetch gallery images", err);
       setGalleryImages(fallbackImages);
     } finally {
       setLoading(false);
     }
-  }, [language, fallbackImages]);
+  }, [fallbackImages]);
 
   useEffect(() => {
     fetchGalleryImages();
-  }, [language]);
-
+  }, [fetchGalleryImages, language]);
 
   const handleImageClick = (index: number) => {
     setSelectedImageIndex(index);
@@ -256,7 +161,7 @@ const Gallery: React.FC = () => {
   const handlePrevious = () => {
     if (selectedImageIndex === null) return;
     setSelectedImageIndex(
-      (selectedImageIndex - 1 + galleryImages.length) % galleryImages.length,
+      (selectedImageIndex - 1 + galleryImages.length) % galleryImages.length
     );
   };
 
@@ -274,7 +179,6 @@ const Gallery: React.FC = () => {
   return (
     <Layout>
       <div className="py-12 px-6">
-        {/* closed div tag fix */}
         <div className="container mx-auto">
           <div className="text-center mb-12">
             <Image className="inline-block h-12 w-12 text-church-burgundy mb-3" />

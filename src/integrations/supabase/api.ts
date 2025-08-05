@@ -3,6 +3,16 @@ import { supabase } from "./client";
 
 // Members API
 export const api = {
+  gallery: {
+    async getGalleryImages() {
+      const { data, error } = await supabase
+        .from("gallery")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  },
   members: {
     async getMembers() {
       const { data, error } = await supabase

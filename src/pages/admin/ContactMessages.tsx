@@ -30,7 +30,7 @@ const AdminContactMessages: React.FC = () => {
   useEffect(() => {
     const fetchMessages = async () => {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("contact_messages")
         .select("*")
         .order("created_at", { ascending: false });

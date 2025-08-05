@@ -68,13 +68,18 @@ export default function GalleryManager() {
       try {
         const fileExt = file.name.split(".").pop();
         const filePath = `gallery/${Date.now()}.${fileExt}`;
+        // Upload the file to the 'images' bucket
         const { error: uploadError } = await supabase.storage
           .from("images")
           .upload(filePath, file);
         if (uploadError) throw uploadError;
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("images").getPublicUrl(filePath);
+
+        // Get the public URL for the uploaded image
+        const { data: publicUrlData } = supabase.storage.from("images").getPublicUrl(filePath);
+        const publicUrl = publicUrlData?.publicUrl;
+        if (!publicUrl) throw new Error("Failed to get public URL for image");
+
+        // Insert the image record into the gallery table
         const { error: dbError } = await supabase.from("gallery").insert([
           {
             title,
