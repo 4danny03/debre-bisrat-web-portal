@@ -7,7 +7,6 @@ import {
 import {
   createStripeInstance,
   verifyStripeSignature,
-  processCompletedCheckout,
 } from "../_shared/payment-utils.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
@@ -26,7 +25,13 @@ Deno.serve(async (req) => {
     }
 
     // Get environment variables
-    const stripeSecretKey = Deno.env.get("VITE_STRIPE_SECRET_KEY") || "sk_test_51ROOqvPp3jAs3nkg9jWMW5dZtXdeGAB9SvrBjc5DonIXUtTLYGPeq2XusT45cXQeiQ0ELAsSOIKtc7ekmhwrOD2r00bbE6pqt9";
+    const stripeSecretKey = Deno.env.get("VITE_STRIPE_SECRET_KEY");
+    if (!stripeSecretKey) {
+      return formatErrorResponse(
+        new Error("Missing VITE_STRIPE_SECRET_KEY environment variable"),
+        500,
+      );
+    }
     const stripeWebhookSecret = Deno.env.get("VITE_STRIPE_WEBHOOK_SECRET");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -69,34 +74,52 @@ Deno.serve(async (req) => {
       return formatErrorResponse(new Error(`Webhook error: ${error}`), 400);
     }
 
-    // Create Supabase client
+    // Create Supabase client with service role
     const supabaseClient = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     // Process checkout.session.completed event
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
-      const result = await processCompletedCheckout(
-        supabaseClient,
-        session,
-        stripe,
-      );
-
-      if (!result.success) {
-        console.error("Error processing checkout:", result.error);
-        // We still return 200 to acknowledge receipt to Stripe
+      
+      // Extract member ID from metadata (should be set when creating checkout session)
+      const memberId = session.metadata?.memberId;
+      if (!memberId) {
+        console.error("No memberId found in session metadata");
         return formatSuccessResponse({ received: true, processed: false });
       }
 
+      // Verify payment was successful
+      if (session.payment_status !== "paid") {
+        console.log("Session not paid, skipping update");
+        return formatSuccessResponse({ received: true, processed: false });
+      }
+
+      // Update member record
+      const { error: updateError } = await supabaseClient
+        .from("members")
+        .update({
+          membership_status: "active",
+          membership_fee_paid: true,
+          payment_status: "completed",
+          payment_date: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", memberId);
+
+      if (updateError) {
+        console.error("Failed to update member:", updateError);
+        throw new Error(`Failed to update member: ${updateError.message}`);
+      }
+
+      console.log(`Successfully updated member ${memberId} after payment`);
       return formatSuccessResponse({ received: true, processed: true });
-    } else {
-      // For unsupported event types, just acknowledge receipt
-      return formatSuccessResponse({ received: true, ignored: true });
     }
+
+    // For other event types, just acknowledge receipt
+    return formatSuccessResponse({ received: true, ignored: true });
   } catch (error) {
     console.error("Webhook handler error:", error);
-    return formatErrorResponse(
-      error instanceof Error ? error : new Error(String(error)),
-      500,
-    );
+    // Even if we error, we return 200 to prevent Stripe from retrying
+    return formatSuccessResponse({ received: true, error: error.message });
   }
 });

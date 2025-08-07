@@ -24,7 +24,7 @@ serve(async (req: Request) => {
       throw new Error("Missing session_id parameter");
     }
 
-    const stripeKey = Deno.env.get("VITE_STRIPE_SECRET_KEY") || "sk_test_51ROOqvPp3jAs3nkg9jWMW5dZtXdeGAB9SvrBjc5DonIXUtTLYGPeq2XusT45cXQeiQ0ELAsSOIKtc7ekmhwrOD2r00bbE6pqt9";
+    const stripeKey = Deno.env.get("VITE_STRIPE_SECRET_KEY");
     if (!stripeKey) {
       throw new Error("Missing VITE_STRIPE_SECRET_KEY environment variable");
     }

@@ -23,11 +23,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import {
-  Heart,
+  // Heart,
   Shield,
   CreditCard,
-  Phone,
-  Mail,
+  // Phone,
+  // Mail,
   Users,
   Building,
   GraduationCap,
@@ -41,7 +41,7 @@ import { supabase } from "@/integrations/supabase/client";
 export default function Donation() {
   const { t } = useLanguage();
   const { toast } = useToast();
-  const [donationType, setDonationType] = useState("one_time");
+  const [donationType, setDonationType] = useState("monthly");
   const [purpose, setPurpose] = useState("general_fund");
   const [amount, setAmount] = useState("");
   const [contactMethod, setContactMethod] = useState("email");
@@ -150,7 +150,7 @@ export default function Donation() {
       <div className="min-h-screen bg-gradient-to-br from-church-cream to-white py-12">
         <div className="container mx-auto px-4">
           {/* Header Section */}
-          <div className="text-center mb-12">
+          {/* <div className="text-center mb-12">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-church-burgundy rounded-full mb-4">
               <Heart className="w-8 h-8 text-church-gold" />
             </div>
@@ -164,7 +164,7 @@ export default function Donation() {
               {t("donation_description") ||
                 "Your generous donation helps us continue our mission and serve the community."}
             </p>
-          </div>
+          </div> */}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
             {/* Main Donation Form */}
@@ -296,8 +296,10 @@ export default function Donation() {
                         <Checkbox
                           id="anonymous"
                           checked={isAnonymous}
-                          onCheckedChange={(checked) =>
-                            setIsAnonymous(checked as boolean)
+                          onCheckedChange={(checked) => {
+                            setIsAnonymous(checked as boolean);
+                            setIncludeBulletin(checked as boolean);
+                          }
                           }
                         />
                         <Label
@@ -315,10 +317,10 @@ export default function Donation() {
                     {/* Contact Information */}
                     {!isAnonymous && (
                       <div className="space-y-4">
-                        <Label className="text-lg font-semibold">
+                        {/* <Label className="text-lg font-semibold">
                           {t("contact_preference")}
-                        </Label>
-                        <div className="grid grid-cols-2 gap-4">
+                        </Label> */}
+                        {/* <div className="grid grid-cols-2 gap-4">
                           <Button
                             type="button"
                             variant={
@@ -349,7 +351,7 @@ export default function Donation() {
                             <Phone className="w-4 h-4 mr-2" />
                             {t("phone_contact")}
                           </Button>
-                        </div>
+                        </div> */}
 
                         {contactMethod === "email" ? (
                           <Input
@@ -372,7 +374,7 @@ export default function Donation() {
                     )}
 
                     {/* Donor Recognition */}
-                    {!isAnonymous && (
+                    {/* {!isAnonymous && (
                       <div className="space-y-4">
                         <Label className="text-lg font-semibold">
                           {t("donor_recognition")}
@@ -390,7 +392,7 @@ export default function Donation() {
                           </Label>
                         </div>
                       </div>
-                    )}
+                    )} */}
 
                     {/* Memorial/Dedication */}
                     <div className="space-y-2">
