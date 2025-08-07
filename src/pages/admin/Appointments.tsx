@@ -73,7 +73,6 @@ interface Appointment {
   responded_at?: string | null;
   created_at: string;
   updated_at?: string | null;
-  responded_by_profile?: { email: string } | null;
 }
 
 const AdminAppointments: React.FC = () => {
@@ -87,7 +86,6 @@ const AdminAppointments: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<SupabaseUser | null>(null);
   const { toast } = useToast();
 
-  // Error boundary for robust UI
   const [errorBoundary, setErrorBoundary] = useState<string | null>(null);
 
   const loadAppointments = useCallback(async () => {
@@ -200,7 +198,6 @@ const AdminAppointments: React.FC = () => {
     setResponseDialog(true);
   };
 
-  // Filtered and searched appointments
   const filteredAppointments = useMemo(() => {
     let filtered = appointments;
     if (statusFilter && statusFilter !== "all") {
@@ -216,7 +213,6 @@ const AdminAppointments: React.FC = () => {
     return filtered;
   }, [appointments, statusFilter, search]);
 
-  // Export to CSV functionality
   const exportToCSV = () => {
     const csvRows = [
       [
@@ -331,9 +327,9 @@ const AdminAppointments: React.FC = () => {
                     <TableHead>Requester</TableHead>
                     <TableHead>Service</TableHead>
                     <TableHead>Requested Date/Time</TableHead>
-                    <TableHead>Status</TableHead>
+                    {/* <TableHead>Status</TableHead> */}
                     <TableHead>Submitted</TableHead>
-                    <TableHead>Actions</TableHead>
+                    {/* <TableHead>Actions</TableHead> */}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -395,9 +391,9 @@ const AdminAppointments: React.FC = () => {
                             )}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      {/* <TableCell>
                         {getStatusBadge(appointment.status)}
-                      </TableCell>
+                      </TableCell> */}
                       <TableCell>
                         <div className="text-sm text-gray-500">
                           {format(
@@ -414,13 +410,8 @@ const AdminAppointments: React.FC = () => {
                             )}
                           </div>
                         )}
-                        {appointment.responded_by_profile?.email && (
-                          <div className="text-xs text-gray-400 mt-1">
-                            By: {appointment.responded_by_profile.email}
-                          </div>
-                        )}
                       </TableCell>
-                      <TableCell>
+                      {/* <TableCell>
                         <Button
                           size="sm"
                           onClick={() => openResponseDialog(appointment)}
@@ -430,7 +421,7 @@ const AdminAppointments: React.FC = () => {
                             ? "Respond"
                             : "Update"}
                         </Button>
-                      </TableCell>
+                      </TableCell> */}
                     </TableRow>
                   ))}
                 </TableBody>
@@ -439,7 +430,6 @@ const AdminAppointments: React.FC = () => {
           </CardContent>
         </Card>
       )}
-      {/* Response Dialog */}
       <Dialog open={responseDialog} onOpenChange={setResponseDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -542,7 +532,6 @@ const AdminAppointments: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
-      {/* Activity log stub */}
       <div className="mt-8">
         <h3 className="text-lg font-bold mb-2">Activity Log</h3>
         <div className="text-sm text-gray-500">(Activity log will appear here)</div>

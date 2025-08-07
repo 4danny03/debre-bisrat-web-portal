@@ -32,7 +32,7 @@ serve(async (req: Request) => {
 
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
-  }
+  }VITE_
 
   const signature = req.headers.get("stripe-signature");
   if (!signature) {

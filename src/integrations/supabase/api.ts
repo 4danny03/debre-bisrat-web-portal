@@ -140,16 +140,17 @@ export const api = {
         .from("appointments")
         .select(
           `
-          *,
-          responded_by_profile:profiles!appointments_responded_by_fkey(
-            email
-          )
+          *
+          
         `,
         )
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data;
+      // responded_by_profile:profiles!appointments_responded_by_fkey(
+      //       email
+      //     )
     },
 
     async getAppointmentsByStatus(status: string) {
@@ -157,10 +158,8 @@ export const api = {
         .from("appointments")
         .select(
           `
-          *,
-          responded_by_profile:profiles!appointments_responded_by_fkey(
-            email
-          )
+          *
+          
         `,
         )
         .eq("status", status)
@@ -168,6 +167,9 @@ export const api = {
 
       if (error) throw error;
       return data;
+      // responded_by_profile:profiles!appointments_responded_by_fkey(
+      //       email
+      //     )
     },
 
     async createAppointment(appointment: any) {

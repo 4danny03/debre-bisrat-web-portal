@@ -210,7 +210,7 @@ const Donations = () => {
         Email: donation.donor_email || "",
         Amount: donation.amount || 0,
         Purpose: donation.purpose || "",
-        Status: donation.status || "",
+        // Status: donation.status || "",
         Date: donation.created_at
           ? format(new Date(donation.created_at), "yyyy-MM-dd")
           : "",
@@ -430,7 +430,7 @@ const Donations = () => {
                   <TableHead>Donor</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Purpose</TableHead>
-                  <TableHead>Status</TableHead>
+                  {/* <TableHead>Status</TableHead> */}
                   <TableHead>Date</TableHead>
                   <TableHead>Payment Method</TableHead>
                 </TableRow>
@@ -463,11 +463,11 @@ const Donations = () => {
                         {formatCurrency(donation.amount)}
                       </TableCell>
                       <TableCell>{donation.purpose || "General"}</TableCell>
-                      <TableCell>
+                      {/* <TableCell>
                         <Badge variant={getStatusBadgeVariant(donation.status)}>
                           {donation.status || "Unknown"}
                         </Badge>
-                      </TableCell>
+                      </TableCell> */}
                       <TableCell>
                         {donation.created_at
                           ? format(

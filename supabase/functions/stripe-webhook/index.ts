@@ -37,32 +37,22 @@ Deno.serve(async (req) => {
     const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     // Validate required environment variables
-    if (!stripeSecretKey) {
-      throw new Error("Missing VITE_STRIPE_SECRET_KEY environment variable");
-    }
     if (!stripeWebhookSecret) {
       throw new Error("Missing VITE_STRIPE_WEBHOOK_SECRET environment variable");
     }
-    if (!supabaseUrl) {
-      throw new Error("Missing SUPABASE_URL environment variable");
-    }
-    if (!supabaseServiceRoleKey) {
-      throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY environment variable");
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
+      throw new Error("Missing Supabase configuration");
     }
 
-    // Get Stripe signature from headers
+    // Get Stripe signature and payload
     const signature = req.headers.get("stripe-signature");
     if (!signature) {
       return formatErrorResponse(new Error("Missing Stripe signature"), 400);
     }
-
-    // Get request body as text for signature verification
     const payload = await req.text();
 
-    // Create Stripe instance
+    // Initialize Stripe and verify signature
     const stripe = createStripeInstance(stripeSecretKey);
-
-    // Verify Stripe signature
     const { success, event, error } = verifyStripeSignature(
       stripe,
       payload,
@@ -74,52 +64,111 @@ Deno.serve(async (req) => {
       return formatErrorResponse(new Error(`Webhook error: ${error}`), 400);
     }
 
-    // Create Supabase client with service role
     const supabaseClient = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     // Process checkout.session.completed event
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
+      const { metadata } = session;
       
-      // Extract member ID from metadata (should be set when creating checkout session)
-      const memberId = session.metadata?.memberId;
-      if (!memberId) {
-        console.error("No memberId found in session metadata");
-        return formatSuccessResponse({ received: true, processed: false });
-      }
-
       // Verify payment was successful
       if (session.payment_status !== "paid") {
-        console.log("Session not paid, skipping update");
         return formatSuccessResponse({ received: true, processed: false });
       }
 
-      // Update member record
-      const { error: updateError } = await supabaseClient
-        .from("members")
+      // 1. Update donation record
+      const { error: donationError } = await supabaseClient
+        .from("donations")
         .update({
-          membership_status: "active",
-          membership_fee_paid: true,
-          payment_status: "completed",
-          payment_date: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          status: "completed",
+          completed_at: new Date().toISOString()
         })
-        .eq("id", memberId);
+        .eq("stripe_payment_intent_id", session.id);
 
-      if (updateError) {
-        console.error("Failed to update member:", updateError);
-        throw new Error(`Failed to update member: ${updateError.message}`);
+      if (donationError) throw donationError;
+
+      // 2. Handle membership activation if applicable
+      if (metadata?.memberId) {
+        const { error: memberError } = await supabaseClient
+          .from("members")
+          .update({
+            membership_status: "active",
+            membership_fee_paid: true,
+            payment_status: "completed",
+            payment_date: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", metadata.memberId);
+
+        if (memberError) throw memberError;
       }
 
-      console.log(`Successfully updated member ${memberId} after payment`);
+      // 3. Send confirmation emails
+      try {
+        // Get donation details
+        const { data: donation } = await supabaseClient
+          .from("donations")
+          .select("*")
+          .eq("stripe_payment_intent_id", session.id)
+          .single();
+
+        if (donation) {
+          // Send to donor
+          await supabaseClient.functions.invoke("send-email", {
+            body: {
+              to: session.customer_email || donation.donor_email,
+              subject: metadata?.purpose === "membership_fee"
+                ? "Membership Activated"
+                : "Donation Confirmed",
+              htmlContent: `
+                <h1>Payment Confirmed</h1>
+                <p>Your ${metadata?.purpose === "membership_fee" ? "membership" : "donation"} of $${(session.amount_total / 100).toFixed(2)} has been processed.</p>
+                ${metadata?.purpose === "membership_fee" ? "<p>Your membership is now active!</p>" : ""}
+                <p>Transaction ID: ${session.id}</p>
+                <p>Date: ${new Date().toLocaleString()}</p>
+              `
+            }
+          });
+
+          // Notify admins
+          const { data: admins } = await supabaseClient
+            .from("profiles")
+            .select("email")
+            .eq("role", "admin");
+
+          if (admins?.length) {
+            await supabaseClient.functions.invoke("send-email", {
+              body: {
+                to: admins.map(a => a.email),
+                subject: `Payment Completed - $${(session.amount_total / 100).toFixed(2)}`,
+                htmlContent: `
+                  <h2>Payment Received</h2>
+                  <p><strong>Type:</strong> ${metadata?.purpose?.replace(/_/g, " ") || "Donation"}</p>
+                  <p><strong>Amount:</strong> $${(session.amount_total / 100).toFixed(2)}</p>
+                  <p><strong>From:</strong> ${donation.donor_name || session.customer_email}</p>
+                  ${metadata?.memberId ? `<p><strong>Member ID:</strong> ${metadata.memberId}</p>` : ""}
+                  <p><strong>Transaction ID:</strong> ${session.id}</p>
+                `
+              }
+            });
+          }
+        }
+      } catch (emailError) {
+        console.error("Email sending failed:", emailError);
+        // Don't fail the webhook if emails fail
+      }
+
       return formatSuccessResponse({ received: true, processed: true });
     }
 
-    // For other event types, just acknowledge receipt
+    // Handle other event types
     return formatSuccessResponse({ received: true, ignored: true });
+
   } catch (error) {
     console.error("Webhook handler error:", error);
-    // Even if we error, we return 200 to prevent Stripe from retrying
-    return formatSuccessResponse({ received: true, error: error.message });
+    return formatSuccessResponse({ 
+      received: true, 
+      error: error instanceof Error ? error.message : "Unknown error" 
+    });
   }
 });

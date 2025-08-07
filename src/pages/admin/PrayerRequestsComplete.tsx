@@ -76,6 +76,7 @@ export default function AdminPrayerRequestsComplete() {
     null,
   );
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [emailSending, setEmailSending] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -186,17 +187,38 @@ export default function AdminPrayerRequestsComplete() {
     e.preventDefault();
     if (!selectedRequest || !selectedRequest.email) return;
 
+    setEmailSending(true);
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
     const subject = formData.get("subject") as string;
     const message = formData.get("message") as string;
 
     try {
-      // In a real implementation, you would send an email here
-      // For now, we'll just show a success message
-      console.log("Email would be sent to:", selectedRequest.email);
-      console.log("Subject:", subject);
-      console.log("Message:", message);
+      // Send email via Resend
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: selectedRequest.email,
+          subject: subject,
+          htmlContent: message.replace(/\n/g, '<br>')
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send email');
+      }
+
+      // Update prayer request to mark as answered
+      await supabase
+        .from("prayer_requests")
+        .update({
+          is_answered: true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", selectedRequest.id);
 
       toast({
         title: "Email Sent",
@@ -204,6 +226,7 @@ export default function AdminPrayerRequestsComplete() {
       });
       setIsEmailDialogOpen(false);
       setSelectedRequest(null);
+      loadPrayerRequests();
     } catch (error) {
       console.error("Error sending email:", error);
       toast({
@@ -211,6 +234,8 @@ export default function AdminPrayerRequestsComplete() {
         description: "Failed to send email response",
         variant: "destructive",
       });
+    } finally {
+      setEmailSending(false);
     }
   };
 
@@ -698,14 +723,28 @@ export default function AdminPrayerRequestsComplete() {
                 <Button
                   type="submit"
                   className="flex-1 bg-church-burgundy hover:bg-church-burgundy/90"
+                  disabled={emailSending}
                 >
-                  <Mail className="w-4 h-4 mr-2" />
-                  Send Email
+                  {emailSending ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="w-4 h-4 mr-2" />
+                      Send Email
+                    </>
+                  )}
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setIsEmailDialogOpen(false)}
+                  disabled={emailSending}
                 >
                   Cancel
                 </Button>
