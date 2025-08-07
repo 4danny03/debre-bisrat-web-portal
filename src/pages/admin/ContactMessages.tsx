@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Mail, User, MessageSquare, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import { saveAs } from "file-saver";
 
 interface ContactMessage {
   id: string;
@@ -48,6 +50,28 @@ const AdminContactMessages: React.FC = () => {
       m.message.toLowerCase().includes(search.toLowerCase())
   );
 
+  const exportToCSV = () => {
+    const rows = [
+      ["Name", "Email", "Subject", "Message", "Date"],
+      ...filtered.map((m) => [
+        m.name,
+        m.email,
+        m.subject,
+        m.message.replace(/\n/g, " "),
+        format(new Date(m.created_at), "yyyy-MM-dd HH:mm"),
+      ]),
+    ];
+    const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    saveAs(blob, `contact-messages-${format(new Date(), "yyyy-MM-dd")}.csv`);
+  };
+
+  if (loading) {
+    return (
+      <LoadingSpinner className="h-64" text="Loading messages..." ariaLabel="Loading messages" />
+    );
+  }
+
   return (
     <div className="space-y-6">
       <Card>
@@ -65,6 +89,7 @@ const AdminContactMessages: React.FC = () => {
               onChange={(e) => setSearch(e.target.value)}
             />
             <Button onClick={() => setSearch("")}>Clear</Button>
+            <Button variant="outline" onClick={exportToCSV}>Export CSV</Button>
           </div>
           <div className="overflow-x-auto rounded-md border">
             <Table>
@@ -78,13 +103,7 @@ const AdminContactMessages: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8">
-                      Loading...
-                    </TableCell>
-                  </TableRow>
-                ) : filtered.length === 0 ? (
+                {filtered.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8">
                       No messages found

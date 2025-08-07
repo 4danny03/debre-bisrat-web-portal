@@ -49,6 +49,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import { saveAs } from "file-saver";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 interface Member {
   id: string;
@@ -102,7 +103,6 @@ export default function AdminMembers() {
       });
       setMembers([]);
     } else {
-// ...existing code...
       // Ensure data has proper structure with safe array validation
       const validatedData = Array.isArray(data) ? data : [];
       const processedData = validatedData.map((member) => ({
@@ -115,9 +115,7 @@ export default function AdminMembers() {
           member?.updated_at || member?.created_at || new Date().toISOString(),
       }));
 
-      setMembers(processedData);
-// ...existing code...
-      setMembers(data as Member[]);
+      setMembers(processedData as Member[]);
     }
     setLoading(false);
   };
@@ -324,9 +322,11 @@ export default function AdminMembers() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-church-burgundy"></div>
-      </div>
+      <LoadingSpinner
+        className="h-64"
+        text="Loading members..."
+        ariaLabel="Loading members"
+      />
     );
   }
 

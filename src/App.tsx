@@ -42,24 +42,24 @@ import DonationDemo from "./pages/DonationDemo";
 import MembershipSuccess from "./pages/MembershipSuccess";
 import Gallery from "./pages/Gallery";
 import Services from "./pages/Services";
-import AdminLayout from "./pages/admin/AdminLayout";
-import AdminLogin from "./pages/admin/Login";
-import AdminDashboard from "./pages/admin/Dashboard";
-import AdminEvents from "./pages/admin/Events";
-import AdminGallery from "./pages/admin/Gallery";
-import AdminSettings from "./pages/admin/Settings";
-import AdminMembers from "./pages/admin/Members";
-import AdminTestimonials from "./pages/admin/Testimonials";
-import AdminPrayerRequests from "./pages/admin/PrayerRequests";
-import AdminDonations from "./pages/admin/Donations";
-import AdminUsers from "./pages/admin/Users";
-import AdminSystemHealth from "./pages/admin/SystemHealth";
-import AdminAnalytics from "./pages/admin/Analytics";
-import AdminBulkOperations from "./pages/admin/BulkOperations";
-import AdminContentScheduler from "./pages/admin/ContentScheduler";
-import AdminAppointments from "./pages/admin/Appointments";
-import AdminEmailMarketing from "./pages/admin/EmailMarketing";
-import AdminContactMessages from "./pages/admin/ContactMessages";
+const AdminLayout = React.lazy(() => import("./pages/admin/AdminLayout"));
+const AdminLogin = React.lazy(() => import("./pages/admin/Login"));
+const AdminDashboard = React.lazy(() => import("./pages/admin/Dashboard"));
+const AdminEvents = React.lazy(() => import("./pages/admin/Events"));
+const AdminGallery = React.lazy(() => import("./pages/admin/Gallery"));
+const AdminSettings = React.lazy(() => import("./pages/admin/Settings"));
+const AdminMembers = React.lazy(() => import("./pages/admin/Members"));
+const AdminTestimonials = React.lazy(() => import("./pages/admin/Testimonials"));
+const AdminPrayerRequests = React.lazy(() => import("./pages/admin/PrayerRequests"));
+const AdminDonations = React.lazy(() => import("./pages/admin/Donations"));
+const AdminUsers = React.lazy(() => import("./pages/admin/Users"));
+const AdminSystemHealth = React.lazy(() => import("./pages/admin/SystemHealth"));
+const AdminAnalytics = React.lazy(() => import("./pages/admin/Analytics"));
+const AdminBulkOperations = React.lazy(() => import("./pages/admin/BulkOperations"));
+const AdminContentScheduler = React.lazy(() => import("./pages/admin/ContentScheduler"));
+const AdminAppointments = React.lazy(() => import("./pages/admin/Appointments"));
+const AdminEmailMarketing = React.lazy(() => import("./pages/admin/EmailMarketing"));
+const AdminContactMessages = React.lazy(() => import("./pages/admin/ContactMessages"));
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { DataProvider } from "./contexts/DataContext";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -67,6 +67,7 @@ import "@/utils/debugSync"; // Initialize debug utilities
 import MemberLogin from "./pages/MemberLogin";
 import MemberDashboard from "@/components/MemberDashboard";
 import MemberAuthGuard from "@/components/MemberAuthGuard";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 function AppContent() {
   usePerformanceMonitoring();
@@ -97,32 +98,71 @@ function AppContent() {
       />
 
       {/* Admin Routes */}
-      <Route path="/admin/login" element={<AdminLogin />} />
+      <Route
+        path="/admin/login"
+        element={
+          <React.Suspense
+            fallback={
+              <LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />
+            }
+          >
+            <AdminLogin />
+          </React.Suspense>
+        }
+      />
       <Route
         path="/admin"
         element={
           <ProtectedRoute>
-            <AdminLayout />
+            <React.Suspense
+              fallback={
+                <LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />
+              }
+            >
+              <AdminLayout />
+            </React.Suspense>
           </ProtectedRoute>
         }
       >
-        <Route index element={<AdminDashboard />} />
-        <Route path="dashboard" element={<AdminDashboard />} />
-        <Route path="events" element={<AdminEvents />} />
-        <Route path="gallery" element={<AdminGallery />} />
-        <Route path="settings" element={<AdminSettings />} />
-        <Route path="members" element={<AdminMembers />} />
-        <Route path="testimonials" element={<AdminTestimonials />} />
-        <Route path="prayer-requests" element={<AdminPrayerRequests />} />
-        <Route path="donations" element={<AdminDonations />} />
-        <Route path="users" element={<AdminUsers />} />
-        <Route path="system-health" element={<AdminSystemHealth />} />
-        <Route path="analytics" element={<AdminAnalytics />} />
-        <Route path="bulk-operations" element={<AdminBulkOperations />} />
-        <Route path="content-scheduler" element={<AdminContentScheduler />} />
-        <Route path="appointments" element={<AdminAppointments />} />
-        <Route path="contact-messages" element={<AdminContactMessages />} />
-        <Route path="email-marketing" element={<AdminEmailMarketing />} />
+        <Route
+          index
+          element={
+            <React.Suspense
+              fallback={
+                <LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />
+              }
+            >
+              <AdminDashboard />
+            </React.Suspense>
+          }
+        />
+        <Route
+          path="dashboard"
+          element={
+            <React.Suspense
+              fallback={
+                <LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />
+              }
+            >
+              <AdminDashboard />
+            </React.Suspense>
+          }
+        />
+        <Route path="events" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminEvents /></React.Suspense>} />
+        <Route path="gallery" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminGallery /></React.Suspense>} />
+        <Route path="settings" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminSettings /></React.Suspense>} />
+        <Route path="members" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminMembers /></React.Suspense>} />
+        <Route path="testimonials" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminTestimonials /></React.Suspense>} />
+        <Route path="prayer-requests" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminPrayerRequests /></React.Suspense>} />
+        <Route path="donations" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminDonations /></React.Suspense>} />
+        <Route path="users" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminUsers /></React.Suspense>} />
+        <Route path="system-health" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminSystemHealth /></React.Suspense>} />
+        <Route path="analytics" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminAnalytics /></React.Suspense>} />
+        <Route path="bulk-operations" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminBulkOperations /></React.Suspense>} />
+        <Route path="content-scheduler" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminContentScheduler /></React.Suspense>} />
+        <Route path="appointments" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminAppointments /></React.Suspense>} />
+        <Route path="contact-messages" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminContactMessages /></React.Suspense>} />
+        <Route path="email-marketing" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminEmailMarketing /></React.Suspense>} />
       </Route>
 
       {/* Add this before the catchall route */}

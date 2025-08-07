@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -51,6 +52,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import EmptyState from "@/components/EmptyState";
+import LoadingSpinner from "@/components/LoadingSpinner";
 // @ts-ignore
 import { saveAs } from "file-saver";
 import { User as SupabaseUser } from "@supabase/supabase-js";
@@ -81,12 +83,14 @@ const AdminAppointments: React.FC = () => {
   const [selectedAppointment, setSelectedAppointment] =
     useState<Appointment | null>(null);
   const [responseDialog, setResponseDialog] = useState(false);
+  const [adminResponse, setAdminResponse] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [currentUser, setCurrentUser] = useState<SupabaseUser | null>(null);
   const { toast } = useToast();
 
   const [errorBoundary, setErrorBoundary] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const loadAppointments = useCallback(async () => {
     setLoading(true);
@@ -195,6 +199,7 @@ const AdminAppointments: React.FC = () => {
 
   const openResponseDialog = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
+    setAdminResponse(appointment.admin_response || "");
     setResponseDialog(true);
   };
 
@@ -214,6 +219,11 @@ const AdminAppointments: React.FC = () => {
   }, [appointments, statusFilter, search]);
 
   const exportToCSV = () => {
+    const toExport =
+      selectedIds.size > 0
+        ? filteredAppointments.filter((a) => selectedIds.has(a.id))
+        : filteredAppointments;
+
     const csvRows = [
       [
         "ID",
@@ -222,16 +232,18 @@ const AdminAppointments: React.FC = () => {
         "Phone",
         "Service",
         "Date",
+        "Time",
         "Status",
         "Admin Notes",
       ],
-      ...appointments.map((a) => [
+      ...toExport.map((a) => [
         a.id,
         a.name,
         a.email,
         a.phone,
         a.service_title,
         a.requested_date,
+        a.requested_time,
         a.status,
         a.admin_notes || "",
       ]),
@@ -239,6 +251,41 @@ const AdminAppointments: React.FC = () => {
     const csvContent = csvRows.map((r) => r.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv" });
     saveAs(blob, "appointments.csv");
+  };
+
+  const toggleSelectAllVisible = (checked: boolean) => {
+    const next = new Set(selectedIds);
+    if (checked) {
+      filteredAppointments.forEach((a) => next.add(a.id));
+    } else {
+      filteredAppointments.forEach((a) => next.delete(a.id));
+    }
+    setSelectedIds(next);
+  };
+
+  const toggleSelect = (id: string, checked: boolean) => {
+    const next = new Set(selectedIds);
+    if (checked) next.add(id);
+    else next.delete(id);
+    setSelectedIds(next);
+  };
+
+  const handleBulkUpdateStatus = async (newStatus: string) => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    try {
+      const { error } = await supabase
+        .from("appointments")
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .in("id", ids);
+      if (error) throw error;
+      toast({ title: "Updated", description: `Updated ${ids.length} appointment(s)` });
+      setSelectedIds(new Set());
+      loadAppointments();
+    } catch (e) {
+      console.error("Bulk status update failed", e);
+      toast({ title: "Error", description: "Failed to update selected appointments", variant: "destructive" });
+    }
   };
 
   return (
@@ -283,27 +330,22 @@ const AdminAppointments: React.FC = () => {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <Select
-          value={statusFilter}
-          onValueChange={setStatusFilter}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="confirmed">Confirmed</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+            </SelectContent>
+          </Select>
         <Button onClick={exportToCSV}>Export CSV</Button>
       </div>
       {loading ? (
-        <div className="py-10">
-          <span>Loading...</span>
-        </div>
+        <LoadingSpinner className="h-64" text="Loading appointments..." ariaLabel="Loading appointments" />
       ) : appointments.length === 0 ? (
         <EmptyState
           icon={CalendarCheck}
@@ -320,21 +362,49 @@ const AdminAppointments: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
+          {selectedIds.size > 0 && (
+            <div className="flex items-center justify-between mb-4 p-2 rounded border bg-muted/30">
+              <div className="text-sm">{selectedIds.size} selected</div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => handleBulkUpdateStatus("pending")}>Mark Pending</Button>
+                <Button variant="outline" onClick={() => handleBulkUpdateStatus("approved")}>Approve</Button>
+                <Button variant="outline" onClick={() => handleBulkUpdateStatus("rejected")}>Reject</Button>
+                <Button variant="outline" onClick={() => handleBulkUpdateStatus("completed")}>Complete</Button>
+              </div>
+            </div>
+          )}
+          <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      aria-label="Select all visible"
+                      checked={
+                        filteredAppointments.length > 0 &&
+                        filteredAppointments.every((a) => selectedIds.has(a.id))
+                      }
+                      onCheckedChange={(v) => toggleSelectAllVisible(Boolean(v))}
+                    />
+                  </TableHead>
                     <TableHead>Requester</TableHead>
                     <TableHead>Service</TableHead>
                     <TableHead>Requested Date/Time</TableHead>
-                    {/* <TableHead>Status</TableHead> */}
+                    <TableHead>Status</TableHead>
                     <TableHead>Submitted</TableHead>
-                    {/* <TableHead>Actions</TableHead> */}
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredAppointments.map((appointment) => (
                     <TableRow key={appointment.id}>
+                    <TableCell>
+                      <Checkbox
+                        aria-label={`Select appointment ${appointment.id}`}
+                        checked={selectedIds.has(appointment.id)}
+                        onCheckedChange={(v) => toggleSelect(appointment.id, Boolean(v))}
+                      />
+                    </TableCell>
                       <TableCell>
                         <div className="space-y-1">
                           <div className="font-medium flex items-center">
@@ -391,9 +461,9 @@ const AdminAppointments: React.FC = () => {
                             )}
                         </div>
                       </TableCell>
-                      {/* <TableCell>
+                      <TableCell>
                         {getStatusBadge(appointment.status)}
-                      </TableCell> */}
+                      </TableCell>
                       <TableCell>
                         <div className="text-sm text-gray-500">
                           {format(
@@ -411,17 +481,15 @@ const AdminAppointments: React.FC = () => {
                           </div>
                         )}
                       </TableCell>
-                      {/* <TableCell>
+                      <TableCell>
                         <Button
                           size="sm"
                           onClick={() => openResponseDialog(appointment)}
                           className="bg-church-burgundy hover:bg-church-burgundy/90"
                         >
-                          {appointment.status === "pending"
-                            ? "Respond"
-                            : "Update"}
+                          {appointment.status === "pending" ? "Respond" : "Update"}
                         </Button>
-                      </TableCell> */}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -479,6 +547,32 @@ const AdminAppointments: React.FC = () => {
                 </div>
               </div>
               <div className="space-y-2">
+                <Label>Response Templates</Label>
+                <Select
+                  onValueChange={(v) => {
+                    const name = selectedAppointment.name || "";
+                    const service = selectedAppointment.service_title || "the service";
+                    const date = selectedAppointment.requested_date || "";
+                    const time = selectedAppointment.requested_time || "";
+                    const templates: Record<string, string> = {
+                      approve: `Dear ${name},\n\nYour appointment request for ${service} on ${date} at ${time} has been approved. We look forward to seeing you.\n\nBlessings,\nChurch Admin`,
+                      reschedule: `Dear ${name},\n\nWe received your request for ${service}. Could we reschedule to a different date/time? Please reply with your availability.\n\nBlessings,\nChurch Admin`,
+                      decline: `Dear ${name},\n\nUnfortunately, we are unable to accommodate your appointment request for ${service} at the requested time. Please consider alternative times.\n\nBlessings,\nChurch Admin`,
+                    };
+                    setAdminResponse(templates[v] || "");
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Insert a template (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="approve">Approval</SelectItem>
+                    <SelectItem value="reschedule">Request Reschedule</SelectItem>
+                    <SelectItem value="decline">Decline</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="confirmed_time">
                   Confirmed Time (if approved)
                 </Label>
@@ -498,7 +592,8 @@ const AdminAppointments: React.FC = () => {
                   id="admin_response"
                   name="admin_response"
                   placeholder="Enter your response to the appointment request..."
-                  defaultValue={selectedAppointment.admin_response || ""}
+                  value={adminResponse}
+                  onChange={(e) => setAdminResponse(e.target.value)}
                   required
                   rows={4}
                 />

@@ -54,6 +54,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import { Textarea } from "@/components/ui/textarea";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 interface PrayerRequest {
   id: string;
@@ -264,9 +265,7 @@ export default function AdminPrayerRequestsComplete() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-church-burgundy"></div>
-      </div>
+      <LoadingSpinner className="h-64" text="Loading prayer requests..." ariaLabel="Loading prayer requests" />
     );
   }
 

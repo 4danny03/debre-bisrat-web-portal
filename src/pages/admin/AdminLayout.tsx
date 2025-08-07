@@ -126,12 +126,12 @@ export default function AdminLayout() {
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-50 bg-church-burgundy text-white transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
+          "fixed inset-y-0 left-0 z-50 bg-church-burgundy text-white transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 lg:overflow-hidden",
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
           sidebarCollapsed ? "w-16" : "w-72",
         )}
       >
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full lg:sticky lg:top-0 lg:h-screen lg:overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-church-burgundy/20">
             {!sidebarCollapsed && (
@@ -176,7 +176,7 @@ export default function AdminLayout() {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent hover:scrollbar-thumb-white/40">
             {navigationItems.map((item) => {
             const Icon = Icons[item.icon as keyof typeof Icons];
             const isActive = location.pathname === item.to;
@@ -282,7 +282,7 @@ export default function AdminLayout() {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-0 lg:overflow-hidden">
         {/* Top bar */}
         <header className="bg-white shadow-sm border-b border-gray-200 lg:hidden">
           <div className="flex items-center justify-between px-4 py-3">
@@ -301,7 +301,7 @@ export default function AdminLayout() {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent hover:scrollbar-thumb-gray-300">
           {/* Breadcrumb Navigation */}
           <div className="mb-6">
             <nav className="flex items-center space-x-2 text-sm text-gray-600">

@@ -28,6 +28,7 @@ import {
   runSystemDiagnostics,
   getPerformanceMetrics,
 } from "@/utils/adminDiagnostics";
+import { useToast } from "@/components/ui/use-toast";
 
 interface HealthCheck {
   name: string;
@@ -72,12 +73,19 @@ export default function SystemHealth() {
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
+  const [refreshIntervalMs, setRefreshIntervalMs] = useState<number>(60000);
+  const { toast } = useToast();
 
   useEffect(() => {
     runHealthChecks();
-    const interval = setInterval(runHealthChecks, 60000); // Check every minute
-    return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const interval = setInterval(runHealthChecks, refreshIntervalMs);
+    return () => clearInterval(interval);
+  }, [autoRefresh, refreshIntervalMs]);
 
   const runHealthChecks = async () => {
     setLoading(true);
@@ -182,6 +190,30 @@ export default function SystemHealth() {
       lastChecked: new Date(),
     });
 
+    // Edge Function ping
+    try {
+      const start = Date.now();
+      const { data, error } = await supabase.functions.invoke(
+        "supabase-functions-admin-dashboard",
+        { body: { action: "ping" } },
+      );
+      const responseTime = Date.now() - start;
+      checks.push({
+        name: "Edge Functions",
+        status: error ? "warning" : "healthy",
+        message: error ? `Ping failed` : "Ping ok",
+        lastChecked: new Date(),
+        responseTime,
+      });
+    } catch (e) {
+      checks.push({
+        name: "Edge Functions",
+        status: "warning",
+        message: "Ping failed",
+        lastChecked: new Date(),
+      });
+    }
+
     setHealthChecks(checks);
     setLastUpdate(new Date());
 
@@ -245,6 +277,32 @@ export default function SystemHealth() {
     }
   };
 
+  const exportReport = () => {
+    const report = {
+      generatedAt: new Date().toISOString(),
+      lastUpdate: lastUpdate?.toISOString() || null,
+      overallStatus,
+      healthChecks,
+      metrics,
+      client: {
+        online: typeof navigator !== "undefined" ? navigator.onLine : undefined,
+        connection: (navigator as any)?.connection?.effectiveType,
+      },
+    };
+    const blob = new Blob([JSON.stringify(report, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `system-health-${format(new Date(), "yyyy-MM-dd-HH-mm-ss")}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast({ title: "Report downloaded" });
+  };
+
   const getStatusBadge = (status: HealthCheck["status"]) => {
     const variants = {
       healthy: "default",
@@ -279,7 +337,27 @@ export default function SystemHealth() {
             Monitor system status and performance metrics
           </p>
         </div>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-sm">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={autoRefresh}
+                onChange={(e) => setAutoRefresh(e.target.checked)}
+              />
+              Auto-refresh
+            </label>
+            <select
+              value={String(refreshIntervalMs)}
+              onChange={(e) => setRefreshIntervalMs(Number(e.target.value))}
+              className="border rounded px-2 py-1 text-sm"
+            >
+              <option value="15000">15s</option>
+              <option value="30000">30s</option>
+              <option value="60000">1m</option>
+              <option value="120000">2m</option>
+            </select>
+          </div>
           {lastUpdate && (
             <span className="text-sm text-gray-500">
               Last updated: {format(lastUpdate, "HH:mm:ss")}
@@ -295,6 +373,7 @@ export default function SystemHealth() {
             />
             Refresh
           </Button>
+          <Button onClick={exportReport}>Export Report</Button>
         </div>
       </div>
 
@@ -329,10 +408,11 @@ export default function SystemHealth() {
       </Card>
 
       <Tabs defaultValue="health" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="health">Health Checks</TabsTrigger>
           <TabsTrigger value="metrics">System Metrics</TabsTrigger>
           <TabsTrigger value="logs">System Logs</TabsTrigger>
+          <TabsTrigger value="tests">Quick Tests</TabsTrigger>
         </TabsList>
 
         <TabsContent value="health" className="space-y-4">
@@ -593,6 +673,63 @@ export default function SystemHealth() {
                   </div>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="tests" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Manual Checks</CardTitle>
+              <CardDescription>Run ad-hoc connectivity tests</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={runHealthChecks} disabled={loading}>
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+                Rerun All Checks
+              </Button>
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    const start = Date.now();
+                    await supabase.from("events").select("id").limit(1);
+                    toast({ title: "DB OK", description: `${Date.now() - start}ms` });
+                  } catch {
+                    toast({ title: "DB Error", variant: "destructive" });
+                  }
+                }}
+              >
+                Database Ping
+              </Button>
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    const start = Date.now();
+                    await supabase.storage.from("images").list("", { limit: 1 });
+                    toast({ title: "Storage OK", description: `${Date.now() - start}ms` });
+                  } catch {
+                    toast({ title: "Storage Error", variant: "destructive" });
+                  }
+                }}
+              >
+                Storage Ping
+              </Button>
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    const start = Date.now();
+                    await supabase.functions.invoke("supabase-functions-admin-dashboard", { body: { action: "ping" } });
+                    toast({ title: "Edge OK", description: `${Date.now() - start}ms` });
+                  } catch {
+                    toast({ title: "Edge Error", variant: "destructive" });
+                  }
+                }}
+              >
+                Edge Ping
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
