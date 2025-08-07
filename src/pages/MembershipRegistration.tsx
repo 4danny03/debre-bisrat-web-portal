@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+// import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
@@ -42,7 +42,7 @@ interface FormData {
   postalZipCode: string;
   country: string;
   membershipType: string;
-  ministryInterests: string;
+  // ministryInterests: string;
   preferredLanguage: string;
   emailUpdates: boolean;
   agreeToTerms: boolean;
@@ -71,7 +71,7 @@ const MembershipRegistration = () => {
     postalZipCode: "",
     country: "United States",
     membershipType: "regular",
-    ministryInterests: "",
+    // ministryInterests: "",
     preferredLanguage: "english",
     emailUpdates: true,
     agreeToTerms: false,
@@ -143,138 +143,125 @@ const MembershipRegistration = () => {
   // Removed useEffect for children state
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateStep(currentStep)) return;
-    setIsSubmitting(true);
-    setError(null);
-    try {
-      // Determine membership fee based on type
-      const membershipFees = {
-        regular: "100",
-        student: "50",
-        senior: "75",
-        family: "200",
-      };
-      const membershipFee =
-        membershipFees[
-          formData.membershipType as keyof typeof membershipFees
-        ] || "100";
+  e.preventDefault();
+  if (!validateStep(currentStep)) return;
+  
+  setIsSubmitting(true);
+  setError(null);
+  
+  try {
+    // Determine membership fee based on type
+    const membershipFees = {
+      regular: "100",
+      student: "50",
+      senior: "75",
+      family: "200",
+    };
+    const membershipFee = membershipFees[formData.membershipType as keyof typeof membershipFees] || "100";
 
-      // Create Stripe checkout session using the existing edge function
-      const checkoutData = {
-        amount: membershipFee,
-        donationType: "one_time",
-        purpose: "membership_fee",
-        email: formData.email,
-        name: `${formData.firstName} ${formData.lastName}`,
-        address: `${formData.streetAddress}, ${formData.city}, ${formData.stateProvinceRegion} ${formData.postalZipCode}`,
-        // memberId will be set after member creation
-      };
-
-      console.log("Invoking create-checkout function with data:", checkoutData);
-      console.log(
-        "Membership fee for type",
-        formData.membershipType,
-        ":",
-        membershipFee,
-      );
-
-      // First create the member record using the membership-management function
-      const memberResponse = await supabase.functions.invoke(
-        "membership-management",
-        {
-          body: {
-            action: "create_member",
-            member_data: {
-              full_name: `${formData.firstName} ${formData.lastName}`,
-              first_name: formData.firstName,
-              last_name: formData.lastName,
-              email: formData.email,
-              phone: formData.phone,
-              address: `${formData.streetAddress}, ${formData.city}, ${formData.stateProvinceRegion} ${formData.postalZipCode}`,
-              street_address: formData.streetAddress,
-              city: formData.city,
-              state_province_region: formData.stateProvinceRegion,
-              postal_zip_code: formData.postalZipCode,
-              country: formData.country,
-              date_of_birth: formData.dateOfBirth,
-              gender: formData.gender,
-              membership_type: formData.membershipType,
-              preferred_language: formData.preferredLanguage,
-              ministry_interests: formData.ministryInterests,
-              email_updates: formData.emailUpdates,
-              terms_accepted: formData.agreeToTerms,
-              newsletter_consent: formData.emailUpdates,
-            },
+    // First create the member record
+    const memberResponse = await supabase.functions.invoke(
+      "membership-management",
+      {
+        body: {
+          action: "create_member",
+          member_data: {
+            full_name: `${formData.firstName} ${formData.lastName}`,
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            email: formData.email,
+            phone: formData.phone,
+            address: `${formData.streetAddress}, ${formData.city}, ${formData.stateProvinceRegion} ${formData.postalZipCode}`,
+            street_address: formData.streetAddress,
+            city: formData.city,
+            state_province_region: formData.stateProvinceRegion,
+            postal_zip_code: formData.postalZipCode,
+            country: formData.country,
+            date_of_birth: formData.dateOfBirth,
+            gender: formData.gender,
+            membership_type: formData.membershipType,
+            preferred_language: formData.preferredLanguage,
+            email_updates: formData.emailUpdates,
+            terms_accepted: formData.agreeToTerms,
+            newsletter_consent: formData.emailUpdates,
+            membership_status: "pending_payment", // Initial status
+            payment_status: "pending",
           },
         },
-      );
-
-      if (memberResponse.error) {
-        console.error("Member creation error:", memberResponse.error);
-        throw new Error(
-          `Member registration failed: ${memberResponse.error.message || "Unknown error"}`,
-        );
       }
+    );
 
-      const newMember = memberResponse.data?.member;
-      if (!newMember) {
-        throw new Error("Failed to create member record");
-      }
-
-      // Then create the checkout session
-      console.log("About to invoke create-checkout function...");
-      const response = await supabase.functions.invoke("create-checkout", {
-        body: {
-          ...checkoutData,
-          memberId: newMember.id,
-        },
-      });
-
-      console.log("Checkout function response:", response);
-      console.log("Response data:", response.data);
-      console.log("Response error:", response.error);
-
-      if (response.error) {
-        console.error("Function error:", response.error);
-        const errorMessage = response.error.message || response.error.error_description || "Unknown error";
-        throw new Error(`Payment initiation failed: ${errorMessage}`);
-      }
-
-      if (!response.data?.url) {
-        throw new Error("No checkout URL received");
-      }
-
-      window.location.href = response.data.url;
-    } catch (error: unknown) {
-      let errorMessage = "Registration failed. Please try again.";
-      if (typeof error === "object" && error !== null) {
-        if ("message" in error && typeof (error as any).message === "string") {
-          errorMessage = (error as any).message;
-        } else if (
-          "error_description" in error &&
-          typeof (error as any).error_description === "string"
-        ) {
-          errorMessage = (error as any).error_description;
-        } else {
-          errorMessage = JSON.stringify(error);
-        }
-      } else if (typeof error === "string") {
-        errorMessage = error;
-      }
-      console.error("Membership registration error:", error);
-      toast({
-        variant: "destructive",
-        title: "Registration Error",
-        description:
-          "There was an error processing your membership registration. " +
-          errorMessage,
-      });
-      setError(errorMessage);
-    } finally {
-      setIsSubmitting(false);
+    if (memberResponse.error) {
+      throw new Error(`Member registration failed: ${memberResponse.error.message || "Unknown error"}`);
     }
-  };
+
+    const newMember = memberResponse.data?.member;
+    if (!newMember?.id) {
+      throw new Error("Failed to create member record or get member ID");
+    }
+
+    // Create Stripe checkout session with all required metadata
+    const checkoutData = {
+      amount: membershipFee,
+      donationType: "one_time",
+      purpose: "membership_fee",
+      email: formData.email,
+      name: `${formData.firstName} ${formData.lastName}`,
+      address: `${formData.streetAddress}, ${formData.city}, ${formData.stateProvinceRegion} ${formData.postalZipCode}`,
+      memberId: newMember.id, // Now included in initial request
+    };
+
+    const response = await supabase.functions.invoke("create-checkout", {
+      body: checkoutData,
+    });
+
+    if (response.error) {
+      // Update member record to reflect payment failure
+      await supabase
+        .from('members')
+        .update({ 
+          membership_status: 'registration_failed',
+          payment_status: 'failed'
+        })
+        .eq('id', newMember.id);
+        
+      throw new Error(`Payment initiation failed: ${response.error.message || "Unknown error"}`);
+    }
+
+    if (!response.data?.url) {
+      throw new Error("No checkout URL received from payment processor");
+    }
+
+    // Track the pending payment in your database
+    await supabase
+      .from('member_payments')
+      .insert({
+        member_id: newMember.id,
+        amount: parseFloat(membershipFee),
+        payment_method: 'stripe',
+        status: 'pending',
+        checkout_session_id: response.data.sessionId, // Make sure your create-checkout returns this
+      });
+
+    // Redirect to Stripe checkout
+    window.location.href = response.data.url;
+
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : "Registration failed. Please try again.";
+    
+    console.error("Membership registration error:", error);
+    toast({
+      variant: "destructive",
+      title: "Registration Error",
+      description: `There was an error processing your membership registration. ${errorMessage}`,
+    });
+    setError(errorMessage);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -536,7 +523,7 @@ const MembershipRegistration = () => {
               )}
             </div>
 
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label htmlFor="ministryInterests">Ministry Interests</Label>
               <Textarea
                 id="ministryInterests"
@@ -547,7 +534,7 @@ const MembershipRegistration = () => {
                 placeholder="Please describe any ministries or volunteer activities you're interested in..."
                 rows={3}
               />
-            </div>
+            </div> */}
 
             <div className="space-y-2">
               <Label>Preferred Language</Label>

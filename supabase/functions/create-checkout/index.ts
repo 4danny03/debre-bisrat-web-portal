@@ -29,8 +29,13 @@ function validateInput(data: CheckoutRequest): {
 
   // Validate amount
   const amount = parseFloat(data.amount);
-  if (isNaN(amount) || amount < 1 || amount > 10000) {
-    errors.push("Amount must be between $1 and $10,000");
+  if (isNaN(amount) || amount < 1) {
+    errors.push("Amount must be at least $1");
+  }
+
+  // For membership fees, set a reasonable upper limit
+  if (data.purpose === "membership_fee" && amount > 1000) {
+    errors.push("Membership fee cannot exceed $1000");
   }
 
   // Validate donation type
@@ -51,18 +56,9 @@ function validateInput(data: CheckoutRequest): {
     errors.push("Invalid donation purpose");
   }
 
-  // Validate email format
-  if (!validateEmail(data.email)) {
-    errors.push("Invalid email format");
-  }
-
-  // Sanitize string inputs
-  if (data.name && sanitizeString(data.name, 100) !== data.name) {
-    errors.push("Name contains invalid characters or is too long");
-  }
-
-  if (data.address && sanitizeString(data.address, 200) !== data.address) {
-    errors.push("Address contains invalid characters or is too long");
+  // Validate email format for membership fees
+  if (data.purpose === "membership_fee" && !validateEmail(data.email)) {
+    errors.push("Invalid email format for membership registration");
   }
 
   return { isValid: errors.length === 0, errors };
@@ -104,39 +100,30 @@ Deno.serve(async (req: Request) => {
     const { amount, donationType, purpose, email, name, address, memberId } =
       requestData;
 
-    if (!amount || !donationType || !purpose || !email) {
-      throw new Error(
-        "Missing required fields: amount, donationType, purpose, email",
-      );
-    }
-
     // Use demo key for testing - in production, set VITE_STRIPE_SECRET_KEY environment variable
-    const stripeKey =
-      Deno.env.get("VITE_STRIPE_SECRET_KEY") || "sk_test_51ROOqvPp3jAs3nkg9jWMW5dZtXdeGAB9SvrBjc5DonIXUtTLYGPeq2XusT45cXQeiQ0ELAsSOIKtc7ekmhwrOD2r00bbE6pqt9";
-
-    if (!stripeKey || stripeKey === "sk_test_51ROOqvPp3jAs3nkg9jWMW5dZtXdeGAB9SvrBjc5DonIXUtTLYGPeq2XusT45cXQeiQ0ELAsSOIKtc7ekmhwrOD2r00bbE6pqt9") {
-      console.log("Using demo Stripe key - this is for testing purposes only");
+    const stripeKey = Deno.env.get("VITE_STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      throw new Error("Stripe secret key is not set in environment variables");
     }
 
     const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
     });
 
+    // For membership fees, we always want to create or update the customer record
     const customers = await stripe.customers.list({ email, limit: 1 });
     let customerId;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
-
-      if (name || address) {
-        await stripe.customers.update(customerId, {
-          name: name || undefined,
-          address: address
-            ? {
-                line1: address,
-              }
-            : undefined,
-        });
-      }
+      // Update customer details if needed
+      await stripe.customers.update(customerId, {
+        name: name || undefined,
+        address: address
+          ? {
+              line1: address,
+            }
+          : undefined,
+      });
     } else {
       const customer = await stripe.customers.create({
         email,
@@ -151,16 +138,15 @@ Deno.serve(async (req: Request) => {
     }
 
     const amountInCents = Math.round(parseFloat(amount) * 100);
-    const productName =
-      purpose === "general_fund"
+    const productName = purpose === "membership_fee"
+      ? `Membership Fee (${requestData.memberId ? "Renewal" : "New Member"})`
+      : purpose === "general_fund"
         ? "General Fund Donation"
         : purpose === "building_fund"
           ? "Building Fund Donation"
           : purpose === "youth_programs"
             ? "Youth Programs Donation"
-            : purpose === "membership_fee"
-              ? "Membership Fee"
-              : "Charitable Donation";
+            : "Charitable Donation";
 
     const isRecurring = donationType !== "one_time";
 
@@ -173,7 +159,7 @@ Deno.serve(async (req: Request) => {
             currency: "usd",
             product_data: {
               name: productName,
-              description: `${purpose.replace("_", " ")} - ${isRecurring ? "Recurring" : "One-time"} donation`,
+              description: `${purpose.replace(/_/g, " ")} - ${isRecurring ? "Recurring" : "One-time"}`,
             },
             unit_amount: amountInCents,
             ...(isRecurring && {
@@ -199,15 +185,22 @@ Deno.serve(async (req: Request) => {
         email,
         donationType,
         memberId: memberId || "",
-        demo_mode: "true",
+        isMembershipFee: purpose === "membership_fee" ? "true" : "false",
       },
     };
 
+    // Add phone number collection for membership fees
+    if (purpose === "membership_fee") {
+      sessionConfig.phone_number_collection = {
+        enabled: true,
+      };
+    }
+
     const session = await stripe.checkout.sessions.create(sessionConfig);
 
+    // Store donation/payment record in database
     try {
-      console.log("Storing donation record in database");
-      const { data: donationData, error: donationError } = await supabaseClient
+      const { error: donationError } = await supabaseClient
         .from("donations")
         .insert([
           {
@@ -220,17 +213,15 @@ Deno.serve(async (req: Request) => {
             stripe_payment_intent_id: session.id,
             member_id: memberId || null,
             is_membership_fee: purpose === "membership_fee",
-            notes: purpose === "membership_fee" ? "Member data stored in session metadata" : null,
+            notes: purpose === "membership_fee" 
+              ? `Membership payment for member ${memberId}`
+              : null,
             created_at: new Date().toISOString(),
           },
-        ])
-        .select()
-        .single();
+        ]);
 
       if (donationError) {
         console.error("Error storing donation record:", donationError);
-      } else {
-        console.log("Donation record stored successfully:", donationData);
       }
     } catch (dbError) {
       console.error("Exception storing donation record:", dbError);

@@ -360,11 +360,11 @@ export default function Events() {
                   <p className="text-gray-600 mb-6 line-clamp-3">
                     {event.description}
                   </p>
-                  <div className="flex justify-between">
+                  {/* <div className="flex justify-between">
                     <Button variant="outline" className="text-church-burgundy">
                       Learn More
                     </Button>
-                  </div>
+                  </div> */}
                 </CardContent>
               </Card>
             ))}
