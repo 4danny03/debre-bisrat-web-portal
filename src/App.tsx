@@ -64,6 +64,9 @@ import { LanguageProvider } from "./contexts/LanguageContext";
 import { DataProvider } from "./contexts/DataContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 import "@/utils/debugSync"; // Initialize debug utilities
+import MemberLogin from "./pages/MemberLogin";
+import MemberDashboard from "@/components/MemberDashboard";
+import MemberAuthGuard from "@/components/MemberAuthGuard";
 
 function AppContent() {
   usePerformanceMonitoring();
@@ -81,6 +84,17 @@ function AppContent() {
       <Route path="/membership-success" element={<MembershipSuccess />} />
       <Route path="/gallery" element={<Gallery />} />
       <Route path="/services" element={<Services />} />
+
+      {/* Member Routes */}
+      <Route path="/member/login" element={<MemberLogin />} />
+      <Route
+        path="/member/dashboard"
+        element={
+          <MemberAuthGuard>
+            <MemberDashboard />
+          </MemberAuthGuard>
+        }
+      />
 
       {/* Admin Routes */}
       <Route path="/admin/login" element={<AdminLogin />} />
