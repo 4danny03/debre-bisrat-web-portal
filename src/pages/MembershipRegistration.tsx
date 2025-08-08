@@ -755,7 +755,7 @@ const MembershipRegistration = () => {
         </Card>
       </div>
       {/* TODO: Replace with real user logic */}
-      <MemberDashboard />
+      {/*<MemberDashboard /> */}
     </Layout>
   );
 };

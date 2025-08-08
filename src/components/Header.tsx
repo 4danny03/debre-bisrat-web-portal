@@ -180,7 +180,7 @@ const Header: React.FC = () => {
                 {t("contact")}
               </Link>
             </li>
-            <li className="py-1 md:py-0">
+            {/* <li className="py-1 md:py-0">
               <Link
                 to="/member/login"
                 className={`nav-link text-sm md:text-base ${location.pathname.startsWith("/member") ? "active" : ""}`}
@@ -189,7 +189,7 @@ const Header: React.FC = () => {
               >
                 Member Login
               </Link>
-            </li>
+            </li> */}
           </ul>
         </nav>
       </div>
