@@ -127,7 +127,6 @@ const Contact: React.FC = () => {
                       rel="noreferrer"
                       className="hover:text-church-burgundy transition-colors"
                     >
-                      EthiopianOrthodoxSt.GabrielChurchSilverspringMD
                     </a>
                   </div>
                 </div>
