@@ -107,10 +107,10 @@ const Contact: React.FC = () => {
                       {language === "am" ? "ኢሜይል" : "Email"}
                     </h3>
                     <a
-                      href="mailto:info@stgabrielsilverspring.org"
+                      href="mailto:stgebrielsilverspring@gmail.com"
                       className="hover:text-church-burgundy transition-colors"
                     >
-                      info@stgabrielsilverspring.org
+                      stgebrielsilverspring@gmail.com
                     </a>
                   </div>
                 </div>
@@ -149,17 +149,6 @@ const Contact: React.FC = () => {
                   </div>
                   <div>
                     <a
-                      href="http://www.EthiopianOrthodoxSt.GabrielChurchSilverspringMD.com"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="hover:text-church-burgundy transition-colors"
-                    >
-                      www.EthiopianOrthodoxSt.GabrielChurchSilverspringMD.com
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             <div>
               <div className="bg-white p-8 rounded-lg shadow-md">
