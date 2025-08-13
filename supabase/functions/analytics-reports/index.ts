@@ -16,9 +16,12 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_KEY") ?? "",
     );
 
-    const url = new URL(req.url);
-    const reportType = url.searchParams.get("type") || "overview";
-    const timeRange = url.searchParams.get("timeRange") || "6months";
+    // Parse request body for parameters
+    const {
+      reportType = "overview",
+      timeRange = "6months",
+      filters = {},
+    } = await req.json();
 
     // Calculate date ranges
     const now = new Date();
@@ -47,11 +50,21 @@ Deno.serve(async (req) => {
         const purposeData = processPurposeData(donations || []);
 
         reportData = {
-          total: totalAmount,
-          count: donations?.length || 0,
-          monthly: monthlyData,
-          byPurpose: purposeData,
-          trends: calculateTrends(donations || [], "amount"),
+          donations: {
+            total: totalAmount,
+            count: donations?.length || 0,
+            monthly: monthlyData,
+            byPurpose: purposeData,
+            trends: calculateTrends(donations || [], "amount"),
+          },
+          members: {
+            total: 0,
+            monthly: [],
+            byType: [],
+            trends: { thisMonth: 0, lastMonth: 0, growth: 0 },
+          },
+          events: { total: 0, upcoming: 0, monthly: [], attendance: [] },
+          engagement: { prayerRequests: 0, testimonials: 0, galleryViews: 0 },
         };
         break;
 
@@ -65,10 +78,21 @@ Deno.serve(async (req) => {
         const membersByType = processTypeData(members || [], "membership_type");
 
         reportData = {
-          total: members?.length || 0,
-          monthly: membersByMonth,
-          byType: membersByType,
-          trends: calculateTrends(members || []),
+          donations: {
+            total: 0,
+            count: 0,
+            monthly: [],
+            byPurpose: [],
+            trends: { thisMonth: 0, lastMonth: 0, growth: 0 },
+          },
+          members: {
+            total: members?.length || 0,
+            monthly: membersByMonth,
+            byType: membersByType,
+            trends: calculateTrends(members || []),
+          },
+          events: { total: 0, upcoming: 0, monthly: [], attendance: [] },
+          engagement: { prayerRequests: 0, testimonials: 0, galleryViews: 0 },
         };
         break;
 
@@ -87,45 +111,90 @@ Deno.serve(async (req) => {
           ]);
 
         reportData = {
-          prayerRequests: prayerRequestsRes.count || 0,
-          testimonials: testimonialsRes.count || 0,
-          events: eventsRes.count || 0,
+          donations: {
+            total: 0,
+            count: 0,
+            monthly: [],
+            byPurpose: [],
+            trends: { thisMonth: 0, lastMonth: 0, growth: 0 },
+          },
+          members: {
+            total: 0,
+            monthly: [],
+            byType: [],
+            trends: { thisMonth: 0, lastMonth: 0, growth: 0 },
+          },
+          events: {
+            total: eventsRes.count || 0,
+            upcoming: 0,
+            monthly: [],
+            attendance: [],
+          },
+          engagement: {
+            prayerRequests: prayerRequestsRes.count || 0,
+            testimonials: testimonialsRes.count || 0,
+            galleryViews: 0,
+          },
         };
         break;
 
       default:
-        // Overview report
-        const [donationsOverview, membersOverview, eventsOverview] =
-          await Promise.all([
-            supabaseClient
-              .from("donations")
-              .select("*")
-              .gte("created_at", startDate.toISOString()),
-            supabaseClient
-              .from("members")
-              .select("*")
-              .gte("created_at", startDate.toISOString()),
-            supabaseClient
-              .from("events")
-              .select("*")
-              .gte("created_at", startDate.toISOString()),
-          ]);
+        // Overview report - get comprehensive data for all sections
+        const [
+          donationsOverview,
+          membersOverview,
+          eventsOverview,
+          prayerRequestsOverview,
+          testimonialsOverview,
+        ] = await Promise.all([
+          supabaseClient
+            .from("donations")
+            .select("*")
+            .gte("created_at", startDate.toISOString()),
+          supabaseClient
+            .from("members")
+            .select("*")
+            .gte("created_at", startDate.toISOString()),
+          supabaseClient
+            .from("events")
+            .select("*")
+            .gte("created_at", startDate.toISOString()),
+          supabaseClient
+            .from("prayer_requests")
+            .select("*", { count: "exact", head: true }),
+          supabaseClient
+            .from("testimonials")
+            .select("*", { count: "exact", head: true }),
+        ]);
+
+        const donations = donationsOverview.data || [];
+        const members = membersOverview.data || [];
+        const events = eventsOverview.data || [];
 
         reportData = {
           donations: {
-            total:
-              donationsOverview.data?.reduce((sum, d) => sum + d.amount, 0) ||
-              0,
-            count: donationsOverview.data?.length || 0,
+            total: donations.reduce((sum, d) => sum + (d.amount || 0), 0),
+            count: donations.length,
+            monthly: processMonthlyData(donations, "created_at", "amount"),
+            byPurpose: processPurposeData(donations),
+            trends: calculateTrends(donations, "amount"),
           },
           members: {
-            total: membersOverview.data?.length || 0,
+            total: members.length,
+            monthly: processMonthlyData(members, "created_at"),
+            byType: processTypeData(members, "membership_type"),
+            trends: calculateTrends(members),
           },
           events: {
-            total: eventsOverview.data?.length || 0,
-            upcoming:
-              eventsOverview.data?.filter((e) => new Date(e.event_date) > now)
-                .length || 0,
+            total: events.length,
+            upcoming: events.filter((e) => new Date(e.event_date) > now).length,
+            monthly: processMonthlyData(events, "created_at"),
+            attendance: [], // Placeholder for future implementation
+          },
+          engagement: {
+            prayerRequests: prayerRequestsOverview.count || 0,
+            testimonials: testimonialsOverview.count || 0,
+            galleryViews: 0, // Placeholder for future implementation
           },
         };
     }
