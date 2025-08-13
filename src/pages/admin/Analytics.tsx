@@ -103,13 +103,14 @@ export default function Analytics() {
 
       const dateRange = dateRangeMap[timeRange] || "last30days";
 
-      // Use the new analytics-reports edge function
+      // Use the analytics-reports edge function with correct parameters
+      const reportType = activeTab === "overview" ? "overview" : activeTab;
       const { data: reportData, error } = await supabase.functions.invoke(
-        "supabase-functions-analytics-reports",
+        "analytics-reports",
         {
           body: {
-            reportType: activeTab === "overview" ? "overview" : activeTab,
-            dateRange,
+            reportType,
+            timeRange,
             filters: {},
           },
         },
@@ -189,11 +190,11 @@ export default function Analytics() {
 
       // Request full data for export
       const { data: reportData, error } = await supabase.functions.invoke(
-        "supabase-functions-analytics-reports",
+        "analytics-reports",
         {
           body: {
             reportType: "overview",
-            dateRange,
+            timeRange,
             filters: {},
             includeRawData: true,
           },
