@@ -16,8 +16,8 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // Configure base path for GitHub Pages deployment
-  base: "/",
+  // Configure base path - use relative path for development
+  base: mode === "development" ? "/" : "/debre-bisrat-web-portal/",
   server: {
     host: "::",
     port: 8080,
