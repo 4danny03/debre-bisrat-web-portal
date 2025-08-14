@@ -16,8 +16,10 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // Configure base path - use relative path for development
-  base: mode === "development" ? "/" : "/debre-bisrat-web-portal/",
+  // Configure base path
+  // Using a custom domain (CNAME) on GitHub Pages means the site is served at the domain root
+  // so the base path must be '/'.
+  base: "/",
   server: {
     host: "::",
     port: 8080,
