@@ -152,14 +152,14 @@ function AppContent() {
         <Route path="gallery" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminGallery /></React.Suspense>} />
         <Route path="settings" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminSettings /></React.Suspense>} />
         <Route path="members" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminMembers /></React.Suspense>} />
-        <Route path="testimonials" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminTestimonials /></React.Suspense>} />
-        <Route path="prayer-requests" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminPrayerRequests /></React.Suspense>} />
+        {/* <Route path="testimonials" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminTestimonials /></React.Suspense>} /> */}
+        {/* <Route path="prayer-requests" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminPrayerRequests /></React.Suspense>} /> */}
         <Route path="donations" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminDonations /></React.Suspense>} />
         <Route path="users" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminUsers /></React.Suspense>} />
-        <Route path="system-health" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminSystemHealth /></React.Suspense>} />
-        <Route path="analytics" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminAnalytics /></React.Suspense>} />
-        <Route path="bulk-operations" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminBulkOperations /></React.Suspense>} />
-        <Route path="content-scheduler" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminContentScheduler /></React.Suspense>} />
+        {/* <Route path="system-health" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminSystemHealth /></React.Suspense>} /> */}
+        {/* <Route path="analytics" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminAnalytics /></React.Suspense>} /> */}
+        {/* <Route path="bulk-operations" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminBulkOperations /></React.Suspense>} /> */}
+        {/* <Route path="content-scheduler" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminContentScheduler /></React.Suspense>} /> */}
         <Route path="appointments" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminAppointments /></React.Suspense>} />
         <Route path="contact-messages" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminContactMessages /></React.Suspense>} />
         <Route path="email-marketing" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminEmailMarketing /></React.Suspense>} />

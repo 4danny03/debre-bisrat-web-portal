@@ -53,6 +53,8 @@ import {
   Shield,
   ArrowUp,
   ArrowDown,
+  EyeOff,
+  Eye,
 } from "lucide-react";
 import {
   Card,
@@ -81,6 +83,7 @@ export default function Users() {
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -128,38 +131,68 @@ export default function Users() {
     setFilteredUsers(filtered);
   };
 
+  // const handleAddUser = async (e: React.FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
+  //   const formData = new FormData(e.currentTarget);
+  //   const email = formData.get("email") as string;
+  //   const role = formData.get("role") as string;
+
+  //   try {
+  //     // Create a new user profile directly
+  //     const { data, error } = await supabase.from("profiles").insert([
+  //       {
+  //         email,
+  //         role,
+  //       },
+  //     ]);
+
+  //     if (error) throw error;
+
+  //     toast({
+  //       title: "Success",
+  //       description: "User added successfully",
+  //     });
+  //     setIsAddDialogOpen(false);
+  //     fetchUsers();
+  //   } catch (error) {
+  //     console.error("Error creating user:", error);
+  //     toast({
+  //       title: "Error",
+  //       description: "Failed to create user",
+  //       variant: "destructive",
+  //     });
+  //   }
+  // };
+
   const handleAddUser = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setLoading(true);
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
     const role = formData.get("role") as string;
 
     try {
-      // Create a new user profile directly
-      const { data, error } = await supabase.from("profiles").insert([
-        {
-          email,
-          role,
-        },
-      ]);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "User added successfully",
+      const { data, error } = await supabase.functions.invoke("create-user", {
+        body: { email, password, role },
       });
+
+      if (error || data?.error) throw new Error(data?.error || error.message);
+
+      toast({ title: "Success", description: "User created successfully" });
       setIsAddDialogOpen(false);
       fetchUsers();
-    } catch (error) {
-      console.error("Error creating user:", error);
+    } catch (err) {
       toast({
         title: "Error",
-        description: "Failed to create user",
+        description: err instanceof Error ? err.message : "Failed to create user",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
+
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
@@ -346,6 +379,27 @@ export default function Users() {
                 />
               </div>
               <div>
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    placeholder="Set user password"
+                    required
+                  />
+                  </div>
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-2 flex items-center text-gray-500"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+              </div>
+
+              <div>
                 <Label htmlFor="role">Role</Label>
                 <Select name="role" defaultValue="user">
                   <SelectTrigger>
@@ -361,9 +415,11 @@ export default function Users() {
                 type="submit"
                 className="w-full bg-church-burgundy hover:bg-church-burgundy/90"
               >
-                <UserPlus className="h-4 w-4 mr-2" />
-                Add User
+
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4 mr-2" />}
+                {loading ? "Adding User..." : "Add User"}
               </Button>
+
             </form>
           </DialogContent>
         </Dialog>

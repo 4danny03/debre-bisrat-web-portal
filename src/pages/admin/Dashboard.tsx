@@ -58,7 +58,7 @@ const Dashboard: React.FC = () => {
         supabase.from("donations").select("amount"),
         supabase.from("events").select("id", { count: "exact", head: true }),
         supabase.from("appointments").select("id", { count: "exact", head: true }),
-        supabase.from("testimonials").select("id", { count: "exact", head: true }),
+        supabase.from("profiles").select("id", { count: "exact", head: true }),
       ]);
       const members = membersRaw ?? 0;
       const donations = donationsRaw ?? 0;
@@ -162,15 +162,15 @@ const Dashboard: React.FC = () => {
             <CardDescription>Service appointment requests</CardDescription>
           </CardContent>
         </Card>
-        <Card className="hover:shadow-lg transition cursor-pointer" onClick={() => navigate("/admin/testimonials")}>
+        <Card className="hover:shadow-lg transition cursor-pointer" onClick={() => navigate("/admin/users")}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-lg font-medium flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-purple-600" /> Testimonials
+              <MessageSquare className="h-5 w-5 text-purple-600" /> Users
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{loading ? "-" : stats.testimonials}</div>
-            <CardDescription>Member testimonials</CardDescription>
+            <CardDescription>Users</CardDescription>
           </CardContent>
         </Card>
       </div>

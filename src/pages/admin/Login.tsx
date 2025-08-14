@@ -226,9 +226,9 @@ export default function AdminLogin() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="register">Register</TabsTrigger>
+              {/* <TabsTrigger value="register">Register</TabsTrigger> */}
               <TabsTrigger value="reset">Reset</TabsTrigger>
             </TabsList>
 
@@ -266,7 +266,7 @@ export default function AdminLogin() {
               </form>
             </TabsContent>
 
-            <TabsContent value="register">
+            {/* <TabsContent value="register">
               <form onSubmit={handleRegister} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="register-email">Email</Label>
@@ -314,7 +314,7 @@ export default function AdminLogin() {
                   )}
                 </Button>
               </form>
-            </TabsContent>
+            </TabsContent> */}
 
             <TabsContent value="reset">
               <form onSubmit={handleResetPassword} className="space-y-4">
