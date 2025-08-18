@@ -1,5 +1,7 @@
 // Service Worker for offline capabilities
-const CACHE_NAME = "church-cache-v2"; // Updated version to force cache refresh
+// CACHE_NAME may be overridden at build time by replacing __BUILD_ID__ with a unique id.
+const BUILD_ID = typeof self !== 'undefined' && self.__BUILD_ID__ ? self.__BUILD_ID__ : null;
+const CACHE_NAME = BUILD_ID ? `church-cache-${BUILD_ID}` : `church-cache-${Date.now()}`;
 const urlsToCache = [
   "/",
   "/index.html",
@@ -13,6 +15,22 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(urlsToCache);
+    }),
+  );
+});
+
+// On activate, delete any old caches that don't match the current CACHE_NAME.
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.map((key) => {
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
+          return Promise.resolve();
+        }),
+      );
     }),
   );
 });
