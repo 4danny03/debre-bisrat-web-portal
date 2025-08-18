@@ -12,9 +12,29 @@ const urlsToCache = [
 ];
 
 self.addEventListener("install", (event) => {
+  // Make install resilient: use Promise.allSettled so one failed fetch doesn't fail the whole install
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(urlsToCache);
+    caches.open(CACHE_NAME).then(async (cache) => {
+      try {
+        const results = await Promise.allSettled(
+          urlsToCache.map((u) =>
+            fetch(u, { credentials: "same-origin" }).then((resp) => {
+              if (!resp || !resp.ok) {
+                throw new Error(`Request failed: ${u} (${resp && resp.status})`);
+              }
+              return cache.put(u, resp.clone());
+            }),
+          ),
+        );
+
+        const failures = results.filter((r) => r.status === "rejected");
+        if (failures.length) {
+          console.warn("Some resources failed to cache during SW install:", failures);
+        }
+      } catch (err) {
+        // Don't block install on cache failures; log and continue
+        console.warn("SW install encountered an error while caching:", err);
+      }
     }),
   );
 });
