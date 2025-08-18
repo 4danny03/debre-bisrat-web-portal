@@ -86,7 +86,6 @@ export default function AdminLayout() {
   };
 
   const navigationItems = [
-  { to: "/admin/profile", icon: "User", label: "Profile", description: "View and edit your profile" },
     { to: "/", icon: "Home", label: "Main Website", description: "Return to public site", isExternal: true },
     { to: "/admin/dashboard", icon: "LayoutDashboard", label: "Dashboard", description: "Overview and statistics" },
     { to: "/admin/events", icon: "Calendar", label: "Events", description: "Manage church events" },
@@ -97,12 +96,13 @@ export default function AdminLayout() {
     { to: "/admin/donations", icon: "DollarSign", label: "Donations", description: "Track donations" },
     { to: "/admin/appointments", icon: "CalendarCheck", label: "Appointments", description: "Manage appointment requests" },
     { to: "/admin/contact-messages", icon: "Mail", label: "Contact Messages", description: "View contact form messages" },
-    { to: "/admin/email-marketing", icon: "Mail", label: "Email Marketing", description: "Newsletter campaigns" },
+    // { to: "/admin/email-marketing", icon: "Mail", label: "Email Marketing", description: "Newsletter campaigns" },
     { to: "/admin/users", icon: "Users", label: "Users", description: "Manage admin users" },
     // { to: "/admin/analytics", icon: "TrendingUp", label: "Analytics", description: "Data insights" },
     // { to: "/admin/bulk-operations", icon: "Upload", label: "Bulk Operations", description: "Import/Export data" },
     // { to: "/admin/content-scheduler", icon: "Clock", label: "Content Scheduler", description: "Schedule content" },
     // { to: "/admin/system-health", icon: "Activity", label: "System Health", description: "System status & monitoring" },
+    { to: "/admin/profile", icon: "User", label: "Profile", description: "View and edit your profile" },
     { to: "/admin/settings", icon: "Settings", label: "Settings", description: "System configuration" },
   ];
 

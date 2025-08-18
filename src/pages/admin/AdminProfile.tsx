@@ -200,10 +200,10 @@ export default function AdminProfile(): JSX.Element {
             </div>
           </div>
 
-          <div className="flex items-center justify-end space-x-2">
+          {/* <div className="flex items-center justify-end space-x-2">
             <Button variant="outline" onClick={() => window.location.reload()} disabled={saving}>Reset</Button>
             <Button onClick={handleSave} disabled={saving || loading}>{saving ? "Saving..." : "Save Changes"}</Button>
-          </div>
+          </div> */}
         </CardContent>
       </Card>
     </div>
