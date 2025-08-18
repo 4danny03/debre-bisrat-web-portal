@@ -69,9 +69,10 @@
     <script>
       // Service Worker Registration
       if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker
-            .register("/sw.js")
+          window.addEventListener("load", () => {
+            // Register a versioned service worker URL to force browsers/CDNs to fetch the new file
+            navigator.serviceWorker
+              .register("/sw.js?v=20250819T000000Z")
             .then((registration) => {
               console.log("SW registered: ", registration);
 
