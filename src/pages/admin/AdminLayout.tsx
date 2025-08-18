@@ -86,6 +86,7 @@ export default function AdminLayout() {
   };
 
   const navigationItems = [
+  { to: "/admin/profile", icon: "User", label: "Profile", description: "View and edit your profile" },
     { to: "/", icon: "Home", label: "Main Website", description: "Return to public site", isExternal: true },
     { to: "/admin/dashboard", icon: "LayoutDashboard", label: "Dashboard", description: "Overview and statistics" },
     { to: "/admin/events", icon: "Calendar", label: "Events", description: "Manage church events" },

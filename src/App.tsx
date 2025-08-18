@@ -55,6 +55,7 @@ const AdminDonations = React.lazy(() => import("./pages/admin/Donations"));
 const AdminUsers = React.lazy(() => import("./pages/admin/Users"));
 const AdminSystemHealth = React.lazy(() => import("./pages/admin/SystemHealth"));
 const AdminAnalytics = React.lazy(() => import("./pages/admin/Analytics"));
+const AdminProfile = React.lazy(() => import("./pages/admin/AdminProfile"));
 const AdminBulkOperations = React.lazy(() => import("./pages/admin/BulkOperations"));
 const AdminContentScheduler = React.lazy(() => import("./pages/admin/ContentScheduler"));
 const AdminAppointments = React.lazy(() => import("./pages/admin/Appointments"));
@@ -163,6 +164,7 @@ function AppContent() {
         <Route path="appointments" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminAppointments /></React.Suspense>} />
         <Route path="contact-messages" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminContactMessages /></React.Suspense>} />
         <Route path="email-marketing" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminEmailMarketing /></React.Suspense>} />
+  <Route path="profile" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminProfile /></React.Suspense>} />
       </Route>
 
       {/* Add this before the catchall route */}
