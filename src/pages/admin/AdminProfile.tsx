@@ -10,8 +10,6 @@ import { toast } from "react-hot-toast";
 type Profile = {
   id?: string;
   email?: string;
-  full_name?: string;
-  phone?: string;
   role?: string;
 };
 
@@ -39,7 +37,7 @@ export default function AdminProfile(): JSX.Element {
 
         const { data, error } = await supabase
           .from("profiles")
-          .select("id, email, full_name, phone, role")
+          .select("id, email, role")
           .eq("id", session.user.id)
           .single();
 
@@ -53,7 +51,6 @@ export default function AdminProfile(): JSX.Element {
           const insertBody = {
             id: session.user.id,
             email: session.user.email,
-            full_name: (session.user.user_metadata as any)?.full_name || "",
             role: "admin",
           };
           const { error: insertError } = await supabase.from("profiles").insert(insertBody);
@@ -82,8 +79,6 @@ export default function AdminProfile(): JSX.Element {
         {
           id: profile.id,
           email: profile.email,
-          full_name: profile.full_name,
-          phone: profile.phone,
           role: profile.role || "admin",
         },
       ]);
@@ -116,16 +111,6 @@ export default function AdminProfile(): JSX.Element {
           <div className="space-y-2">
             <Label htmlFor="email">Email (read-only)</Label>
             <Input id="email" value={profile.email || ""} readOnly />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="fullName">Full name</Label>
-            <Input id="fullName" value={profile.full_name || ""} onChange={(e) => handleChange("full_name", e.target.value)} />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone</Label>
-            <Input id="phone" value={profile.phone || ""} onChange={(e) => handleChange("phone", e.target.value)} />
           </div>
 
           <div className="space-y-2">
