@@ -34,6 +34,8 @@ import {
   HandHeart,
   CheckCircle,
   Lock,
+  Mail,
+  Phone,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -263,7 +265,7 @@ export default function Donation() {
                     </div>
 
                     {/* Purpose */}
-                    <div className="space-y-2">
+                    {/* <div className="space-y-2">
                       <Label className="text-lg font-semibold">
                         {t("donation_purpose")}
                       </Label>
@@ -286,7 +288,7 @@ export default function Donation() {
                           </SelectItem>
                         </SelectContent>
                       </Select>
-                    </div>
+                    </div> */}
 
                     <Separator className="my-6" />
 
@@ -317,10 +319,10 @@ export default function Donation() {
                     {/* Contact Information */}
                     {!isAnonymous && (
                       <div className="space-y-4">
-                        {/* <Label className="text-lg font-semibold">
+                        <Label className="text-lg font-semibold">
                           {t("contact_preference")}
-                        </Label> */}
-                        {/* <div className="grid grid-cols-2 gap-4">
+                        </Label>
+                        <div className="grid grid-cols-2 gap-4">
                           <Button
                             type="button"
                             variant={
@@ -351,7 +353,7 @@ export default function Donation() {
                             <Phone className="w-4 h-4 mr-2" />
                             {t("phone_contact")}
                           </Button>
-                        </div> */}
+                        </div>
 
                         {contactMethod === "email" ? (
                           <Input

@@ -157,7 +157,7 @@ function AppContent() {
         <Route path="donations" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminDonations /></React.Suspense>} />
         <Route path="users" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminUsers /></React.Suspense>} />
         {/* <Route path="system-health" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminSystemHealth /></React.Suspense>} /> */}
-        <Route path="analytics" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminAnalytics /></React.Suspense>} />
+        {/* <Route path="analytics" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminAnalytics /></React.Suspense>} /> */}
         {/* <Route path="bulk-operations" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminBulkOperations /></React.Suspense>} /> */}
         {/* <Route path="content-scheduler" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminContentScheduler /></React.Suspense>} /> */}
         <Route path="appointments" element={<React.Suspense fallback={<LoadingSpinner className="p-6" text="Loading..." ariaLabel="Loading page" />}><AdminAppointments /></React.Suspense>} />

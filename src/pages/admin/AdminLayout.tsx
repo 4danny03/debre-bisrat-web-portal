@@ -98,7 +98,7 @@ export default function AdminLayout() {
     { to: "/admin/contact-messages", icon: "Mail", label: "Contact Messages", description: "View contact form messages" },
     { to: "/admin/email-marketing", icon: "Mail", label: "Email Marketing", description: "Newsletter campaigns" },
     { to: "/admin/users", icon: "Users", label: "Users", description: "Manage admin users" },
-    { to: "/admin/analytics", icon: "TrendingUp", label: "Analytics", description: "Data insights" },
+    // { to: "/admin/analytics", icon: "TrendingUp", label: "Analytics", description: "Data insights" },
     // { to: "/admin/bulk-operations", icon: "Upload", label: "Bulk Operations", description: "Import/Export data" },
     // { to: "/admin/content-scheduler", icon: "Clock", label: "Content Scheduler", description: "Schedule content" },
     // { to: "/admin/system-health", icon: "Activity", label: "System Health", description: "System status & monitoring" },
