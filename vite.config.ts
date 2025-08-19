@@ -1,14 +1,13 @@
+// vite.config.js
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { fileURLToPath } from "url";
 import { tempo } from "tempo-devtools/dist/vite";
 
-// Polyfill __dirname for ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   plugins: [react(), tempo()].filter(Boolean),
   resolve: {
@@ -16,8 +15,8 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // Configure base path - use relative path for development
-  base: mode === "development" ? "/" : "/debre-bisrat-web-portal/",
+  // ✅ Use root for GitHub Pages with custom domain
+  base: "/",
   server: {
     host: "::",
     port: 8080,
