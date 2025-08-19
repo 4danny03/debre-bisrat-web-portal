@@ -64,40 +64,35 @@
     <script type="module" src="/src/main.tsx"></script>
     <script src="https://api.tempo.build/proxy-asset?url=https://storage.googleapis.com/tempo-public-assets/error-handling.js"></script>
     <script>
-      // Service Worker Registration
-      if ("serviceWorker" in navigator) {
-          window.addEventListener("load", () => {
-            // Register a versioned service worker URL to force browsers/CDNs to fetch the new file
-            navigator.serviceWorker
-              .register("/sw.js?v=20250819T000000Z")
-            .then((registration) => {
-              console.log("SW registered: ", registration);
+  // Service Worker Registration
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker
+        .register("/sw.js?v=20250819T000000Z")
+        .then((registration) => {
+          console.log("SW registered: ", registration);
 
-              // Handle updates
-              registration.addEventListener("updatefound", () => {
-                const newWorker = registration.installing;
-                if (newWorker) {
-                  newWorker.addEventListener("statechange", () => {
-                    if (
-                      newWorker.state === "installed" &&
-                      navigator.serviceWorker.controller
-                    ) {
-                      // New content is available, refresh the page
-                      if (
-                        confirm("New version available! Refresh to update?")
-                      ) {
-                        window.location.reload();
-                      }
-                    }
-                  });
+          // Handle updates
+          registration.addEventListener("updatefound", () => {
+            const newWorker = registration.installing;
+            if (newWorker) {
+              newWorker.addEventListener("statechange", () => {
+                if (
+                  newWorker.state === "installed" &&
+                  navigator.serviceWorker.controller
+                ) {
+                  // ✅ Silent auto-refresh, no popup
+                  window.location.reload();
                 }
               });
-            })
-            .catch((registrationError) => {
-              console.log("SW registration failed: ", registrationError);
-            });
+            }
+          });
+        })
+        .catch((registrationError) => {
+          console.log("SW registration failed: ", registrationError);
         });
-      }
-    </script>
+    });
+  }
+</script>
   </body>
 </html>
