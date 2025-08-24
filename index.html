@@ -64,35 +64,10 @@
     <script type="module" src="/src/main.tsx"></script>
     <script src="https://api.tempo.build/proxy-asset?url=https://storage.googleapis.com/tempo-public-assets/error-handling.js"></script>
     <script>
-  // Service Worker Registration
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker
-        .register("/sw.js?v=20250819T000000Z")
-        .then((registration) => {
-          console.log("SW registered: ", registration);
-
-          // Handle updates
-          registration.addEventListener("updatefound", () => {
-            const newWorker = registration.installing;
-            if (newWorker) {
-              newWorker.addEventListener("statechange", () => {
-                if (
-                  newWorker.state === "installed" &&
-                  navigator.serviceWorker.controller
-                ) {
-                  // ✅ Silent auto-refresh, no popup
-                  window.location.reload();
-                }
-              });
-            }
-          });
-        })
-        .catch((registrationError) => {
-          console.log("SW registration failed: ", registrationError);
-        });
-    });
-  }
-</script>
+      // Service worker registration temporarily disabled to prevent reload loops while debugging
+      // DEBUG: service worker disabled. To re-enable, restore the original registration code.
+      // if ("serviceWorker" in navigator) { ... }
+      console.log('SW registration disabled for debugging');
+    </script>
   </body>
 </html>
