@@ -1,11 +1,11 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>
-      Debre Bisrat Dagimawi Kulibi St.Gabriel EOTC | á‹°á‰¥áˆ¨ á‰¥áˆ¥áˆ«á‰µ á‹³áŒáˆ›á‹Š á‰áˆá‰¢ á‰…á‹±áˆµ áŒˆá‰¥áˆ­áŠ¤áˆ
-      á‰¤á‰°áŠ­áˆ­áˆµá‰²á‹«áŠ•
+      Debre Bisrat Dagimawi Kulibi St.Gabriel EOTC | ደብረ ብሥራት ዳግማዊ ቁልቢ ቅዱስ ገብርኤል
+      ቤተክርስቲያን
     </title>
     <meta
       name="description"
@@ -17,7 +17,7 @@
     />
     <meta
       name="keywords"
-      content="Ethiopian Orthodox, Tewahedo, Church, Silver Spring, Maryland, St.Gabriel, Debre Bisrat, á‹°á‰¥áˆ¨ á‰¥áˆ¥áˆ«á‰µ, á‰…á‹±áˆµ áŒˆá‰¥áˆ­áŠ¤áˆ"
+      content="Ethiopian Orthodox, Tewahedo, Church, Silver Spring, Maryland, St.Gabriel, Debre Bisrat, ደብረ ብሥራት, ቅዱስ ገብርኤል"
     />
 
     <!-- Open Graph / Facebook -->
@@ -57,19 +57,7 @@
   <link rel="apple-touch-icon" href="/images/church-icon.png" />
   <!-- Build stamp: 2025-08-19T00:00:00Z - inserted to force CDN revalidation -->
     <meta name="theme-color" content="#7D2224" />
-        <!-- Inline path-fixer: rewrite old subpath assets to root /assets/ before they load -->
-    <script>(function(){
-      try{
-        var replacePrefix = '/debre-bisrat-web-portal/assets/';
-        var toPrefix = '/assets/';
-        var els = document.getElementsByTagName('link');
-        for(var i=0;i<els.length;i++){ var href = els[i].getAttribute('href'); if(href && href.indexOf(replacePrefix)===0){ els[i].setAttribute('href', href.replace(replacePrefix,toPrefix)); } }
-        var s = document.getElementsByTagName('script');
-        for(var j=0;j<s.length;j++){ var src = s[j].getAttribute('src'); if(src && src.indexOf(replacePrefix)===0){ s[j].setAttribute('src', src.replace(replacePrefix,toPrefix)); } }
-        var rels = document.querySelectorAll('link[rel="modulepreload"]');
-        rels.forEach(function(l){ var h = l.getAttribute('href'); if(h && h.indexOf(replacePrefix)===0){ l.setAttribute('href', h.replace(replacePrefix,toPrefix)); } });
-      } catch(e){ console.warn('path fixer failed', e); }
-    })();</script><script type="module" crossorigin src="/assets/index-C4XDO3q4.js"></script>
+    <script type="module" crossorigin src="/assets/index-C4XDO3q4.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/vendor-Di3rkBj0.js">
     <link rel="modulepreload" crossorigin href="/assets/ui-CIANOcUa.js">
     <link rel="stylesheet" crossorigin href="/assets/index-dQuxHchm.css">
@@ -79,41 +67,37 @@
     <div id="root"></div>
     <script src="https://api.tempo.build/proxy-asset?url=https://storage.googleapis.com/tempo-public-assets/error-handling.js"></script>
     <script>
-      // Service Worker Registration
-      if ("serviceWorker" in navigator) {
-          window.addEventListener("load", () => {
-            // Register a versioned service worker URL to force browsers/CDNs to fetch the new file
-            navigator.serviceWorker
-              .register("/sw.js?v=20250819T000000Z")
-            .then((registration) => {
-              console.log("SW registered: ", registration);
+  // Service Worker Registration
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker
+        .register("/sw.js?v=20250819T000000Z")
+        .then((registration) => {
+          console.log("SW registered: ", registration);
 
-              // Handle updates
-              registration.addEventListener("updatefound", () => {
-                const newWorker = registration.installing;
-                if (newWorker) {
-                  newWorker.addEventListener("statechange", () => {
-                    if (
-                      newWorker.state === "installed" &&
-                      navigator.serviceWorker.controller
-                    ) {
-                      // New content is available, refresh the page
-                      if (
-                        confirm("New version available! Refresh to update?")
-                      ) {
-                        window.location.reload();
-                      }
-                    }
-                  });
+          // Handle updates
+          registration.addEventListener("updatefound", () => {
+            const newWorker = registration.installing;
+            if (newWorker) {
+              newWorker.addEventListener("statechange", () => {
+                if (
+                  newWorker.state === "installed" &&
+                  navigator.serviceWorker.controller
+                ) {
+                  // Prompt the user before reloading to avoid reload loops
+                  if (confirm("New version available — reload to update?")) {
+                    window.location.reload();
+                  }
                 }
               });
-            })
-            .catch((registrationError) => {
-              console.log("SW registration failed: ", registrationError);
-            });
+            }
+          });
+        })
+        .catch((registrationError) => {
+          console.log("SW registration failed: ", registrationError);
         });
-      }
-    </script>
+    });
+  }
+</script>
   </body>
 </html>
-
