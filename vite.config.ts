@@ -23,6 +23,15 @@ export default defineConfig(({ mode }) => ({
     strictPort: true,
     allowedHosts: process.env.TEMPO === "true" ? true : undefined,
   },
+  define: {
+    // Make sure environment variables are properly exposed
+    "process.env.VITE_SUPABASE_URL": JSON.stringify(
+      process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
+    ),
+    "process.env.VITE_SUPABASE_ANON_KEY": JSON.stringify(
+      process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY,
+    ),
+  },
   build: {
     outDir: "dist",
     sourcemap: mode === "development",

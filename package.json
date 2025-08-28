@@ -19,7 +19,9 @@
     "test:ui": "vitest --ui",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css,md}\"",
-    "deploy": "vite build && npx gh-pages -d dist"
+    "deploy": "vite build && npx gh-pages -d dist",
+    "test:email": "node src/test-email.cjs",
+    "test:email:all": "npm run test:email user.registered && npm run test:email membership.pending_payment && npm run test:email appointment.requested && npm run test:email donation.created && npm run test:email membership.payment_confirmed"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -108,6 +110,7 @@
     "gh-pages": "^6.3.0",
     "jsdom": "^26.1.0",
     "msw": "^2.10.2",
+    "node-fetch": "^3.3.2",
     "postcss": "^8.5.6",
     "postcss-import": "^16.1.1",
     "postcss-nested": "^7.0.2",
