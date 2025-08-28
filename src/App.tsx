@@ -3,7 +3,7 @@ import * as React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { usePerformanceMonitoring } from "@/hooks/use-performance-monitoring";
 
@@ -181,11 +181,11 @@ export default function App(): React.ReactElement {
       <LanguageProvider>
         <DataProvider>
           <TooltipProvider>
-            <BrowserRouter>
+            <HashRouter>
               <AppContent />
               <Toaster />
               <Sonner />
-            </BrowserRouter>
+            </HashRouter>
           </TooltipProvider>
         </DataProvider>
       </LanguageProvider>
