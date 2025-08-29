@@ -97,7 +97,7 @@ async function sendDonationEmails(supabaseClient: any, donation: any) {
 
     // Send confirmation email to donor
     if (donation.donor_email && !donation.is_anonymous) {
-      await supabaseClient.functions.invoke("supabase-functions-send-email", {
+      await supabaseClient.functions.invoke("notify-emails", {
         body: {
           type: "donation_confirmation",
           data: {
@@ -113,7 +113,7 @@ async function sendDonationEmails(supabaseClient: any, donation: any) {
 
     // Send notification to admin
     if (settings?.admin_email && settings?.enable_email_notifications) {
-      await supabaseClient.functions.invoke("supabase-functions-send-email", {
+      await supabaseClient.functions.invoke("notify-emails", {
         body: {
           type: "admin_notification",
           data: {

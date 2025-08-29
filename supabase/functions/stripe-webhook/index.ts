@@ -1,13 +1,13 @@
-import { corsHeaders } from "../_shared/cors.ts";
+import { corsHeaders } from "@shared/cors.ts";
 import {
   handleCorsOptions,
   formatErrorResponse,
   formatSuccessResponse,
-} from "../_shared/utils.ts";
+} from "@shared/utils.ts";
 import {
   createStripeInstance,
   verifyStripeSignature,
-} from "../_shared/payment-utils.ts";
+} from "@shared/payment-utils.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
 Deno.serve(async (req) => {
@@ -38,7 +38,9 @@ Deno.serve(async (req) => {
 
     // Validate required environment variables
     if (!stripeWebhookSecret) {
-      throw new Error("Missing VITE_STRIPE_WEBHOOK_SECRET environment variable");
+      throw new Error(
+        "Missing VITE_STRIPE_WEBHOOK_SECRET environment variable",
+      );
     }
     if (!supabaseUrl || !supabaseServiceRoleKey) {
       throw new Error("Missing Supabase configuration");
@@ -68,9 +70,9 @@ Deno.serve(async (req) => {
 
     // Process checkout.session.completed event
     if (event.type === "checkout.session.completed") {
-      const session = event.data.object;
+      const session: any = event.data.object;
       const { metadata } = session;
-      
+
       // Verify payment was successful
       if (session.payment_status !== "paid") {
         return formatSuccessResponse({ received: true, processed: false });
@@ -81,7 +83,7 @@ Deno.serve(async (req) => {
         .from("donations")
         .update({
           status: "completed",
-          completed_at: new Date().toISOString()
+          completed_at: new Date().toISOString(),
         })
         .eq("stripe_payment_intent_id", session.id);
 
@@ -103,53 +105,50 @@ Deno.serve(async (req) => {
         if (memberError) throw memberError;
       }
 
-      // 3. Send confirmation emails
+      // 3. Send confirmation emails via notify-emails router
       try {
-        // Get donation details
+        // Get donation details (optional donor name/email)
         const { data: donation } = await supabaseClient
           .from("donations")
           .select("*")
           .eq("stripe_payment_intent_id", session.id)
           .single();
 
-        if (donation) {
-          // Send to donor
-          await supabaseClient.functions.invoke("send-email", {
-            body: {
-              to: session.customer_email || donation.donor_email,
-              subject: metadata?.purpose === "membership_fee"
-                ? "Membership Activated"
-                : "Donation Confirmed",
-              htmlContent: `
-                <h1>Payment Confirmed</h1>
-                <p>Your ${metadata?.purpose === "membership_fee" ? "membership" : "donation"} of $${(session.amount_total / 100).toFixed(2)} has been processed.</p>
-                ${metadata?.purpose === "membership_fee" ? "<p>Your membership is now active!</p>" : ""}
-                <p>Transaction ID: ${session.id}</p>
-                <p>Date: ${new Date().toLocaleString()}</p>
-              `
-            }
-          });
+        const donorEmail =
+          session.customer_email || donation?.donor_email || undefined;
+        const donorName = donation?.donor_name || undefined;
+        const currency = (session.currency || "usd").toLowerCase();
+        const amountCents: number = Number(session.amount_total) || 0;
 
-          // Notify admins
-          const { data: admins } = await supabaseClient
-            .from("profiles")
-            .select("email")
-            .eq("role", "admin");
+        // Single call will notify both admins and donor
+        await supabaseClient.functions.invoke("notify-emails", {
+          body: {
+            type: "donation.created",
+            payload: {
+              amount: amountCents,
+              currency,
+              donorEmail: donorEmail || "",
+              donorName,
+              purpose: metadata?.purpose,
+              receiptUrl: undefined,
+            },
+          },
+        });
 
-          if (admins?.length) {
-            await supabaseClient.functions.invoke("send-email", {
+        // Membership confirmation email (if applicable)
+        if (metadata?.purpose === "membership_fee") {
+          if (donorEmail) {
+            await supabaseClient.functions.invoke("notify-emails", {
               body: {
-                to: admins.map(a => a.email),
-                subject: `Payment Completed - $${(session.amount_total / 100).toFixed(2)}`,
-                htmlContent: `
-                  <h2>Payment Received</h2>
-                  <p><strong>Type:</strong> ${metadata?.purpose?.replace(/_/g, " ") || "Donation"}</p>
-                  <p><strong>Amount:</strong> $${(session.amount_total / 100).toFixed(2)}</p>
-                  <p><strong>From:</strong> ${donation.donor_name || session.customer_email}</p>
-                  ${metadata?.memberId ? `<p><strong>Member ID:</strong> ${metadata.memberId}</p>` : ""}
-                  <p><strong>Transaction ID:</strong> ${session.id}</p>
-                `
-              }
+                type: "membership.payment_confirmed",
+                payload: {
+                  email: donorEmail,
+                  name: donorName,
+                  amount: amountCents,
+                  currency,
+                  receiptUrl: undefined,
+                },
+              },
             });
           }
         }
@@ -163,12 +162,11 @@ Deno.serve(async (req) => {
 
     // Handle other event types
     return formatSuccessResponse({ received: true, ignored: true });
-
   } catch (error) {
     console.error("Webhook handler error:", error);
-    return formatSuccessResponse({ 
-      received: true, 
-      error: error instanceof Error ? error.message : "Unknown error" 
+    return formatSuccessResponse({
+      received: true,
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 });

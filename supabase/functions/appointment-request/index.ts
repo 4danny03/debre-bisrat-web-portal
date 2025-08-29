@@ -86,6 +86,24 @@ Deno.serve(async (req) => {
       throw new Error(`Database error: ${error.message}`);
     }
 
+    // Fire notifications to admins and user via notify-emails router
+    try {
+      await supabase.functions.invoke("notify-emails", {
+        body: {
+          type: "appointment.requested",
+          payload: {
+            email,
+            name,
+            phone: phone || undefined,
+            datetime: `${requested_date} ${requested_time}`,
+            message: notes || undefined,
+          },
+        },
+      });
+    } catch (notifyErr) {
+      console.error("Failed to send appointment notifications:", notifyErr);
+    }
+
     // Return successful response
     return new Response(JSON.stringify({ success: true, appointment: data }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
