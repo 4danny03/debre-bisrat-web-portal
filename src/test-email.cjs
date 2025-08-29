@@ -106,7 +106,7 @@ async function testEmailFunction() {
     console.log(
       `Sending test request to ${supabaseUrl}/functions/v1/notify-emails`,
     );
-    const fetch = require("node-fetch");
+    const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
     const response = await fetch(`${supabaseUrl}/functions/v1/notify-emails`, {
       method: "POST",
       headers: {

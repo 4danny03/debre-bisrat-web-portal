@@ -34,7 +34,7 @@ async function testEmailDiagnostics() {
 
   try {
     console.log("Checking Edge Function environment variables...");
-    const fetch = require("node-fetch");
+    const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
     const response = await fetch(
       `${supabaseUrl}/functions/v1/notify-emails/debug`,
       {

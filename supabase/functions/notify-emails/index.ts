@@ -52,44 +52,31 @@ async function sendEmail({
   cc,
   bcc,
 }: EmailArgs) {
-  if (!RESEND_API_KEY) {
-    throw new Error("RESEND_API_KEY is not set");
-  }
-
   // Rate limiting check - max 50 emails per hour per recipient domain
   if (Array.isArray(to) && to.length > 0) {
     const domain = to[0].split("@")[1];
     const now = Date.now();
     const hourAgo = now - 3600000;
-
     const log = emailSendLog.get(domain) || { count: 0, timestamp: now };
-
     // Reset counter if it's been more than an hour
     if (log.timestamp < hourAgo) {
       log.count = 1;
       log.timestamp = now;
     } else {
       log.count++;
-
       // Check if we've hit the limit
       if (log.count > 50) {
-        console.warn(
-          `Rate limit exceeded for domain ${domain}. Skipping email send.`,
-        );
+        console.warn(`Rate limit exceeded for domain ${domain}. Skipping email send.`);
         return { id: null, message: "Rate limit exceeded" };
       }
     }
-
     emailSendLog.set(domain, log);
   }
 
   try {
-    console.log(
-      `Attempting to send email to ${Array.isArray(to) ? to.join(", ") : to}`,
-    );
+    console.log(`Attempting to send email to ${Array.isArray(to) ? to.join(", ") : to}`);
     console.log(`From: ${FROM_EMAIL}`);
     console.log(`Subject: ${subject}`);
-
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -107,24 +94,18 @@ async function sendEmail({
         bcc,
       }),
     });
-
     if (!res.ok) {
       const body = await res.text();
       console.error("Resend error", res.status, body);
       throw new Error(`Resend failed: ${res.status} - ${body}`);
     }
-
     const data = await res.json();
-    console.log(
-      `Email sent successfully to ${Array.isArray(to) ? to.join(", ") : to}`,
-    );
+    console.log(`Email sent successfully to ${Array.isArray(to) ? to.join(", ") : to}`);
     return data;
   } catch (error) {
     console.error("Failed to send email:", error);
     throw error;
   }
-}
-
 type Event =
   | {
       type: "user.registered";
@@ -192,7 +173,9 @@ type Event =
 // Import email templates
 import { templates } from "./templates.ts";
 
-Deno.serve(async (req) => {
+// Note: Deno.serve is valid in Supabase Edge Functions (Deno runtime)
+// @ts-ignore: Deno.serve is valid in Supabase Edge Functions
+Deno.serve(async (req: Request) => {
   // Add CORS headers
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
@@ -244,9 +227,17 @@ Deno.serve(async (req) => {
       headers: corsHeaders,
     });
 
-  let evt: Event;
+  let evt: Event | any;
   try {
     evt = await req.json();
+    // Debug log: print event type and payload
+    console.log("[DEBUG] Received event:", JSON.stringify(evt, null, 2));
+    if (evt.type) {
+      console.log(`[DEBUG] Event type: ${evt.type}`);
+    }
+    if (evt.payload) {
+      console.log(`[DEBUG] Event payload:`, JSON.stringify(evt.payload, null, 2));
+    }
   } catch (error) {
     console.error("Failed to parse request body:", error);
     return new Response(JSON.stringify({ error: "Invalid JSON payload" }), {
@@ -420,7 +411,7 @@ Deno.serve(async (req) => {
 
       default:
         return new Response(
-          JSON.stringify({ error: `Unknown event type: ${evt.type}` }),
+          JSON.stringify({ error: `Unknown event type: ${(evt as any).type}` }),
           {
             status: 400,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -439,4 +430,5 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+  // ...existing code...
 });
