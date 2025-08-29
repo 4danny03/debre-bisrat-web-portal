@@ -40,6 +40,9 @@ export type EmailEvent =
         donorName?: string;
         purpose?: string;
         receiptUrl?: string;
+        paymentMethod?: string;
+        paymentId?: string;
+        donationDate?: string;
       };
     }
   | {
@@ -90,12 +93,9 @@ export async function sendNotification(
     });
 
     // Invoke the Supabase function
-    const { data, error } = await supabase.functions.invoke(
-      "supabase-functions-notify-emails",
-      {
-        body: event,
-      },
-    );
+    const { data, error } = await supabase.functions.invoke("notify-emails", {
+      body: event,
+    });
 
     if (error) {
       console.error(`Error sending ${event.type} notification:`, error);
@@ -201,6 +201,9 @@ export async function sendDonationNotification({
   donorName,
   purpose,
   receiptUrl,
+  paymentMethod,
+  paymentId,
+  donationDate,
 }: {
   amount: number;
   currency: string;
@@ -208,10 +211,23 @@ export async function sendDonationNotification({
   donorName?: string;
   purpose?: string;
   receiptUrl?: string;
+  paymentMethod?: string;
+  paymentId?: string;
+  donationDate?: string;
 }) {
   return sendNotification({
     type: "donation.created",
-    payload: { amount, currency, donorEmail, donorName, purpose, receiptUrl },
+    payload: {
+      amount,
+      currency,
+      donorEmail,
+      donorName,
+      purpose,
+      receiptUrl,
+      paymentMethod,
+      paymentId,
+      donationDate,
+    },
   });
 }
 

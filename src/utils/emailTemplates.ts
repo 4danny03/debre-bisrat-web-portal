@@ -214,19 +214,59 @@ export const templates = {
       currency: string;
       purpose?: string;
       receiptUrl?: string;
+      paymentMethod?: string;
+      paymentId?: string;
+      donationDate?: string;
     }) => `
       <div style="${baseStyles}${containerStyles}">
         <div style="${headerStyles}">
-          <h1>Thank You for Your Donation</h1>
+          <h1>Donation Processing Receipt</h1>
         </div>
         <p>Dear ${data.donorName || "Friend"},</p>
-        <p>Thank you for your generous donation of ${new Intl.NumberFormat("en-US", { style: "currency", currency: data.currency }).format(data.amount / 100)} to St. Gabriel Ethiopian Orthodox Tewahedo Church${data.purpose ? ` for ${data.purpose}` : ""}.</p>
-        <p>Your support helps us continue our mission and serve our community.</p>
+        <p>With a heart full of gratitude, we sincerely thank you for your generous donation to Debre Bisrat Dagimawi Kulibi St. Gabriel Ethiopian Orthodox Tewahedo Church.</p>
+        <p>Your contribution is a blessing to our community and supports our mission to serve God and our congregation.</p>
+        
+        <div style="background-color: #f9f9f9; border: 1px solid #e0e0e0; padding: 15px; margin: 20px 0; border-radius: 5px;">
+          <h3 style="margin-top: 0; color: #8B0000;">Donation Details</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;"><strong>Donor Name:</strong></td>
+              <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">${data.donorName || "Anonymous"}</td>
+            </tr>
+            <tr>
+              <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;"><strong>Donation Type:</strong></td>
+              <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">${data.purpose || "ይለግሱ (Donate)"}</td>
+            </tr>
+            <tr>
+              <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;"><strong>Date:</strong></td>
+              <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">${data.donationDate || new Date().toLocaleDateString()}</td>
+            </tr>
+            <tr>
+              <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;"><strong>Amount:</strong></td>
+              <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">${new Intl.NumberFormat("en-US", { style: "currency", currency: data.currency }).format(data.amount / 100)}</td>
+            </tr>
+            <tr>
+              <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;"><strong>Payment Method:</strong></td>
+              <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">${data.paymentMethod || "Online Payment"}</td>
+            </tr>
+            <tr>
+              <td style="padding: 5px 0;"><strong>Reference ID:</strong></td>
+              <td style="padding: 5px 0;">${data.paymentId || ""}</td>
+            </tr>
+          </table>
+        </div>
+        
+        <p>የሰጡት ልገሳ በእምነትና በፍቅር የተሞላ ነው። እግዚአብሔር ይባርክዎት።</p>
+        <p>Your donation is received with faith and love. May God bless you abundantly.</p>
+        
         ${data.receiptUrl ? `<p><a href="${data.receiptUrl}" style="${buttonStyles}">View Receipt</a></p>` : ""}
-        <p>May God bless you for your generosity.</p>
-        <p>With gratitude,<br>St. Gabriel Church Team</p>
+        
+        <p>With sincere appreciation,<br>
+        ደብረ ብሥራት ዳጊማዊ ቁልቢ ቅዱስ ገብርኤል የኢትዮጵያ ኦርቶዶክስ ተዋሕዶ ቤተ ክርስቲያን<br>
+        Debre Bisrat Dagimawi Kulibi St. Gabriel Ethiopian Orthodox Tewahedo Church</p>
+        
         <div style="${footerStyles}">
-          <p>St. Gabriel Ethiopian Orthodox Tewahedo Church<br>Silver Spring, MD</p>
+          <p>6020 Batson Rd, Burtonsville, MD 20868</p>
           <p>This donation may be tax-deductible. Please consult with your tax advisor.</p>
         </div>
       </div>
@@ -238,21 +278,57 @@ export const templates = {
       currency: string;
       purpose?: string;
       receiptUrl?: string;
+      paymentMethod?: string;
+      paymentId?: string;
+      donationDate?: string;
     }) => `
       <div style="${baseStyles}${containerStyles}">
         <div style="${headerStyles}">
           <h1>New Donation Received</h1>
         </div>
-        <p>A new donation has been received:</p>
-        <ul>
-          <li><strong>Donor:</strong> ${data.donorName || data.donorEmail || "Anonymous"}</li>
-          <li><strong>Amount:</strong> ${new Intl.NumberFormat("en-US", { style: "currency", currency: data.currency }).format(data.amount / 100)}</li>
-          <li><strong>Purpose:</strong> ${data.purpose || "General"}</li>
-          <li><strong>Date:</strong> ${new Date().toLocaleDateString()}</li>
-        </ul>
+        <p>A new donation has been processed for the church:</p>
+        
+        <div style="background-color: #f9f9f9; border: 1px solid #e0e0e0; padding: 15px; margin: 20px 0; border-radius: 5px;">
+          <h3 style="margin-top: 0; color: #8B0000;">Donation Details</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;"><strong>Donor Name:</strong></td>
+              <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">${data.donorName || "Anonymous"}</td>
+            </tr>
+            <tr>
+              <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;"><strong>Donor Email:</strong></td>
+              <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">${data.donorEmail || "Not provided"}</td>
+            </tr>
+            <tr>
+              <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;"><strong>Donation Type:</strong></td>
+              <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">${data.purpose || "General Donation"}</td>
+            </tr>
+            <tr>
+              <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;"><strong>Date:</strong></td>
+              <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">${data.donationDate || new Date().toLocaleDateString()}</td>
+            </tr>
+            <tr>
+              <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;"><strong>Amount:</strong></td>
+              <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">${new Intl.NumberFormat("en-US", { style: "currency", currency: data.currency }).format(data.amount / 100)}</td>
+            </tr>
+            <tr>
+              <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;"><strong>Payment Method:</strong></td>
+              <td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">${data.paymentMethod || "Online Payment"}</td>
+            </tr>
+            <tr>
+              <td style="padding: 5px 0;"><strong>Reference ID:</strong></td>
+              <td style="padding: 5px 0;">${data.paymentId || ""}</td>
+            </tr>
+          </table>
+        </div>
+        
+        <p>This donation has been recorded in the system. Please verify the details in the admin dashboard.</p>
         ${data.receiptUrl ? `<p><a href="${data.receiptUrl}" style="${buttonStyles}">View Receipt</a></p>` : ""}
+        
         <div style="${footerStyles}">
           <p>This is an automated notification from the St. Gabriel Church system.</p>
+          <p>Debre Bisrat Dagimawi Kulibi St. Gabriel Ethiopian Orthodox Tewahedo Church<br>
+          6020 Batson Rd, Burtonsville, MD 20868</p>
         </div>
       </div>
     `,

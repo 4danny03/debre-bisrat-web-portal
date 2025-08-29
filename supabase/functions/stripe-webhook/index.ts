@@ -1,13 +1,13 @@
-import { corsHeaders } from "../_shared/cors.ts";
+import { corsHeaders } from "@shared/cors.ts";
 import {
   handleCorsOptions,
   formatErrorResponse,
   formatSuccessResponse,
-} from "../_shared/utils.ts";
+} from "@shared/utils.ts";
 import {
   createStripeInstance,
   verifyStripeSignature,
-} from "../_shared/payment-utils.ts";
+} from "@shared/payment-utils.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
 Deno.serve(async (req) => {

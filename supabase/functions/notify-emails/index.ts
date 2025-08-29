@@ -1,6 +1,8 @@
 // supabase/functions/notify-emails/index.ts
 // Server-side router that sends emails via Resend based on event type.
 
+import { handleDebugRequest } from "./debug.ts";
+
 type EmailArgs = {
   to: string | string[];
   subject: string;
@@ -11,11 +13,32 @@ type EmailArgs = {
   bcc?: string | string[];
 };
 
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
-const FROM_EMAIL = Deno.env.get("FROM_EMAIL")!; // e.g. 'St. Gabriel <noreply@stgabrielmd.org>'
-const ADMIN_EMAILS = JSON.parse(
-  Deno.env.get("ADMIN_EMAILS") || "[]",
-) as string[];
+// Get environment variables with better error handling
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+if (!RESEND_API_KEY) {
+  console.error(
+    "CRITICAL ERROR: RESEND_API_KEY environment variable is not set",
+  );
+}
+
+const FROM_EMAIL = Deno.env.get("FROM_EMAIL") || "onboarding@resend.dev"; // Fallback to Resend test email
+const ADMIN_EMAILS_ENV = Deno.env.get("ADMIN_EMAILS");
+
+// Parse ADMIN_EMAILS from environment or use fallback
+let ADMIN_EMAILS: string[] = [];
+try {
+  if (ADMIN_EMAILS_ENV) {
+    ADMIN_EMAILS = JSON.parse(ADMIN_EMAILS_ENV);
+  }
+} catch (e) {
+  console.error("Error parsing ADMIN_EMAILS:", e);
+}
+
+// Use fallback email if no admin emails are configured
+if (ADMIN_EMAILS.length === 0) {
+  ADMIN_EMAILS = ["matterskhalid@gmail.com"];
+  console.log("Using fallback admin email:", ADMIN_EMAILS[0]);
+}
 
 // Track email sending for rate limiting
 const emailSendLog = new Map<string, { count: number; timestamp: number }>();
@@ -29,6 +52,10 @@ async function sendEmail({
   cc,
   bcc,
 }: EmailArgs) {
+  if (!RESEND_API_KEY) {
+    throw new Error("RESEND_API_KEY is not set");
+  }
+
   // Rate limiting check - max 50 emails per hour per recipient domain
   if (Array.isArray(to) && to.length > 0) {
     const domain = to[0].split("@")[1];
@@ -57,6 +84,12 @@ async function sendEmail({
   }
 
   try {
+    console.log(
+      `Attempting to send email to ${Array.isArray(to) ? to.join(", ") : to}`,
+    );
+    console.log(`From: ${FROM_EMAIL}`);
+    console.log(`Subject: ${subject}`);
+
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -132,6 +165,9 @@ type Event =
         donorName?: string;
         purpose?: string;
         receiptUrl?: string;
+        paymentMethod?: string;
+        paymentId?: string;
+        donationDate?: string;
       };
     }
   | {
@@ -142,6 +178,14 @@ type Event =
         amount: number;
         currency: string;
         receiptUrl?: string;
+      };
+    }
+  | {
+      type: "test.email";
+      payload: {
+        email: string;
+        subject: string;
+        message: string;
       };
     };
 
@@ -159,6 +203,39 @@ Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  // Handle debug endpoint
+  const url = new URL(req.url);
+  if (req.method === "GET" && url.pathname.endsWith("/debug")) {
+    return handleDebugRequest(req);
+  }
+
+  // Handle test email
+  if (req.method === "GET" && url.pathname.endsWith("/test")) {
+    try {
+      const testResult = await sendEmail({
+        to: "matterskhalid@gmail.com", // Replace with your email
+        subject: "Email System Test",
+        html: "<h1>Test Email</h1><p>This is a test email from the notify-emails function.</p>",
+      });
+
+      return new Response(
+        JSON.stringify({ success: true, result: testResult }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ success: false, error: String(error) }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
   }
 
   if (req.method !== "POST")
@@ -195,6 +272,17 @@ Deno.serve(async (req) => {
     const results = [];
 
     switch (evt.type) {
+      case "test.email": {
+        // Simple test email
+        const testResult = await sendEmail({
+          to: evt.payload.email,
+          subject: evt.payload.subject || "Test Email",
+          html: `<h1>Test Email</h1><p>${evt.payload.message || "This is a test email from the notify-emails function."}</p>`,
+        });
+        results.push({ recipient: "test", result: testResult });
+        break;
+      }
+
       case "user.registered": {
         // Admin notification
         const adminResult = await sendEmail({
@@ -268,7 +356,18 @@ Deno.serve(async (req) => {
               currency: evt.payload.currency.toUpperCase(),
             },
           ).format(evt.payload.amount / 100)}`,
-          html: templates.donation.adminNotification(evt.payload),
+          html: templates.donation.adminNotification({
+            donorName: evt.payload.donorName,
+            donorEmail: evt.payload.donorEmail,
+            amount: evt.payload.amount,
+            currency: evt.payload.currency,
+            purpose: evt.payload.purpose,
+            receiptUrl: evt.payload.receiptUrl,
+            paymentMethod: evt.payload.paymentMethod || "Online Payment",
+            paymentId: evt.payload.paymentId,
+            donationDate:
+              evt.payload.donationDate || new Date().toLocaleDateString(),
+          }),
         });
         results.push({ recipient: "admin", result: adminResult });
 
@@ -276,8 +375,18 @@ Deno.serve(async (req) => {
         if (evt.payload.donorEmail) {
           const donorResult = await sendEmail({
             to: evt.payload.donorEmail,
-            subject: "Thank you for your donation",
-            html: templates.donation.thankYou(evt.payload),
+            subject: "Donation Processing Receipt",
+            html: templates.donation.thankYou({
+              donorName: evt.payload.donorName,
+              amount: evt.payload.amount,
+              currency: evt.payload.currency,
+              purpose: evt.payload.purpose,
+              receiptUrl: evt.payload.receiptUrl,
+              paymentMethod: evt.payload.paymentMethod || "Online Payment",
+              paymentId: evt.payload.paymentId,
+              donationDate:
+                evt.payload.donationDate || new Date().toLocaleDateString(),
+            }),
           });
           results.push({ recipient: "donor", result: donorResult });
         }
