@@ -1,9 +1,9 @@
-import { corsHeaders } from "@shared/cors.ts";
+import { corsHeaders } from "../_shared/cors.ts";
 import {
   handleCorsOptions,
   formatErrorResponse,
   formatSuccessResponse,
-} from "@shared/utils.ts";
+} from "../_shared/utils.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
 Deno.serve(async (req) => {
@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
   try {
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_KEY") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
 
     // Parse request body for parameters
@@ -33,8 +33,9 @@ Deno.serve(async (req) => {
 
     let reportData: any = {};
 
+    // IMPORTANT: wrap each case in { } to avoid "Identifier already declared" errors
     switch (reportType) {
-      case "donations":
+      case "donations": {
         const { data: donations } = await supabaseClient
           .from("donations")
           .select("*")
@@ -42,11 +43,13 @@ Deno.serve(async (req) => {
 
         const totalAmount =
           donations?.reduce((sum, d) => sum + d.amount, 0) || 0;
+
         const monthlyData = processMonthlyData(
           donations || [],
           "created_at",
           "amount",
         );
+
         const purposeData = processPurposeData(donations || []);
 
         reportData = {
@@ -66,9 +69,11 @@ Deno.serve(async (req) => {
           events: { total: 0, upcoming: 0, monthly: [], attendance: [] },
           engagement: { prayerRequests: 0, testimonials: 0, galleryViews: 0 },
         };
-        break;
 
-      case "members":
+        break;
+      }
+
+      case "members": {
         const { data: members } = await supabaseClient
           .from("members")
           .select("*")
@@ -94,9 +99,11 @@ Deno.serve(async (req) => {
           events: { total: 0, upcoming: 0, monthly: [], attendance: [] },
           engagement: { prayerRequests: 0, testimonials: 0, galleryViews: 0 },
         };
-        break;
 
-      case "engagement":
+        break;
+      }
+
+      case "engagement": {
         const [prayerRequestsRes, testimonialsRes, eventsRes] =
           await Promise.all([
             supabaseClient
@@ -136,9 +143,11 @@ Deno.serve(async (req) => {
             galleryViews: 0,
           },
         };
-        break;
 
-      default:
+        break;
+      }
+
+      default: {
         // Overview report - get comprehensive data for all sections
         const [
           donationsOverview,
@@ -197,6 +206,9 @@ Deno.serve(async (req) => {
             galleryViews: 0, // Placeholder for future implementation
           },
         };
+
+        break;
+      }
     }
 
     return formatSuccessResponse({
