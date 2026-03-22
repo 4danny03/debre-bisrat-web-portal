@@ -317,13 +317,13 @@ const Home: React.FC = () => {
           <div className="container mx-auto max-w-7xl">
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif text-church-burgundy mb-4 animate-slide-up">
-                {language === "en" ? "Stay Connected" : "ተገናኙ"}
+                {language === "en" ? "Stay Connected" : "ወቅታዊ መልእክት"}
               </h2>
               <div className="w-24 h-1 bg-gradient-to-r from-transparent via-church-gold to-transparent mx-auto mb-6"></div>
               <p className="text-lg text-gray-600 max-w-2xl mx-auto animate-slide-up">
                 {language === "en"
                   ? "Discover upcoming events and support our mission through your generous contributions."
-                  : "የሚመጡ ዝግጅቶችን ያግኙ እና በልግስ አስተዋፅዖዎ ተልዕኮአችንን ይደግፉ።"}
+                  : "የሚመጡ ዝግጅቶችን ያግኙ እና በልግስና አስተዋፅዖዎ ተልዕኮአችንን ይደግፉ።"}
               </p>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
