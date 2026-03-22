@@ -30,13 +30,13 @@ serve(async (req: Request) => {
     // Initialize Resend client with NEW syntax
     const resend = new Resend(RESEND_API_KEY);
 
-    // Send email
-    const { data, error } = await resend.emails.send({
-      from: "onboarding@resend.dev", // Use test domain if no custom domain
-      to: requestData.to,
-      subject: requestData.subject,
-      html: requestData.htmlContent
-    });
+   // Send email
+const { data, error } = await resend.emails.send({
+  from: Deno.env.get("FROM_EMAIL") ?? "noreply@stgabrielmd.org",
+  to: requestData.to,
+  subject: requestData.subject,
+  html: requestData.htmlContent,
+});
 
     if (error) {
       console.error("Resend error:", error);
