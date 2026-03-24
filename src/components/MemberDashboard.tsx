@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth/hooks";
 import { api } from "@/integrations/supabase/api";
 import { format } from "date-fns";
@@ -17,43 +17,55 @@ interface Donation {
   created_at: string;
 }
 
-interface Event {
+interface EventRegistration {
   status: string;
   events: {
     id: string;
     title: string;
     event_date: string;
-  };
+  } | null;
 }
 
-const MemberDashboard: React.FC = () => {
+export default function MemberDashboard() {
   const { user } = useAuth();
+
   const [profile, setProfile] = useState<Profile | null>(null);
   const [donations, setDonations] = useState<Donation[]>([]);
-  const [events, setEvents] = useState<Event[]>([]);
+  const [events, setEvents] = useState<EventRegistration[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchMemberData = async () => {
-      if (!user?.id) return;
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+
       try {
+        setLoading(true);
+
         const [profileData, donationsData, eventsData] = await Promise.all([
           api.members.getMemberProfile(user.id),
           api.members.getMemberDonations(user.id),
           api.members.getMemberEvents(user.id),
         ]);
-        // setProfile(profileData);
-        // setDonations(donationsData);
-        // setEvents(eventsData);
+
+        setProfile(profileData ?? null);
+        setDonations(donationsData ?? []);
+        setEvents(eventsData ?? []);
       } catch (error) {
         console.error("Error fetching member data:", error);
+        setProfile(null);
+        setDonations([]);
+        setEvents([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchMemberData();
-  }, [user]);
+  }, [user?.id]);
+
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -73,24 +85,28 @@ const MemberDashboard: React.FC = () => {
       <h1 className="text-3xl font-bold mb-8 text-church-burgundy">
         Member Dashboard
       </h1>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-        {/* Profile Card */}
         <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
           <div className="w-20 h-20 rounded-full bg-church-burgundy text-white flex items-center justify-center text-3xl font-bold mb-4">
             {profile?.full_name?.[0] || user.email?.[0] || "U"}
           </div>
+
           <div className="text-lg font-semibold mb-1">
             {profile?.full_name || user.email}
           </div>
+
           <div className="text-gray-500 text-sm mb-2">
             {profile?.email || user.email}
           </div>
+
           <div className="text-gray-400 text-xs mb-1">
-            Member since:{" "}
+            Member since{" "}
             {profile?.created_at
               ? format(new Date(profile.created_at), "MMM yyyy")
               : "N/A"}
           </div>
+
           <span
             className={`px-3 py-1 rounded-full text-xs font-medium ${
               profile?.status === "active"
@@ -102,11 +118,11 @@ const MemberDashboard: React.FC = () => {
           </span>
         </div>
 
-        {/* Donation History Card */}
-        <div className="bg-white rounded-lg shadow p-6 col-span-1 md:col-span-1">
+        <div className="bg-white rounded-lg shadow p-6">
           <div className="font-semibold text-church-burgundy mb-3">
             Recent Donations
           </div>
+
           <ul className="divide-y divide-gray-100">
             {donations.length > 0 ? (
               donations.slice(0, 3).map((donation, idx) => (
@@ -124,11 +140,11 @@ const MemberDashboard: React.FC = () => {
           </ul>
         </div>
 
-        {/* Event Registrations Card */}
-        <div className="bg-white rounded-lg shadow p-6 col-span-1 md:col-span-1">
+        <div className="bg-white rounded-lg shadow p-6">
           <div className="font-semibold text-church-burgundy mb-3">
             Event Registrations
           </div>
+
           <ul className="divide-y divide-gray-100">
             {events.length > 0 ? (
               events.slice(0, 3).map((event, idx) => (
@@ -136,7 +152,10 @@ const MemberDashboard: React.FC = () => {
                   <span>{event.events?.title || "Event"}</span>
                   <span>
                     {event.events?.event_date
-                      ? format(new Date(event.events.event_date), "MMM dd")
+                      ? format(
+                          new Date(`${event.events.event_date}T12:00:00`),
+                          "MMM dd",
+                        )
                       : "TBD"}
                   </span>
                   <span
@@ -159,12 +178,9 @@ const MemberDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Extensible area for future widgets */}
       <div className="bg-church-burgundy/5 rounded-lg p-6 text-center text-gray-500">
         More features coming soon: profile editing, payment methods, and more!
       </div>
     </div>
   );
-};
-
-export default MemberDashboard;
+}

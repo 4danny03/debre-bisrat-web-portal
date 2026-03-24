@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import { AlertTriangle, RefreshCw, Home, Bug, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,14 +23,14 @@ interface AdminErrorBoundaryState {
 interface AdminErrorBoundaryProps {
   children: React.ReactNode;
   fallback?: React.ComponentType<{ error?: Error; resetError: () => void }>;
-  onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
+  onError?: (error: Error, errorInfo: React.ErrorInfo) => void; // eslint-disable-line no-unused-vars
 }
 
 class AdminErrorBoundary extends React.Component<
   AdminErrorBoundaryProps,
   AdminErrorBoundaryState
 > {
-  private retryTimeoutId?: NodeJS.Timeout;
+  private retryTimeoutId?: ReturnType<typeof setTimeout>;
 
   constructor(props: AdminErrorBoundaryProps) {
     super(props);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, type FC } from "react";
 import { imageProcessor } from "@/lib/image/ImageProcessor";
 
 interface ImageWithFallbackProps {
@@ -14,7 +14,7 @@ interface ImageWithFallbackProps {
   ariaLabel?: string;
 }
 
-const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
+const ImageWithFallback: FC<ImageWithFallbackProps> = ({
   src,
   fallbackSrc = import.meta.env.BASE_URL + "images/gallery/church-service.jpg",
   alt,
@@ -111,7 +111,7 @@ const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
         </div>
       )}
       <img
-        src={imgSrc}
+        src={optimizedSrc || imgSrc}
         alt={alt}
         className={`${className} ${isLoading ? "opacity-0" : "opacity-100"} transition-opacity duration-300`}
         onError={handleError}

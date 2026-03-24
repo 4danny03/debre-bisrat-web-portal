@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, type ReactNode } from "react";
 import {
   Table,
   TableBody,
@@ -23,13 +23,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Search, ChevronLeft, ChevronRight, Filter } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
 
 interface Column<T> {
   key: keyof T | string;
   label: string;
-  render?: (item: T) => React.ReactNode;
+  render?: (item: T) => ReactNode; // eslint-disable-line no-unused-vars
   sortable?: boolean;
   filterable?: boolean;
   filterOptions?: string[];
@@ -42,7 +42,7 @@ interface AdminDataTableProps<T> {
   description?: string;
   searchPlaceholder?: string;
   pageSize?: number;
-  actions?: (item: T) => React.ReactNode;
+  actions?: (item: T) => ReactNode; // eslint-disable-line no-unused-vars
   loading?: boolean;
   onRefresh?: () => void;
 }
@@ -183,7 +183,7 @@ export default function AdminDataTable<T extends Record<string, any>>({
                 <Select
                   key={String(column.key)}
                   value={filters[String(column.key)] || ""}
-                  onValueChange={(value) => handleFilterChange(String(column.key), value)}
+                  onValueChange={(value: string) => handleFilterChange(String(column.key), value)}
                 >
                   <SelectTrigger className="w-full sm:w-48" aria-label={`Filter by ${column.label}`} tabIndex={0}>
                     <SelectValue placeholder={`Filter ${column.label}`} />

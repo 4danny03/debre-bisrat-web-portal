@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Clock } from "lucide-react";
 
 interface AdminSessionManagerProps {
-  children: React.ReactNode;
+  children: ReactNode;
   ariaLabel?: string;
 }
 
@@ -29,9 +29,9 @@ export default function AdminSessionManager(props: AdminSessionManagerProps) {
   const { toast } = useToast();
 
   useEffect(() => {
-    let activityTimer: NodeJS.Timeout;
-    let warningTimer: NodeJS.Timeout;
-    let countdownTimer: NodeJS.Timeout;
+    let activityTimer: ReturnType<typeof setTimeout>;
+    let warningTimer: ReturnType<typeof setTimeout>;
+    let countdownTimer: ReturnType<typeof setTimeout>;
     let lastActivity = Date.now();
 
     const resetTimers = () => {

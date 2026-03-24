@@ -15,14 +15,14 @@ export const useDataRefresh = (
   dependencies: unknown[] = [],
   tableName?: string,
 ) => {
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isActiveRef = useRef(true);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const isRefreshingRef = useRef(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const refreshFunctionRef = useRef(refreshFunction);
-  const { connectionHealth, forceSync } = useDataContext();
+  const { connectionHealth } = useDataContext();
 
   useEffect(() => {
     refreshFunctionRef.current = refreshFunction;
@@ -138,17 +138,7 @@ export const useDataRefresh = (
     };
   }, [tableName, connectionHealth, intervalMs, ...dependencies]);
 
-  const pauseRefresh = useCallback(() => {
-    isActiveRef.current = false;
-    console.log(`Paused refresh for ${tableName || "component"}`);
-  }, [tableName]);
-
-  const resumeRefresh = useCallback(() => {
-    isActiveRef.current = true;
-    console.log(`Resumed refresh for ${tableName || "component"}`);
-  }, [tableName]);
-
-  const manualRefresh = useCallback(async () => {
+     const manualRefresh = useCallback(async () => {
     if (!isRefreshingRef.current) {
       console.log(`Manual refresh triggered for ${tableName || "component"}`);
       isRefreshingRef.current = true;

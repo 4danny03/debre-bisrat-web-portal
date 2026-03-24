@@ -1,12 +1,12 @@
-import React, { useState } from "react";
+import { useState, useRef, useEffect, type ReactNode, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, AlertCircle, CheckCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 interface AdminFormWrapperProps {
-  children: React.ReactNode;
-  onSubmit: (formData: FormData) => Promise<void>;
+  children: ReactNode;
+  onSubmit: (formData: FormData) => Promise<void>; // eslint-disable-line no-unused-vars
   submitText?: string;
   successMessage?: string;
   className?: string;
@@ -29,10 +29,10 @@ export default function AdminFormWrapper({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const { toast } = useToast();
-  const errorRef = React.useRef<HTMLDivElement>(null);
-  const successRef = React.useRef<HTMLDivElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
+  const successRef = useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (error && errorRef.current) {
       errorRef.current.focus();
     } else if (success && successRef.current) {
@@ -40,7 +40,7 @@ export default function AdminFormWrapper({
     }
   }, [error, success]);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError(null);

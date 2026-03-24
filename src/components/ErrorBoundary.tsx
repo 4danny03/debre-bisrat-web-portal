@@ -1,5 +1,5 @@
-import React from "react";
-import { AlertTriangle, RefreshCw, Home, Bug } from "lucide-react";
+import * as React from "react";
+import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,7 +9,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { dataSyncService } from "@/services/DataSyncService";
-import { useToast } from "@/components/ui/use-toast";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -21,7 +20,7 @@ interface ErrorBoundaryState {
 interface ErrorBoundaryProps {
   children: React.ReactNode;
   fallback?: React.ComponentType<{ error?: Error; resetError: () => void }>;
-  onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
+  onError?: (error: Error, errorInfo: React.ErrorInfo) => void; // eslint-disable-line no-unused-vars
 }
 
 class ErrorBoundary extends React.Component<

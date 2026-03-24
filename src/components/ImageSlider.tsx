@@ -24,15 +24,16 @@ export default function ImageSlider({
   );
 
   useEffect(() => {
-    if (!autoPlay || slides.length <= 1) return;
+  if (!autoPlay || slides.length <= 1) return;
 
-    const autoAdvance = setInterval(() => {
-      setCurrentSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
-    }, 7000); // 7 seconds for better readability
+  const autoAdvance = setInterval(() => {
+    setCurrentSlide((prev) =>
+      prev === slides.length - 1 ? 0 : prev + 1
+    );
+  }, interval);
 
-    return () => clearInterval(autoAdvance);
-  }, [autoPlay, slides.length]);
-
+  return () => clearInterval(autoAdvance);
+}, [autoPlay, slides.length, interval]);
   // Preload next image for better performance
   useEffect(() => {
     if (slides.length > 0) {
