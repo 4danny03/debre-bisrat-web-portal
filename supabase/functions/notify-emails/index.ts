@@ -3,6 +3,9 @@
 
 import { handleDebugRequest } from "./debug.ts";
 
+// Import email templates
+import { templates } from "./templates.ts";
+
 type EmailArgs = {
   to: string | string[];
   subject: string;
@@ -58,25 +61,33 @@ async function sendEmail({
     const now = Date.now();
     const hourAgo = now - 3600000;
     const log = emailSendLog.get(domain) || { count: 0, timestamp: now };
+
     // Reset counter if it's been more than an hour
     if (log.timestamp < hourAgo) {
       log.count = 1;
       log.timestamp = now;
     } else {
       log.count++;
+
       // Check if we've hit the limit
       if (log.count > 50) {
-        console.warn(`Rate limit exceeded for domain ${domain}. Skipping email send.`);
+        console.warn(
+          `Rate limit exceeded for domain ${domain}. Skipping email send.`,
+        );
         return { id: null, message: "Rate limit exceeded" };
       }
     }
+
     emailSendLog.set(domain, log);
   }
 
   try {
-    console.log(`Attempting to send email to ${Array.isArray(to) ? to.join(", ") : to}`);
+    console.log(
+      `Attempting to send email to ${Array.isArray(to) ? to.join(", ") : to}`,
+    );
     console.log(`From: ${FROM_EMAIL}`);
     console.log(`Subject: ${subject}`);
+
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -94,18 +105,24 @@ async function sendEmail({
         bcc,
       }),
     });
+
     if (!res.ok) {
       const body = await res.text();
       console.error("Resend error", res.status, body);
       throw new Error(`Resend failed: ${res.status} - ${body}`);
     }
+
     const data = await res.json();
-    console.log(`Email sent successfully to ${Array.isArray(to) ? to.join(", ") : to}`);
+    console.log(
+      `Email sent successfully to ${Array.isArray(to) ? to.join(", ") : to}`,
+    );
     return data;
   } catch (error) {
     console.error("Failed to send email:", error);
     throw error;
   }
+}
+
 type Event =
   | {
       type: "user.registered";
@@ -170,9 +187,6 @@ type Event =
       };
     };
 
-// Import email templates
-import { templates } from "./templates.ts";
-
 // Note: Deno.serve is valid in Supabase Edge Functions (Deno runtime)
 // @ts-ignore: Deno.serve is valid in Supabase Edge Functions
 Deno.serve(async (req: Request) => {
@@ -200,7 +214,8 @@ Deno.serve(async (req: Request) => {
       const testResult = await sendEmail({
         to: "matterskhalid@gmail.com", // Replace with your email
         subject: "Email System Test",
-        html: "<h1>Test Email</h1><p>This is a test email from the notify-emails function.</p>",
+        html:
+          "<h1>Test Email</h1><p>This is a test email from the notify-emails function.</p>",
       });
 
       return new Response(
@@ -221,22 +236,27 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  if (req.method !== "POST")
+  if (req.method !== "POST") {
     return new Response("Method not allowed", {
       status: 405,
       headers: corsHeaders,
     });
+  }
 
   let evt: Event | any;
   try {
     evt = await req.json();
+
     // Debug log: print event type and payload
     console.log("[DEBUG] Received event:", JSON.stringify(evt, null, 2));
     if (evt.type) {
       console.log(`[DEBUG] Event type: ${evt.type}`);
     }
     if (evt.payload) {
-      console.log(`[DEBUG] Event payload:`, JSON.stringify(evt.payload, null, 2));
+      console.log(
+        "[DEBUG] Event payload:",
+        JSON.stringify(evt.payload, null, 2),
+      );
     }
   } catch (error) {
     console.error("Failed to parse request body:", error);
@@ -268,7 +288,10 @@ Deno.serve(async (req: Request) => {
         const testResult = await sendEmail({
           to: evt.payload.email,
           subject: evt.payload.subject || "Test Email",
-          html: `<h1>Test Email</h1><p>${evt.payload.message || "This is a test email from the notify-emails function."}</p>`,
+          html: `<h1>Test Email</h1><p>${
+            evt.payload.message ||
+            "This is a test email from the notify-emails function."
+          }</p>`,
         });
         results.push({ recipient: "test", result: testResult });
         break;
@@ -308,8 +331,14 @@ Deno.serve(async (req: Request) => {
           subject: "Membership pending payment",
           html: `
             <p>${evt.payload.name || evt.payload.email} started checkout.</p>
-            <p>Type: ${evt.payload.membershipType || "—"}, Amount: ${evt.payload.amount || "—"}</p>
-            ${evt.payload.checkoutUrl ? `<p><a href="${evt.payload.checkoutUrl}">View Checkout</a></p>` : ""}
+            <p>Type: ${evt.payload.membershipType || "—"}, Amount: ${
+              evt.payload.amount || "—"
+            }</p>
+            ${
+              evt.payload.checkoutUrl
+                ? `<p><a href="${evt.payload.checkoutUrl}">View Checkout</a></p>`
+                : ""
+            }
           `,
         });
         results.push({ recipient: "admin", result: adminResult });
@@ -320,7 +349,9 @@ Deno.serve(async (req: Request) => {
         // Admins
         const adminResult = await sendEmail({
           to: ADMIN_EMAILS,
-          subject: `Appointment request from ${evt.payload.name || evt.payload.email}`,
+          subject: `Appointment request from ${
+            evt.payload.name || evt.payload.email
+          }`,
           html: templates.appointmentRequest.admin(evt.payload),
           reply_to: evt.payload.email,
         });
@@ -430,5 +461,4 @@ Deno.serve(async (req: Request) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-  // ...existing code...
 });

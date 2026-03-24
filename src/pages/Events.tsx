@@ -41,7 +41,7 @@ const PlaceholderEvents = () => {
       title:
         language === "en"
           ? "St. Gabriel Monthly Commemoration"
-          : "የቅዱስ ገብርኤል ወርሃዊ ተዝካር",
+          : "የቅዱስ ገብርኤል ወርሃዊ በአል",
       description:
         language === "en"
           ? "Monthly celebration honoring St. Gabriel the Archangel, our church's patron saint. Special prayers and blessings."
