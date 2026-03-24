@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, type ChangeEvent, type FormEvent, type FC } from "react";
 import {
   Table,
   TableBody,
@@ -82,7 +82,30 @@ interface FileUploadProps {
   onRemove?: () => void;
 }
 
-const FileUpload: React.FC<FileUploadProps> = ({
+const sortEventsFutureFirst = (events: Event[]) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayTime = today.getTime();
+
+  return [...events].sort((a, b) => {
+    const aTime = new Date(`${a.event_date}T12:00:00`).getTime();
+    const bTime = new Date(`${b.event_date}T12:00:00`).getTime();
+
+    const aIsUpcoming = aTime >= todayTime;
+    const bIsUpcoming = bTime >= todayTime;
+
+    if (aIsUpcoming && !bIsUpcoming) return -1;
+    if (!aIsUpcoming && bIsUpcoming) return 1;
+
+    if (aIsUpcoming && bIsUpcoming) {
+      return aTime - bTime;
+    }
+
+    return bTime - aTime;
+  });
+};
+
+const FileUpload: FC<FileUploadProps> = ({
   onFileUpload,
   defaultImageUrl,
   onRemove,
@@ -95,8 +118,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
   );
   const { toast } = useToast();
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
       const selectedFile = e.target.files[0];
       setFile(selectedFile);
       const objectUrl = URL.createObjectURL(selectedFile);
@@ -129,9 +152,12 @@ const FileUpload: React.FC<FileUploadProps> = ({
       if (error) throw error;
 
       setProgress(100);
-      const { data: { publicUrl } } = supabase.storage
-        .from("events")
-        .getPublicUrl(filePath);
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("events").getPublicUrl(filePath);
+					   
+								
 
       onFileUpload(publicUrl);
       toast({
@@ -153,13 +179,13 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const handleRemove = () => {
     setFile(null);
     setPreviewUrl(null);
-    if (onRemove) onRemove();
+    onRemove?.();
   };
 
   useEffect(() => {
-    if (defaultImageUrl) {
-      setPreviewUrl(defaultImageUrl);
-    }
+    setPreviewUrl(defaultImageUrl || null);
+									 
+	 
   }, [defaultImageUrl]);
 
   return (
@@ -205,12 +231,12 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
       {previewUrl && (
         <div className="mt-4">
-          <p className="text-sm font-medium mb-2">Preview:</p>
-          <div className="relative w-full h-48 bg-gray-100 rounded-md overflow-hidden">
+          <p className="mb-2 text-sm font-medium">Preview:</p>
+          <div className="relative h-48 w-full overflow-hidden rounded-md bg-gray-100">
             <img
               src={previewUrl}
               alt="Preview"
-              className="w-full h-full object-cover"
+              className="h-full w-full object-cover"
             />
           </div>
         </div>
@@ -233,15 +259,17 @@ export default function AdminEvents() {
   const loadEvents = useCallback(async () => {
     try {
       setLoading(true);
+
       const { data, error } = await supabase
         .from("events")
-        .select("*")
-        .order("event_date", { ascending: true });
+        .select("*");
+												  
 
       if (error) throw error;
 
-      setEvents(data || []);
-      setFilteredEvents(data || []);
+      const sortedData = sortEventsFutureFirst(data || []);
+      setEvents(sortedData);
+      setFilteredEvents(sortedData);
     } catch (error) {
       console.error("Error loading events:", error);
       toast({
@@ -264,15 +292,16 @@ export default function AdminEvents() {
         event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         event.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         event.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        event.category?.toLowerCase().includes(searchTerm.toLowerCase())
+        event.category?.toLowerCase().includes(searchTerm.toLowerCase()),
     );
-    setFilteredEvents(filtered);
+
+    setFilteredEvents(sortEventsFutureFirst(filtered));
   }, [searchTerm, events]);
 
   const handleAddEvent = useCallback(
-    async (e: React.FormEvent) => {
+    async (e: FormEvent<HTMLFormElement>) => {
       e.preventDefault();
-      const form = e.target as HTMLFormElement;
+      const form = e.currentTarget;
       const formData = new FormData(form);
       const user = (await supabase.auth.getUser()).data.user;
 
@@ -282,16 +311,18 @@ export default function AdminEvents() {
             title: formData.get("title") as string,
             description: formData.get("description") as string,
             event_date: formData.get("event_date") as string,
-            event_time: formData.get("event_time") as string || null,
-            end_date: formData.get("end_date") as string || null,
-            end_time: formData.get("end_time") as string || null,
-            location: formData.get("location") as string || null,
-            category: formData.get("category") as string || null,
-            max_attendees: formData.get("max_attendees") 
-              ? parseInt(formData.get("max_attendees") as string) 
+            event_time: (formData.get("event_time") as string) || null,
+            end_date: (formData.get("end_date") as string) || null,
+            end_time: (formData.get("end_time") as string) || null,
+            location: (formData.get("location") as string) || null,
+            category: (formData.get("category") as string) || null,
+            max_attendees: formData.get("max_attendees")
+              ? parseInt(formData.get("max_attendees") as string, 10)
               : null,
-            registration_required: formData.get("registration_required") === "on",
-            registration_deadline: formData.get("registration_deadline") as string || null,
+            registration_required:
+              formData.get("registration_required") === "on",
+            registration_deadline:
+              (formData.get("registration_deadline") as string) || null,
             featured: formData.get("featured") === "on",
             image_url: uploadedImageUrl,
             created_by: user?.id || null,
@@ -304,7 +335,7 @@ export default function AdminEvents() {
           title: "Success",
           description: "Event added successfully",
         });
-        loadEvents();
+        await loadEvents();
         setIsAddDialogOpen(false);
         setUploadedImageUrl(null);
         form.reset();
@@ -321,10 +352,11 @@ export default function AdminEvents() {
   );
 
   const handleUpdateEvent = useCallback(
-    async (e: React.FormEvent) => {
+    async (e: FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       if (!editingEvent) return;
-      const form = e.target as HTMLFormElement;
+
+      const form = e.currentTarget;
       const formData = new FormData(form);
 
       try {
@@ -336,16 +368,18 @@ export default function AdminEvents() {
             title: formData.get("title") as string,
             description: formData.get("description") as string,
             event_date: formData.get("event_date") as string,
-            event_time: formData.get("event_time") as string || null,
-            end_date: formData.get("end_date") as string || null,
-            end_time: formData.get("end_time") as string || null,
-            location: formData.get("location") as string || null,
-            category: formData.get("category") as string || null,
-            max_attendees: formData.get("max_attendees") 
-              ? parseInt(formData.get("max_attendees") as string) 
+            event_time: (formData.get("event_time") as string) || null,
+            end_date: (formData.get("end_date") as string) || null,
+            end_time: (formData.get("end_time") as string) || null,
+            location: (formData.get("location") as string) || null,
+            category: (formData.get("category") as string) || null,
+            max_attendees: formData.get("max_attendees")
+              ? parseInt(formData.get("max_attendees") as string, 10)
               : null,
-            registration_required: formData.get("registration_required") === "on",
-            registration_deadline: formData.get("registration_deadline") as string || null,
+            registration_required:
+              formData.get("registration_required") === "on",
+            registration_deadline:
+              (formData.get("registration_deadline") as string) || null,
             featured: formData.get("featured") === "on",
             image_url: imageUrlToUse,
             updated_at: new Date().toISOString(),
@@ -358,7 +392,7 @@ export default function AdminEvents() {
           title: "Success",
           description: "Event updated successfully",
         });
-        loadEvents();
+        await loadEvents();
         setEditingEvent(null);
         setUploadedImageUrl(null);
         setCurrentImageUrl(null);
@@ -377,7 +411,7 @@ export default function AdminEvents() {
   const handleDeleteEvent = useCallback(
     async (id: string) => {
       try {
-        // First get the event to check for image
+												 
         const { data: eventData, error: fetchError } = await supabase
           .from("events")
           .select("image_url")
@@ -386,14 +420,14 @@ export default function AdminEvents() {
 
         if (fetchError) throw fetchError;
 
-        // Delete image from storage if exists
+											  
         if (eventData?.image_url) {
           const urlParts = eventData.image_url.split("/");
           const filePath = urlParts.slice(urlParts.indexOf("events")).join("/");
           await supabase.storage.from("events").remove([filePath]);
         }
 
-        // Delete event from database
+									 
         const { error: deleteError } = await supabase
           .from("events")
           .delete()
@@ -405,7 +439,7 @@ export default function AdminEvents() {
           title: "Success",
           description: "Event deleted successfully",
         });
-        loadEvents();
+        await loadEvents();
       } catch (error) {
         console.error("Error deleting event:", error);
         toast({
@@ -429,9 +463,16 @@ export default function AdminEvents() {
     setCurrentImageUrl(null);
   };
 
+  const upcomingEventCount = events.filter((event) => {
+    const eventTime = new Date(`${event.event_date}T12:00:00`).getTime();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return eventTime >= today.getTime();
+  }).length;
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex h-64 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-church-burgundy" />
       </div>
     );
@@ -447,11 +488,11 @@ export default function AdminEvents() {
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button>
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="mr-2 h-4 w-4" />
               Add Event
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl overflow-y-auto max-h-screen">
+          <DialogContent className="max-h-screen max-w-2xl overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Add New Event</DialogTitle>
             </DialogHeader>
@@ -503,19 +544,19 @@ export default function AdminEvents() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="max_attendees">Max Attendees</Label>
-                  <Input 
-                    id="max_attendees" 
-                    name="max_attendees" 
-                    type="number" 
+                  <Input
+                    id="max_attendees"
+                    name="max_attendees"
+                    type="number"
                     min="0"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="registration_deadline">Registration Deadline</Label>
-                  <Input 
-                    id="registration_deadline" 
-                    name="registration_deadline" 
-                    type="date" 
+                  <Input
+                    id="registration_deadline"
+                    name="registration_deadline"
+                    type="date"
                   />
                 </div>
               </div>
@@ -559,7 +600,7 @@ export default function AdminEvents() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-600">
-              {events.filter((e) => e.featured).length}
+              {events.filter((event) => event.featured).length}
             </div>
           </CardContent>
         </Card>
@@ -569,7 +610,7 @@ export default function AdminEvents() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {events.filter((e) => new Date(e.event_date) >= new Date()).length}
+              {upcomingEventCount}
             </div>
           </CardContent>
         </Card>
@@ -579,7 +620,7 @@ export default function AdminEvents() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              {events.filter((e) => e.registration_required).length}
+              {events.filter((event) => event.registration_required).length}
             </div>
           </CardContent>
         </Card>
@@ -591,7 +632,7 @@ export default function AdminEvents() {
         </CardHeader>
         <CardContent>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
             <Input
               placeholder="Search events by title, description, location, or category..."
               value={searchTerm}
@@ -627,60 +668,63 @@ export default function AdminEvents() {
                   <TableRow key={event.id}>
                     <TableCell>
                       {event.image_url ? (
-                        <div className="w-16 h-16 rounded-md overflow-hidden">
+                        <div className="h-16 w-16 overflow-hidden rounded-md">
                           <img
                             src={event.image_url}
                             alt={event.title}
-                            className="w-full h-full object-cover"
+                            className="h-full w-full object-cover"
                           />
                         </div>
                       ) : (
-                        <div className="w-16 h-16 rounded-md bg-gray-100 flex items-center justify-center">
-                          <ImageIcon className="w-6 h-6 text-gray-400" />
+                        <div className="flex h-16 w-16 items-center justify-center rounded-md bg-gray-100">
+                          <ImageIcon className="h-6 w-6 text-gray-400" />
                         </div>
                       )}
                     </TableCell>
                     <TableCell className="font-medium">
                       <div>{event.title}</div>
                       {event.description && (
-                        <div className="text-sm text-gray-500 line-clamp-1">
+                        <div className="line-clamp-1 text-sm text-gray-500">
                           {event.description}
                         </div>
                       )}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center">
-                        <Calendar className="w-4 h-4 mr-2" />
+                        <Calendar className="mr-2 h-4 w-4" />
                         {format(new Date(`${event.event_date}T12:00:00`), "MMM d, yyyy")}
                         {event.event_time && (
                           <>
-                            <Clock className="w-4 h-4 ml-3 mr-2" />
+                            <Clock className="ml-3 mr-2 h-4 w-4" />
                             {event.event_time.substring(0, 5)}
                           </>
                         )}
                       </div>
                       {event.end_date && (
-                        <div className="text-sm mt-1">
+                        <div className="mt-1 text-sm">
                           Ends: {format(new Date(`${event.end_date}T12:00:00`), "MMM d, yyyy")}
                           {event.end_time && ` at ${event.end_time.substring(0, 5)}`}
                         </div>
                       )}
                     </TableCell>
-                    <TableCell>
-                      {event.location || "-"}
-                    </TableCell>
+                    <TableCell>{event.location || "-"}</TableCell>
+											 
+								
+							   
                     <TableCell>
                       {event.category ? (
                         <Badge variant="outline">
-                          <Tag className="w-3 h-3 mr-1" />
+                          <Tag className="mr-1 h-3 w-3" />
                           {event.category}
                         </Badge>
-                      ) : "-"}
+                      ) : (
+                        "-"
+                      )}
                     </TableCell>
                     <TableCell>
                       {event.registration_required ? (
                         <div className="flex items-center">
-                          <Users className="w-4 h-4 mr-2" />
+                          <Users className="mr-2 h-4 w-4" />
                           {event.max_attendees ? `${event.max_attendees} max` : "Required"}
                         </div>
                       ) : (
@@ -690,7 +734,9 @@ export default function AdminEvents() {
                     <TableCell>
                       {event.featured ? (
                         <Badge variant="secondary">Featured</Badge>
-                      ) : "-"}
+                      ) : (
+                        "-"
+                      )}
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
@@ -699,12 +745,12 @@ export default function AdminEvents() {
                           size="sm"
                           onClick={() => handleEditEvent(event)}
                         >
-                          <Edit className="w-4 h-4" />
+                          <Edit className="h-4 w-4" />
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="destructive" size="sm">
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
@@ -732,8 +778,9 @@ export default function AdminEvents() {
               </TableBody>
             </Table>
           </div>
+
           {filteredEvents.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
+            <div className="py-8 text-center text-gray-500">
               No events found matching your criteria
             </div>
           )}
@@ -741,10 +788,11 @@ export default function AdminEvents() {
       </Card>
 
       <Dialog open={!!editingEvent} onOpenChange={() => setEditingEvent(null)}>
-        <DialogContent className="max-w-2xl overflow-y-auto max-h-screen">
+        <DialogContent className="max-h-screen max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Event</DialogTitle>
           </DialogHeader>
+
           {editingEvent && (
             <form onSubmit={handleUpdateEvent} className="space-y-4">
               <div className="grid grid-cols-1 gap-4">
