@@ -185,7 +185,7 @@ const Home: React.FC = () => {
         title:
           language === "en"
             ? "St. Gabriel Monthly Commemoration"
-            : "የቅዱስ ገብርኤል ወርሃዊ ተዝካር",
+            : "የቅዱስ ገብርኤል ወርሃዊ በአል",
         description: null,
         event_date: "2025-05-19",
         event_time: "10:00",

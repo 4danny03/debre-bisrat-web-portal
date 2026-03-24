@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Table,
   TableBody,
@@ -44,7 +44,6 @@ import {
   Edit,
   Trash2,
   Calendar,
-  MapPin,
   Clock,
   Upload,
   Loader2,
@@ -237,7 +236,7 @@ export default function AdminEvents() {
       const { data, error } = await supabase
         .from("events")
         .select("*")
-        .order("event_date", { ascending: false });
+        .order("event_date", { ascending: true });
 
       if (error) throw error;
 
@@ -652,7 +651,7 @@ export default function AdminEvents() {
                     <TableCell>
                       <div className="flex items-center">
                         <Calendar className="w-4 h-4 mr-2" />
-                        {format(new Date(event.event_date), "MMM d, yyyy")}
+                        {format(new Date(`${event.event_date}T12:00:00`), "MMM d, yyyy")}
                         {event.event_time && (
                           <>
                             <Clock className="w-4 h-4 ml-3 mr-2" />
@@ -662,7 +661,7 @@ export default function AdminEvents() {
                       </div>
                       {event.end_date && (
                         <div className="text-sm mt-1">
-                          Ends: {format(new Date(event.end_date), "MMM d, yyyy")}
+                          Ends: {format(new Date(`${event.end_date}T12:00:00`), "MMM d, yyyy")}
                           {event.end_time && ` at ${event.end_time.substring(0, 5)}`}
                         </div>
                       )}
