@@ -19,10 +19,111 @@ import { useDataRefresh } from "@/hooks/useDataRefresh";
 
 const baseUrl = import.meta.env.BASE_URL;
 
-// Placeholder Events Component
+interface Event {
+  id: string;
+  title: string;
+  description: string | null;
+  event_date: string;
+  event_time: string | null;
+  location: string | null;
+  image_url: string | null;
+  is_featured: boolean;
+  created_at: string;
+}
+
+interface PlaceholderEvent {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+  location: string;
+  image: string;
+  icon: typeof Church;
+}
+
+const fallbackImages = [
+  baseUrl + "images/religious/palm-sunday.jpg",
+  baseUrl + "images/religious/crucifixion.jpg",
+  baseUrl + "images/religious/procession.jpg",
+  baseUrl + "images/gallery/timket.jpg",
+  baseUrl + "images/gallery/church-service.jpg",
+  baseUrl + "images/gallery/church-gathering.jpg",
+  baseUrl + "images/gallery/ceremony-1.jpg",
+  baseUrl + "images/gallery/ceremony-2.jpg",
+  baseUrl + "images/gallery/ceremony-3.jpg",
+];
+
+const getSafeEventImage = (event: Event): string => {
+  if (event.image_url && event.image_url.trim()) return event.image_url;
+
+  const firstChar = event.id?.charAt(0) || "0";
+  const parsed = parseInt(firstChar, 16);
+  const imageIndex = Number.isNaN(parsed) ? 0 : parsed % fallbackImages.length;
+
+  return fallbackImages[imageIndex];
+};
+
+const handleImageFallback = (e: React.SyntheticEvent<HTMLImageElement>) => {
+  const target = e.currentTarget;
+
+  if (target.src.includes("church-service.jpg")) {
+    target.src = baseUrl + "images/gallery/church-gathering.jpg";
+  } else if (target.src.includes("church-gathering.jpg")) {
+    target.src = baseUrl + "images/gallery/ceremony-1.jpg";
+  } else if (target.src.includes("ceremony-1.jpg")) {
+    target.src = baseUrl + "images/gallery/timket.jpg";
+  } else {
+    target.src = baseUrl + "images/gallery/church-service.jpg";
+  }
+};
+
+const getEventDateTime = (event: Event) => {
+  const date = new Date(event.event_date);
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
+
+const sortEvents = (events: Event[]) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return [...events].sort((a, b) => {
+    const dateA = getEventDateTime(a).getTime();
+    const dateB = getEventDateTime(b).getTime();
+
+    const aIsUpcomingOrToday = dateA >= today.getTime();
+    const bIsUpcomingOrToday = dateB >= today.getTime();
+
+    // Upcoming/current events first, past events last
+    if (aIsUpcomingOrToday !== bIsUpcomingOrToday) {
+      return aIsUpcomingOrToday ? -1 : 1;
+    }
+
+    // Within the same section, featured events first
+    if (a.is_featured !== b.is_featured) {
+      return a.is_featured ? -1 : 1;
+    }
+
+    // Upcoming/current events: nearest first
+    if (aIsUpcomingOrToday && bIsUpcomingOrToday) {
+      if (dateA !== dateB) return dateA - dateB;
+    }
+
+    // Past events: most recent past first
+    if (!aIsUpcomingOrToday && !bIsUpcomingOrToday) {
+      if (dateA !== dateB) return dateB - dateA;
+    }
+
+    // Final tie-breaker: newest created first
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
+};
+
 const PlaceholderEvents = () => {
   const { language } = useLanguage();
-  const placeholderEvents = [
+
+  const placeholderEvents: PlaceholderEvent[] = [
     {
       id: "placeholder-1",
       title: language === "en" ? "Sunday Divine Liturgy" : "የእሁድ ቅዳሴ",
@@ -41,7 +142,7 @@ const PlaceholderEvents = () => {
       title:
         language === "en"
           ? "St. Gabriel Monthly Commemoration"
-          : "የቅዱስ ገብርኤል ወርሃዊ በአል",
+          : "የቅዱስ ገብርኤል ወርሃዊ በዓል",
       description:
         language === "en"
           ? "Monthly celebration honoring St. Gabriel the Archangel, our church's patron saint. Special prayers and blessings."
@@ -120,13 +221,14 @@ const PlaceholderEvents = () => {
         <p className="text-gray-600 max-w-2xl mx-auto">
           {language === "en"
             ? "While we don't have specific upcoming events scheduled, here are our regular activities and services that happen throughout the year."
-            : "ልዩ የወደፊት ዝግጅቶች ባይኖሩንም፣ በዓመቱ ውስጥ የሚካሄዱ መደበኛ ስራዎቻችን እና አገልግሎቶቻችን እነኚሁ ናቸው።"}
+            : "ልዩ የወደፊት ዝግጅቶች ባይኖሩንም፣ በዓመቱ ውስጥ የሚካሄዱ መደበኛ ስራዎቻችን እና አገልግሎቶቻችን እነዚሁ ናቸው።"}
         </p>
       </div>
 
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
         {placeholderEvents.map((event) => {
           const IconComponent = event.icon;
+
           return (
             <Card
               key={event.id}
@@ -137,52 +239,43 @@ const PlaceholderEvents = () => {
                   src={event.image}
                   alt={event.title}
                   className="w-full h-full object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    if (target.src.includes("church-service.jpg")) {
-                      target.src =
-                        baseUrl + "images/gallery/church-gathering.jpg";
-                    } else if (target.src.includes("church-gathering.jpg")) {
-                      target.src = baseUrl + "images/gallery/ceremony-1.jpg";
-                    } else if (target.src.includes("ceremony-1.jpg")) {
-                      target.src = baseUrl + "images/gallery/timket.jpg";
-                    } else {
-                      target.src =
-                        baseUrl + "images/gallery/church-service.jpg";
-                    }
-                  }}
+                  onError={handleImageFallback}
                 />
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                   <IconComponent className="h-12 w-12 text-white" />
                 </div>
               </div>
+
               <CardContent className="p-6">
                 <h3 className="text-xl font-bold text-church-burgundy mb-2">
                   {event.title}
                 </h3>
+
                 <div className="flex items-center text-gray-600 mb-2">
                   <Calendar className="h-4 w-4 mr-2" />
                   <span className="text-sm font-medium">{event.date}</span>
                 </div>
+
                 <div className="flex items-center text-gray-600 mb-2">
                   <Clock className="h-4 w-4 mr-2" />
                   <span className="text-sm">{event.time}</span>
                 </div>
+
                 <div className="flex items-center text-gray-600 mb-4">
                   <MapPin className="h-4 w-4 mr-2" />
                   <span className="text-sm">{event.location}</span>
                 </div>
+
                 <p className="text-gray-600 mb-6 text-sm leading-relaxed">
                   {event.description}
                 </p>
-                <div className="flex justify-between">
-                  <Button
-                    variant="outline"
-                    className="text-church-burgundy border-church-burgundy hover:bg-church-burgundy hover:text-white"
-                  >
-                    {language === "en" ? "Learn More" : "ተጨማሪ መረጃ"}
-                  </Button>
-                </div>
+
+                <Button
+                  variant="outline"
+                  className="text-church-burgundy border-church-burgundy hover:bg-church-burgundy hover:text-white"
+                >
+                  {language === "en" ? "Learn More" : "ተጨማሪ መረጃ"}
+                </Button>
               </CardContent>
             </Card>
           );
@@ -190,42 +283,6 @@ const PlaceholderEvents = () => {
       </div>
     </div>
   );
-};
-
-interface Event {
-  id: string;
-  title: string;
-  description: string | null;
-  event_date: string;
-  event_time: string | null;
-  location: string | null;
-  image_url: string | null;
-  is_featured: boolean;
-  created_at: string;
-}
-
-// Religious event images mapping with verified paths
-const religiousEventImages = [
-  baseUrl + "images/religious/palm-sunday.jpg",
-  baseUrl + "images/religious/crucifixion.jpg",
-  baseUrl + "images/religious/procession.jpg",
-  baseUrl + "images/gallery/timket.jpg",
-  baseUrl + "images/gallery/church-service.jpg",
-  baseUrl + "images/gallery/church-gathering.jpg",
-  baseUrl + "images/gallery/ceremony-1.jpg",
-  baseUrl + "images/gallery/ceremony-2.jpg",
-  baseUrl + "images/gallery/ceremony-3.jpg",
-];
-
-// Function to get a religious image based on event data
-const getReligiousImage = (event: Event): string => {
-  // If the event already has an image, use it
-  if (event.image_url) return event.image_url;
-
-  // Otherwise, assign a religious image based on the event id (for consistency)
-  const imageIndex =
-    parseInt(event.id.charAt(0), 16) % religiousEventImages.length;
-  return religiousEventImages[imageIndex];
 };
 
 export default function Events() {
@@ -238,26 +295,23 @@ export default function Events() {
       setLoading(true);
       const data = await api.events.getEvents();
       const validatedData = Array.isArray(data) ? data : [];
-      setEvents(validatedData);
+      const sortedEvents = sortEvents(validatedData);
+      setEvents(sortedEvents);
     } catch (error) {
       console.error("Error loading events:", error);
-      // Only show error if we have no events to display
-      if (events.length === 0) {
-        console.error("Failed to load events on initial load");
-        setEvents([]);
-      }
+      setEvents([]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
     loadEvents();
-  }, []);
+  }, [loadEvents]);
 
-  // Use enhanced data refresh hook
   const { manualRefresh, forceSyncData } = useDataRefresh(
     loadEvents,
-    5 * 60 * 1000, // Refresh every 5 minutes
+    5 * 60 * 1000,
     [],
     "events",
   );
@@ -275,11 +329,13 @@ export default function Events() {
           <h1 className="text-3xl md:text-4xl font-bold text-church-burgundy mb-4">
             {t("events") || "Church Events"}
           </h1>
+
           <p className="text-gray-600 max-w-2xl mx-auto mb-4">
             Join us for our upcoming events and celebrations. Our church hosts
             various activities throughout the year for all members of our
             community.
           </p>
+
           <Button
             onClick={handleManualRefresh}
             variant="outline"
@@ -303,9 +359,7 @@ export default function Events() {
                   <Skeleton className="h-6 w-3/4 mb-2" />
                   <Skeleton className="h-4 w-1/2 mb-4" />
                   <Skeleton className="h-20 w-full mb-4" />
-                  <div className="flex justify-between">
-                    <Skeleton className="h-10 w-24" />
-                  </div>
+                  <Skeleton className="h-10 w-24" />
                 </CardContent>
               </Card>
             ))}
@@ -313,58 +367,53 @@ export default function Events() {
         ) : events.length > 0 ? (
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {events.map((event) => (
-              <Card key={event.id} className="overflow-hidden">
+              <Card key={event.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="h-56 bg-cover bg-center relative overflow-hidden">
                   <img
-                    src={getReligiousImage(event)}
+                    src={getSafeEventImage(event)}
                     alt={event.title}
                     className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      if (target.src.includes("church-service.jpg")) {
-                        target.src =
-                          baseUrl + "images/gallery/church-gathering.jpg";
-                      } else if (target.src.includes("church-gathering.jpg")) {
-                        target.src = baseUrl + "images/gallery/ceremony-1.jpg";
-                      } else if (target.src.includes("ceremony-1.jpg")) {
-                        target.src = baseUrl + "images/gallery/timket.jpg";
-                      } else {
-                        target.src =
-                          baseUrl + "images/gallery/church-service.jpg";
-                      }
-                    }}
+                    onError={handleImageFallback}
                   />
+
+                  {event.is_featured && (
+                    <div className="absolute top-3 right-3 bg-church-burgundy text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
+                      Featured
+                    </div>
+                  )}
                 </div>
+
                 <CardContent className="p-6">
                   <h3 className="text-xl font-bold text-church-burgundy mb-2">
                     {event.title}
                   </h3>
-                  <div className="flex items-center text-gray-600 mb-4">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    <span>
-                      {format(new Date(event.event_date), "MMMM d, yyyy")}
-                    </span>
+
+                  <div className="flex items-center flex-wrap gap-y-2 text-gray-600 mb-4">
+                    <div className="flex items-center mr-4">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      <span>{format(new Date(event.event_date), "MMMM d, yyyy")}</span>
+                    </div>
+
                     {event.event_time && (
-                      <>
-                        <Clock className="h-4 w-4 ml-4 mr-2" />
+                      <div className="flex items-center">
+                        <Clock className="h-4 w-4 mr-2" />
                         <span>{event.event_time}</span>
-                      </>
+                      </div>
                     )}
                   </div>
+
                   {event.location && (
                     <div className="flex items-center text-gray-600 mb-4">
                       <MapPin className="h-4 w-4 mr-2" />
                       <span>{event.location}</span>
                     </div>
                   )}
-                  <p className="text-gray-600 mb-6 line-clamp-3">
-                    {event.description}
-                  </p>
-                  {/* <div className="flex justify-between">
-                    <Button variant="outline" className="text-church-burgundy">
-                      Learn More
-                    </Button>
-                  </div> */}
+
+                  {event.description && (
+                    <p className="text-gray-600 mb-6 line-clamp-3">
+                      {event.description}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             ))}
