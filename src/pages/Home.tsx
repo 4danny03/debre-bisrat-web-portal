@@ -364,7 +364,7 @@ const Home: React.FC = () => {
                           <div className="flex-1">
                             <p className="text-sm text-church-burgundy font-semibold">
                               {format(
-                                new Date(event.event_date),
+                                new Date(event.event_date + "T00:00:00"),
                                 "MMMM d, yyyy",
                               )}
                               {event.event_time && (

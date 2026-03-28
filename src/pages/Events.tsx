@@ -79,7 +79,7 @@ const handleImageFallback = (e: React.SyntheticEvent<HTMLImageElement>) => {
 };
 
 const getEventDateTime = (event: Event) => {
-  const date = new Date(event.event_date);
+  const date = new Date(event.event_date + "T00:00:00");
   date.setHours(0, 0, 0, 0);
   return date;
 };
@@ -391,7 +391,7 @@ export default function Events() {
                   <div className="flex items-center flex-wrap gap-y-2 text-gray-600 mb-4">
                     <div className="flex items-center mr-4">
                       <Calendar className="h-4 w-4 mr-2" />
-                      <span>{format(new Date(event.event_date), "MMMM d, yyyy")}</span>
+                      <span>{format(new Date(event.event_date + "T00:00:00"), "MMMM d, yyyy")}</span>
                     </div>
 
                     {event.event_time && (
